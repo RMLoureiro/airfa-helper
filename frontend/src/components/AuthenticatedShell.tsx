@@ -9,6 +9,7 @@ const navigation = [
   { href: '/perfil', label: 'Sobre mim' },
   { href: '/membros', label: 'Membros' },
   { href: '/events', label: 'Eventos' },
+  { href: '/newsletter', label: 'Newsletter' },
   { href: '/presencas', label: 'Presenças' },
   { href: '/instrumentos', label: 'Instrumentos' },
   { href: '/repertorio', label: 'Repertório' },
