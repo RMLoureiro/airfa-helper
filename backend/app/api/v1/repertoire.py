@@ -1,6 +1,7 @@
 from pathlib import Path
+import re
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
@@ -12,6 +13,36 @@ from app.models.user import User
 from app.schemas.repertoire import RepertoireCreate, RepertoireFileRead, RepertoireRead
 
 router = APIRouter(prefix="/repertoire", tags=["repertoire"])
+
+
+def _sanitize_filename(filename: str) -> str:
+    name = Path(filename).name
+    sanitized = re.sub(r"[^a-zA-Z0-9._-]", "_", name)
+    return sanitized or "partitura.pdf"
+
+
+def _ensure_repertoire_folder(db: Session, repertoire: Repertoire) -> Path:
+    base_dir = Path(settings.REPERTOIRE_FILES_DIR).resolve()
+    base_dir.mkdir(parents=True, exist_ok=True)
+
+    folder_name = repertoire.folder_path or f"work-{repertoire.id}"
+    folder_name = re.sub(r"[^a-zA-Z0-9._-]", "_", folder_name)
+    if not folder_name:
+        folder_name = f"work-{repertoire.id}"
+
+    folder = (base_dir / folder_name).resolve()
+    if base_dir not in folder.parents and folder != base_dir:
+        raise HTTPException(status_code=400, detail="Pasta de repertório inválida")
+
+    folder.mkdir(parents=True, exist_ok=True)
+
+    if repertoire.folder_path != folder_name:
+        repertoire.folder_path = folder_name
+        db.add(repertoire)
+        db.commit()
+        db.refresh(repertoire)
+
+    return folder
 
 
 def _resolve_folder(folder_path: str | None) -> Path | None:
@@ -71,6 +102,39 @@ def create_repertoire(
     db.commit()
     db.refresh(repertoire)
     return repertoire
+
+
+@router.post("/{repertoire_id}/files")
+async def upload_repertoire_files(
+    repertoire_id: int,
+    files: list[UploadFile] = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(SystemRole.ADMIN, SystemRole.SUPER_ADMIN)),
+):
+    repertoire = db.query(Repertoire).filter(Repertoire.id == repertoire_id).first()
+    if not repertoire:
+        raise HTTPException(status_code=404, detail="Repertório não encontrado")
+
+    if not files:
+        raise HTTPException(status_code=400, detail="Nenhum ficheiro recebido")
+
+    folder = _ensure_repertoire_folder(db, repertoire)
+    uploaded: list[str] = []
+
+    for upload in files:
+        filename = _sanitize_filename(upload.filename or "")
+        if not filename.lower().endswith(".pdf"):
+            raise HTTPException(status_code=400, detail="Apenas ficheiros PDF são permitidos")
+
+        destination = (folder / filename).resolve()
+        if folder not in destination.parents:
+            raise HTTPException(status_code=400, detail="Nome de ficheiro inválido")
+
+        content = await upload.read()
+        destination.write_bytes(content)
+        uploaded.append(filename)
+
+    return {"uploaded": uploaded, "folder_path": repertoire.folder_path}
 
 
 @router.get("/{repertoire_id}/files")
