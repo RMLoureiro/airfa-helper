@@ -1,0 +1,8 @@
+A pasta alembic guarda as migrações do banco de dados.
+Para criar uma nova migração, usa o comando:
+
+alembic revision --autogenerate -m "mensagem"
+
+Para aplicar as migrações:
+
+alembic upgrade head
