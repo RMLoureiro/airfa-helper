@@ -1,6 +1,6 @@
 from datetime import date
 
-from sqlalchemy import extract, func
+from sqlalchemy import extract, func, text
 
 from app.db.session import SessionLocal
 from app.models.enums import NotificationType
@@ -8,10 +8,16 @@ from app.models.notification import Notification
 from app.models.user import User
 
 
+ADVISORY_LOCK_ID = 784_512_993
+
+
 def send_daily_birthday_notifications() -> None:
     today = date.today()
-    db = SessionLocal()
-    try:
+    with SessionLocal.begin() as db:
+        lock_acquired = db.execute(text(f"SELECT pg_try_advisory_xact_lock({ADVISORY_LOCK_ID})")).scalar_one()
+        if not lock_acquired:
+            return
+
         birthday_members = (
             db.query(User)
             .filter(User.birth_date.isnot(None))
@@ -46,7 +52,3 @@ def send_daily_birthday_notifications() -> None:
                         read=False,
                     )
                 )
-
-        db.commit()
-    finally:
-        db.close()
