@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.venv
+env/
+venv/
+instance/
+.webassets-cache
+
+# Alembic
+alembic/versions/
+
+# Node/Next.js
+node_modules/
+.next/
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+volumes/
+db_data/
+
+# VSCode
+.vscode/
+
+# Others
+*.sqlite3
