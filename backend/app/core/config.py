@@ -1,10 +1,34 @@
 import os
+import subprocess
 from pydantic_settings import BaseSettings
+
+
+def _default_database_url() -> str:
+    configured = os.getenv("DATABASE_URL")
+    if configured:
+        return configured
+
+    # Docker compose should always inject DATABASE_URL; this fallback targets local dev.
+    database_host = os.getenv("DATABASE_HOST")
+    if database_host:
+        return f"postgresql://airfa:230422@{database_host}:5432/airfa"
+
+    try:
+        wsl_gateway = subprocess.check_output(
+            ["sh", "-lc", "ip route | grep default | awk '{print $3; exit}'"],
+            text=True,
+        ).strip()
+        if wsl_gateway:
+            return f"postgresql://airfa:230422@{wsl_gateway}:5432/airfa"
+    except Exception:
+        pass
+
+    return "postgresql://airfa:230422@localhost:5432/airfa"
 
 class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "Airfa Helper API"
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://airfa:airfa@db:5432/airfa")
+    DATABASE_URL: str = _default_database_url()
     SECRET_KEY: str = os.getenv("SECRET_KEY", "supersecret")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24
     ALGORITHM: str = "HS256"
