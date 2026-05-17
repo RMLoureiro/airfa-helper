@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
+from app.schemas.base import ReadSchema
 
 class ReportBase(BaseModel):
     user_id: int
@@ -10,9 +11,6 @@ class ReportBase(BaseModel):
 class ReportCreate(ReportBase):
     pass
 
-class ReportRead(ReportBase):
+class ReportRead(ReportBase, ReadSchema):
     id: int
     created_at: datetime
-
-    class Config:
-        orm_mode = True

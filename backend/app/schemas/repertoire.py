@@ -1,6 +1,12 @@
 from pydantic import BaseModel
 from typing import Optional
 from app.models.enums import RepertoireState
+from app.schemas.base import ReadSchema
+
+
+class RepertoireFileRead(BaseModel):
+    name: str
+    download_url: str
 
 class RepertoireBase(BaseModel):
     title: str
@@ -11,8 +17,6 @@ class RepertoireBase(BaseModel):
 class RepertoireCreate(RepertoireBase):
     pass
 
-class RepertoireRead(RepertoireBase):
+class RepertoireRead(RepertoireBase, ReadSchema):
     id: int
-
-    class Config:
-        orm_mode = True
+    files: list[RepertoireFileRead] = []

@@ -1,5 +1,5 @@
 import os
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
@@ -8,5 +8,9 @@ class Settings(BaseSettings):
     SECRET_KEY: str = os.getenv("SECRET_KEY", "supersecret")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24
     ALGORITHM: str = "HS256"
+    REPERTOIRE_FILES_DIR: str = os.getenv(
+        "REPERTOIRE_FILES_DIR",
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "uploads", "repertoire")),
+    )
 
 settings = Settings()

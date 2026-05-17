@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 from app.models.enums import EventType
+from app.schemas.base import ReadSchema
 
 class EventBase(BaseModel):
     title: str
@@ -16,8 +17,5 @@ class EventBase(BaseModel):
 class EventCreate(EventBase):
     pass
 
-class EventRead(EventBase):
+class EventRead(EventBase, ReadSchema):
     id: int
-
-    class Config:
-        orm_mode = True

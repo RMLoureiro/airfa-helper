@@ -1,0 +1,67 @@
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+from app.deps.auth import get_current_user, get_db, require_roles
+from app.models.enums import SystemRole
+from app.models.instrument import Instrument
+from app.models.instrument_report import InstrumentReport
+from app.models.user import User
+from app.schemas.instrument import InstrumentRead
+from app.schemas.instrument_report import InstrumentReportCreate, InstrumentReportRead
+
+router = APIRouter(prefix="/instruments", tags=["instruments"])
+
+
+@router.get("", response_model=list[InstrumentRead])
+def list_instruments(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.system_role in {SystemRole.ADMIN, SystemRole.SUPER_ADMIN}:
+        return db.query(Instrument).order_by(Instrument.id.asc()).all()
+    return db.query(Instrument).filter(Instrument.user_id == current_user.id).order_by(Instrument.id.asc()).all()
+
+
+@router.post("/{instrument_id}/assign")
+def assign_instrument(
+    instrument_id: int,
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(SystemRole.ADMIN, SystemRole.SUPER_ADMIN)),
+):
+    instrument = db.query(Instrument).filter(Instrument.id == instrument_id).first()
+    if not instrument:
+        return {"detail": "Instrumento não encontrado"}
+    instrument.user_id = user_id
+    db.commit()
+    db.refresh(instrument)
+    return {"id": instrument.id, "user_id": instrument.user_id}
+
+
+@router.get("/reports", response_model=list[InstrumentReportRead])
+def list_reports(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(SystemRole.ADMIN, SystemRole.SUPER_ADMIN)),
+):
+    return db.query(InstrumentReport).order_by(InstrumentReport.created_at.desc()).all()
+
+
+@router.post("/{instrument_id}/reports", response_model=InstrumentReportRead)
+def create_report(
+    instrument_id: int,
+    payload: InstrumentReportCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    report = InstrumentReport(
+        instrument_id=instrument_id,
+        user_id=current_user.id,
+        report_type=payload.report_type,
+        severity=payload.severity,
+        description=payload.description,
+        addressed=False,
+    )
+    db.add(report)
+    db.commit()
+    db.refresh(report)
+    return report

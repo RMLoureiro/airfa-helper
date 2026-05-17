@@ -5,5 +5,10 @@ alembic
 psycopg2-binary
 python-jose[cryptography]
 passlib[bcrypt]
+bcrypt==3.2.2
 pydantic
+pydantic-settings
+email-validator
 python-multipart
+apscheduler
+httpx

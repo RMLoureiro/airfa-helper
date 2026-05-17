@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
+from app.schemas.base import ReadSchema
 
 class NewsletterBase(BaseModel):
     title: str
@@ -10,9 +11,6 @@ class NewsletterBase(BaseModel):
 class NewsletterCreate(NewsletterBase):
     pass
 
-class NewsletterRead(NewsletterBase):
+class NewsletterRead(NewsletterBase, ReadSchema):
     id: int
     created_at: datetime
-
-    class Config:
-        orm_mode = True

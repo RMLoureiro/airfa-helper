@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from app.models.enums import AttendanceStatus
+from app.schemas.base import ReadSchema
 
 class EventAttendanceBase(BaseModel):
     event_id: int
@@ -9,8 +10,5 @@ class EventAttendanceBase(BaseModel):
 class EventAttendanceCreate(EventAttendanceBase):
     pass
 
-class EventAttendanceRead(EventAttendanceBase):
+class EventAttendanceRead(EventAttendanceBase, ReadSchema):
     id: int
-
-    class Config:
-        orm_mode = True

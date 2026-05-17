@@ -2,6 +2,7 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import date
 from app.models.enums import SystemRole, MusicalRole
+from app.schemas.base import ReadSchema
 
 class UserBase(BaseModel):
     email: EmailStr
@@ -16,8 +17,5 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
 
-class UserRead(UserBase):
+class UserRead(UserBase, ReadSchema):
     id: int
-
-    class Config:
-        orm_mode = True
