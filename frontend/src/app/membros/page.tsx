@@ -47,6 +47,9 @@ export default function MembersPage() {
   const router = useRouter();
   const [members, setMembers] = useState<MemberItem[]>([]);
   const [role, setRole] = useState('REGULAR');
+  const [query, setQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState<'ALL' | MemberItem['system_role']>('ALL');
+  const [naipeFilter, setNaipeFilter] = useState('ALL');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<MemberItem | null>(null);
   const [message, setMessage] = useState('');
@@ -63,6 +66,23 @@ export default function MembersPage() {
   });
 
   const isSuperAdmin = role === 'SUPER_ADMIN';
+
+  const filteredMembers = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+
+    return members.filter((member) => {
+      const matchesQuery =
+        !normalizedQuery ||
+        member.name.toLowerCase().includes(normalizedQuery) ||
+        member.email.toLowerCase().includes(normalizedQuery) ||
+        (member.phone ?? '').toLowerCase().includes(normalizedQuery);
+
+      const matchesRole = roleFilter === 'ALL' || member.system_role === roleFilter;
+      const matchesNaipe = naipeFilter === 'ALL' || (member.musical_role ?? 'NONE') === naipeFilter;
+
+      return matchesQuery && matchesRole && matchesNaipe;
+    });
+  }, [members, naipeFilter, query, roleFilter]);
 
   const subtitle = useMemo(() => {
     if (isSuperAdmin) {
@@ -208,7 +228,10 @@ export default function MembersPage() {
     <AuthenticatedShell title="Membros" subtitle={subtitle}>
       <section className="section">
         <header className="section-header">
-          <h1>Membros</h1>
+          <div>
+            <h1>Membros</h1>
+            <p className="section-note">{filteredMembers.length} de {members.length} membros.</p>
+          </div>
           {isSuperAdmin ? (
             <button type="button" onClick={openCreateModal}>
               Novo membro
@@ -216,10 +239,47 @@ export default function MembersPage() {
           ) : null}
         </header>
 
+        <div className="filters">
+          <label>
+            Pesquisar
+            <input
+              type="search"
+              placeholder="Nome, email ou telemóvel"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </label>
+
+          <label>
+            Papel
+            <select value={roleFilter} onChange={(event) => setRoleFilter(event.target.value as typeof roleFilter)}>
+              <option value="ALL">Todos</option>
+              <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+              <option value="ADMIN">ADMIN</option>
+              <option value="REGULAR">REGULAR</option>
+            </select>
+          </label>
+
+          <label>
+            Naipe
+            <select value={naipeFilter} onChange={(event) => setNaipeFilter(event.target.value)}>
+              <option value="ALL">Todos</option>
+              <option value="NONE">Sem naipe</option>
+              {musicalRoles
+                .filter((item) => item)
+                .map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+            </select>
+          </label>
+        </div>
+
         {message ? <p className="message">{message}</p> : null}
 
         <div className="grid">
-          {members.map((member) => (
+          {filteredMembers.map((member) => (
             <article key={member.id} className="card">
               <div className="card-top">
                 <h2>{member.name}</h2>
@@ -371,6 +431,33 @@ export default function MembersPage() {
           grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
         }
 
+        .filters {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+          gap: 12px;
+          padding: 16px;
+          border: 1px solid var(--border);
+          border-radius: 18px;
+          background: var(--panel-soft);
+        }
+
+        .filters label {
+          display: grid;
+          gap: 8px;
+          color: var(--text);
+        }
+
+        .filters input,
+        .filters select {
+          width: 100%;
+          background: rgba(255, 255, 255, 0.03);
+          color: var(--text);
+          border: 1px solid var(--border);
+          border-radius: 12px;
+          padding: 10px 12px;
+          outline: none;
+        }
+
         .card {
           display: grid;
           gap: 8px;
@@ -403,6 +490,11 @@ export default function MembersPage() {
 
         .message {
           margin: 0;
+          color: var(--muted);
+        }
+
+        .section-note {
+          margin: 6px 0 0;
           color: var(--muted);
         }
 
