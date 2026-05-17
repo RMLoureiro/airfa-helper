@@ -7,6 +7,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 const navigation = [
   { href: '/home', label: 'Início' },
   { href: '/perfil', label: 'Sobre mim' },
+  { href: '/membros', label: 'Membros' },
   { href: '/events', label: 'Eventos' },
   { href: '/presencas', label: 'Presenças' },
   { href: '/instrumentos', label: 'Instrumentos' },
@@ -57,6 +58,7 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
   }
 
   const activeNav = pathname ?? '/home';
+  const canSeeMembers = role === 'ADMIN' || role === 'SUPER_ADMIN';
 
   if (!ready) {
     return <main className="shell-loading">A carregar...</main>;
@@ -72,11 +74,13 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
         </div>
 
         <nav className="nav">
-          {navigation.map((item) => (
+          {navigation
+            .filter((item) => item.href !== '/membros' || canSeeMembers)
+            .map((item) => (
             <Link key={item.href} href={item.href} className={activeNav === item.href ? 'active' : ''}>
               {item.label}
             </Link>
-          ))}
+            ))}
         </nav>
 
         <div className="user-card">
