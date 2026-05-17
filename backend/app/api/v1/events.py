@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.deps.auth import get_db, get_current_user, require_roles
@@ -55,7 +55,7 @@ def update_event(
 ):
     event = db.query(Event).filter(Event.id == event_id).first()
     if not event:
-        return {"detail": "Evento não encontrado"}
+        raise HTTPException(status_code=404, detail="Evento não encontrado")
 
     for field, value in payload.model_dump().items():
         setattr(event, field, value)
@@ -74,7 +74,7 @@ def delete_event(
 ):
     event = db.query(Event).filter(Event.id == event_id).first()
     if not event:
-        return {"detail": "Evento não encontrado"}
+        raise HTTPException(status_code=404, detail="Evento não encontrado")
 
     title = event.title
     db.delete(event)

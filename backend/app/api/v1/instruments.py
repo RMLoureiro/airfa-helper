@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.deps.auth import get_current_user, get_db, require_roles
@@ -31,7 +31,12 @@ def assign_instrument(
 ):
     instrument = db.query(Instrument).filter(Instrument.id == instrument_id).first()
     if not instrument:
-        return {"detail": "Instrumento não encontrado"}
+        raise HTTPException(status_code=404, detail="Instrumento não encontrado")
+
+    member = db.query(User).filter(User.id == user_id).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="Membro não encontrado")
+
     instrument.user_id = user_id
     db.commit()
     db.refresh(instrument)
@@ -53,6 +58,10 @@ def create_report(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    instrument = db.query(Instrument).filter(Instrument.id == instrument_id).first()
+    if not instrument:
+        raise HTTPException(status_code=404, detail="Instrumento não encontrado")
+
     report = InstrumentReport(
         instrument_id=instrument_id,
         user_id=current_user.id,

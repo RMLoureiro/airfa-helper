@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.deps.auth import get_current_user, get_db
@@ -29,7 +29,7 @@ def mark_notification_read(
         .first()
     )
     if not notification:
-        return {"detail": "Notificação não encontrada"}
+        raise HTTPException(status_code=404, detail="Notificação não encontrada")
 
     notification.read = True
     db.commit()
