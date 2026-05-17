@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "Airfa Helper API"
     DATABASE_URL: str = _default_database_url()
+    CORS_ORIGINS: str = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
     SECRET_KEY: str = os.getenv("SECRET_KEY", "supersecret")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24
     ALGORITHM: str = "HS256"
