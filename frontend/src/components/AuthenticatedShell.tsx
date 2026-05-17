@@ -6,6 +6,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 
 const navigation = [
   { href: '/home', label: 'Início' },
+  { href: '/perfil', label: 'Sobre mim' },
   { href: '/events', label: 'Eventos' },
   { href: '/presencas', label: 'Presenças' },
   { href: '/instrumentos', label: 'Instrumentos' },

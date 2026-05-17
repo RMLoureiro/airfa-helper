@@ -17,5 +17,17 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
 
+
+class UserSelfUpdate(BaseModel):
+    name: str | None = None
+    phone: str | None = None
+    birth_date: date | None = None
+    address: str | None = None
+
+
+class PasswordChangeRequest(BaseModel):
+    new_password: str
+
+
 class UserRead(UserBase, ReadSchema):
     id: int
