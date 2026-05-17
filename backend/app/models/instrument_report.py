@@ -1,6 +1,7 @@
+from datetime import datetime, timezone
+
 from sqlalchemy import Column, Integer, String, Enum, ForeignKey, Boolean, DateTime
 from sqlalchemy.orm import relationship
-from datetime import datetime
 from app.db.base import Base
 from app.models.enums import InstrumentReportType, InstrumentReportSeverity
 
@@ -13,7 +14,7 @@ class InstrumentReport(Base):
     report_type = Column(Enum(InstrumentReportType), nullable=False)
     severity = Column(Enum(InstrumentReportSeverity), nullable=False)
     description = Column(String, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     addressed = Column(Boolean, default=False, nullable=False)
 
     instrument = relationship("Instrument", back_populates="reports")

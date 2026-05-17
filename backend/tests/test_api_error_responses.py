@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 import pytest
@@ -51,7 +51,7 @@ def _create_user(db, role: SystemRole) -> User:
 
 
 def _create_event(db) -> Event:
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     event = Event(
         title=f"Evento Teste {uuid4().hex[:8]}",
         description="evento para testes",
@@ -108,8 +108,8 @@ def test_update_missing_event_returns_404_for_admin(client: TestClient, db_sessi
     payload = {
         "title": "Evento inexistente",
         "description": "teste",
-        "start_time": (datetime.utcnow() + timedelta(days=2)).isoformat(),
-        "end_time": (datetime.utcnow() + timedelta(days=2, hours=1)).isoformat(),
+        "start_time": (datetime.now(timezone.utc) + timedelta(days=2)).isoformat(),
+        "end_time": (datetime.now(timezone.utc) + timedelta(days=2, hours=1)).isoformat(),
         "location": "Sala",
         "type": "REHEARSAL",
         "facebook_link": None,
