@@ -22,6 +22,13 @@ type HomeResponse = {
     birth_date?: string | null;
     days_until?: number | null;
   }>;
+  recent_feed: Array<{
+    id: number;
+    item_type: 'EVENT' | 'NEWSLETTER';
+    title: string;
+    description?: string | null;
+    published_at: string;
+  }>;
 };
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
@@ -64,6 +71,25 @@ export default function HomePage() {
             </p>
           </div>
         </header>
+
+        <section className="panel">
+          <h2>Newsletter e agenda</h2>
+          <div className="birthday-list">
+            {data?.recent_feed?.length ? (
+              data.recent_feed.map((item) => (
+                <article key={`${item.item_type}-${item.id}`} className="birthday-item">
+                  <div>
+                    <strong>{item.title}</strong>
+                    <p className="feed-description">{item.description ?? 'Sem descrição.'}</p>
+                  </div>
+                  <span>{item.item_type === 'EVENT' ? 'Evento' : 'Newsletter'}</span>
+                </article>
+              ))
+            ) : (
+              <p className="muted">Sem publicações ou eventos para mostrar.</p>
+            )}
+          </div>
+        </section>
 
         <section className="panel">
           <h2>Próximos eventos</h2>
@@ -152,6 +178,12 @@ export default function HomePage() {
 
         .muted {
           color: var(--muted);
+        }
+
+        .feed-description {
+          margin-top: 6px;
+          color: var(--muted);
+          max-width: 70ch;
         }
       `}</style>
     </AuthenticatedShell>

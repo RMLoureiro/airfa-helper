@@ -1,12 +1,13 @@
-from datetime import date, timedelta
+from datetime import date, datetime
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.deps.auth import get_current_user, get_db
 from app.models.event import Event
+from app.models.newsletter import Newsletter
 from app.models.user import User
-from app.schemas.dashboard import HomeResponse, UpcomingBirthdayRead
+from app.schemas.dashboard import HomeFeedItemRead, HomeResponse, UpcomingBirthdayRead
 
 router = APIRouter(prefix="/home", tags=["home"])
 
@@ -26,13 +27,15 @@ def read_home(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    now = datetime.utcnow()
     events = (
         db.query(Event)
-        .filter(Event.start_time >= date.today())
+        .filter(Event.start_time >= now)
         .order_by(Event.start_time.asc())
         .limit(10)
         .all()
     )
+    newsletters = db.query(Newsletter).order_by(Newsletter.created_at.desc()).limit(10).all()
 
     users = db.query(User).filter(User.birth_date.isnot(None)).order_by(User.birth_date.asc()).all()
     birthdays = []
@@ -45,6 +48,30 @@ def read_home(
                 days_until=_days_until_birthday(user.birth_date),
             )
         )
+
+    recent_feed = [
+        HomeFeedItemRead(
+            id=event.id,
+            item_type="EVENT",
+            title=event.title,
+            description=event.description,
+            published_at=event.start_time,
+        )
+        for event in events
+    ]
+    recent_feed.extend(
+        [
+            HomeFeedItemRead(
+                id=post.id,
+                item_type="NEWSLETTER",
+                title=post.title,
+                description=post.content,
+                published_at=post.created_at,
+            )
+            for post in newsletters
+        ]
+    )
+    recent_feed.sort(key=lambda item: item.published_at, reverse=True)
 
     return HomeResponse(
         name=current_user.name,
@@ -62,4 +89,5 @@ def read_home(
             for event in events
         ],
         upcoming_birthdays=birthdays[:10],
+        recent_feed=recent_feed[:12],
     )
