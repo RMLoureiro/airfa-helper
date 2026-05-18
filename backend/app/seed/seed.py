@@ -50,7 +50,7 @@ def _upsert_user(db: Session, payload: dict) -> User:
     return user
 
 
-def _seed_users(db: Session) -> tuple[User, User, User]:
+def _seed_users(db: Session) -> tuple[User, User, User, User]:
     super_admin = _upsert_user(
         db,
         {
@@ -96,7 +96,22 @@ def _seed_users(db: Session) -> tuple[User, User, User]:
         },
     )
 
-    return super_admin, admin, regular
+    regular2 = _upsert_user(
+        db,
+        {
+            "username": os.getenv("REGULAR2_USERNAME", "membro2"),
+            "hashed_password": get_password_hash(SEED_PASSWORD_REGULAR),
+            "name": "Membro Regular 2",
+            "phone": "910000004",
+            "birth_date": date(1995, 7, 15),
+            "address": "Rua Nova 4",
+            "join_year": 2018,
+            "system_role": SystemRole.REGULAR,
+            "musical_role": MusicalRole.PERCUSSION_PLAYER,
+        },
+    )
+
+    return super_admin, admin, regular, regular2
 
 
 def _seed_events(db: Session) -> list[Event]:
@@ -131,21 +146,23 @@ def _seed_events(db: Session) -> list[Event]:
     return events
 
 
-def _seed_attendance(db: Session, events: list[Event], users: tuple[User, User, User]) -> None:
-    super_admin, admin, regular = users
+def _seed_attendance(db: Session, events: list[Event], users: tuple[User, User, User, User]) -> None:
+    super_admin, admin, regular, regular2 = users
     records = [
         EventAttendance(event_id=events[0].id, user_id=super_admin.id, status=AttendanceStatus.PRESENT),
         EventAttendance(event_id=events[0].id, user_id=admin.id, status=AttendanceStatus.TARDY),
         EventAttendance(event_id=events[0].id, user_id=regular.id, status=AttendanceStatus.JUSTIFIED),
+        EventAttendance(event_id=events[0].id, user_id=regular2.id, status=AttendanceStatus.JUSTIFIED),
         EventAttendance(event_id=events[1].id, user_id=super_admin.id, status=AttendanceStatus.PRESENT),
         EventAttendance(event_id=events[1].id, user_id=admin.id, status=AttendanceStatus.PRESENT),
         EventAttendance(event_id=events[1].id, user_id=regular.id, status=AttendanceStatus.ABSENT),
+        EventAttendance(event_id=events[1].id, user_id=regular2.id, status=AttendanceStatus.ABSENT),
     ]
     db.add_all(records)
 
 
-def _seed_instruments(db: Session, users: tuple[User, User, User]) -> list[Instrument]:
-    _, admin, regular = users
+def _seed_instruments(db: Session, users: tuple[User, User, User, User]) -> list[Instrument]:
+    _, admin, regular, regular2 = users
     db.query(InstrumentReport).delete(synchronize_session=False)
     db.query(Instrument).delete(synchronize_session=False)
 
@@ -177,8 +194,8 @@ def _seed_instruments(db: Session, users: tuple[User, User, User]) -> list[Instr
     return instruments
 
 
-def _seed_instrument_reports(db: Session, instruments: list[Instrument], users: tuple[User, User, User]) -> None:
-    super_admin, _, regular = users
+def _seed_instrument_reports(db: Session, instruments: list[Instrument], users: tuple[User, User, User, User]) -> None:
+    super_admin, _, regular, regular2 = users
     reports = [
         InstrumentReport(
             instrument_id=instruments[0].id,
@@ -200,8 +217,8 @@ def _seed_instrument_reports(db: Session, instruments: list[Instrument], users: 
     db.add_all(reports)
 
 
-def _seed_newsletter(db: Session, users: tuple[User, User, User]) -> list[Newsletter]:
-    _, admin, _ = users
+def _seed_newsletter(db: Session, users: tuple[User, User, User, User]) -> list[Newsletter]:
+    _, admin, _, _ = users
     db.query(Newsletter).delete(synchronize_session=False)
     items = [
         Newsletter(
@@ -247,8 +264,8 @@ def _seed_repertoire(db: Session) -> list[Repertoire]:
     return items
 
 
-def _seed_notifications(db: Session, users: tuple[User, User, User], events: list[Event], newsletters: list[Newsletter]) -> None:
-    super_admin, admin, regular = users
+def _seed_notifications(db: Session, users: tuple[User, User, User, User], events: list[Event], newsletters: list[Newsletter]) -> None:
+    super_admin, admin, regular, regular2 = users
     db.query(Notification).delete(synchronize_session=False)
 
     notifications = [
@@ -270,12 +287,18 @@ def _seed_notifications(db: Session, users: tuple[User, User, User], events: lis
             content="Hoje faz anos um membro da banda.",
             read=False,
         ),
+        Notification(
+            user_id=regular2.id,
+            type=NotificationType.BIRTHDAY,
+            content="Hoje faz anos um membro da banda.",
+            read=False,
+        ),
     ]
     db.add_all(notifications)
 
 
-def _seed_reports(db: Session, users: tuple[User, User, User]) -> None:
-    _, _, regular = users
+def _seed_reports(db: Session, users: tuple[User, User, User, User]) -> None:
+    _, _, regular, regular2 = users
     db.query(Report).delete(synchronize_session=False)
     db.add(
         Report(

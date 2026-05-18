@@ -7,6 +7,10 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from app.api.v1.api import api_router
 from app.core.config import settings
 from app.services.birthday_notifications import send_daily_birthday_notifications
+from app.services.maintenance_jobs import (
+    cleanup_old_newsletter_items,
+    generate_upcoming_birthday_events,
+)
 
 scheduler = BackgroundScheduler(timezone="Europe/Lisbon")
 
@@ -14,12 +18,31 @@ scheduler = BackgroundScheduler(timezone="Europe/Lisbon")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     send_daily_birthday_notifications()
+    generate_upcoming_birthday_events()
+    cleanup_old_newsletter_items()
+
     scheduler.add_job(
         send_daily_birthday_notifications,
         "cron",
         id="daily_birthday_notifications",
         hour=8,
         minute=0,
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        generate_upcoming_birthday_events,
+        "cron",
+        id="generate_upcoming_birthday_events",
+        hour=0,
+        minute=10,
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        cleanup_old_newsletter_items,
+        "cron",
+        id="cleanup_old_newsletter_items",
+        hour=0,
+        minute=20,
         replace_existing=True,
     )
     scheduler.start()
