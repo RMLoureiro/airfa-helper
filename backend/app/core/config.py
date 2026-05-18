@@ -1,6 +1,15 @@
 import os
+import socket
 import subprocess
 from pydantic_settings import BaseSettings
+
+
+def _check_postgres(host: str, port: int = 5432, timeout: float = 0.5) -> bool:
+    try:
+        with socket.create_connection((host, port), timeout=timeout):
+            return True
+    except (socket.timeout, ConnectionRefusedError, OSError):
+        return False
 
 
 def _default_database_url() -> str:
@@ -13,12 +22,17 @@ def _default_database_url() -> str:
     if database_host:
         return f"postgresql://airfa:230422@{database_host}:5432/airfa"
 
+    # Works with WSL2 mirrored networking (localhost shared with Windows)
+    if _check_postgres("127.0.0.1"):
+        return "postgresql://airfa:230422@127.0.0.1:5432/airfa"
+
+    # Fallback: WSL2 NAT gateway (classic mode)
     try:
         wsl_gateway = subprocess.check_output(
             ["sh", "-lc", "ip route | grep default | awk '{print $3; exit}'"],
             text=True,
         ).strip()
-        if wsl_gateway:
+        if wsl_gateway and _check_postgres(wsl_gateway):
             return f"postgresql://airfa:230422@{wsl_gateway}:5432/airfa"
     except Exception:
         pass

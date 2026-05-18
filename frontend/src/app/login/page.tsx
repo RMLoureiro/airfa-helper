@@ -7,7 +7,7 @@ const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('admin@airfa.pt');
+  const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('admin123');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -23,11 +23,11 @@ export default function LoginPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username, password }),
       });
 
       if (!response.ok) {
-        throw new Error('Email ou password inválidos.');
+        throw new Error('Username ou password inválidos.');
       }
 
       const data = await response.json();
@@ -51,8 +51,8 @@ export default function LoginPage() {
 
         <form className="login-form" onSubmit={handleSubmit}>
           <label>
-            Email
-            <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} />
+            Username
+            <input type="text" value={username} onChange={(event) => setUsername(event.target.value)} />
           </label>
 
           <label>

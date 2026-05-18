@@ -36,7 +36,7 @@ SEED_PASSWORD_REGULAR = os.getenv("SEED_REGULAR_PASSWORD", "admin123")
 
 
 def _upsert_user(db: Session, payload: dict) -> User:
-    user = db.query(User).filter(User.email == payload["email"]).first()
+    user = db.query(User).filter(User.username == payload["username"]).first()
     if not user:
         user = User(**payload)
         db.add(user)
@@ -55,6 +55,7 @@ def _seed_users(db: Session) -> tuple[User, User, User, User]:
         db,
         {
             "username": os.getenv("SUPER_ADMIN_USERNAME", "superadmin"),
+            "email": os.getenv("SUPER_ADMIN_USERNAME", "superadmin"),
             "hashed_password": get_password_hash(SEED_PASSWORD_SUPER_ADMIN),
             "name": os.getenv("SUPER_ADMIN_NAME", "Super Admin Airfa"),
             "phone": "910000001",
@@ -70,6 +71,7 @@ def _seed_users(db: Session) -> tuple[User, User, User, User]:
         db,
         {
             "username": os.getenv("ADMIN_USERNAME", "admin"),
+            "email": os.getenv("ADMIN_USERNAME", "admin"),
             "hashed_password": get_password_hash(SEED_PASSWORD_ADMIN),
             "name": "Admin Airfa",
             "phone": "910000002",
@@ -85,6 +87,7 @@ def _seed_users(db: Session) -> tuple[User, User, User, User]:
         db,
         {
             "username": os.getenv("REGULAR_USERNAME", "membro"),
+            "email": os.getenv("REGULAR_USERNAME", "membro"),
             "hashed_password": get_password_hash(SEED_PASSWORD_REGULAR),
             "name": "Membro Regular",
             "phone": "910000003",
@@ -100,6 +103,7 @@ def _seed_users(db: Session) -> tuple[User, User, User, User]:
         db,
         {
             "username": os.getenv("REGULAR2_USERNAME", "membro2"),
+            "email": os.getenv("REGULAR2_USERNAME", "membro2"),
             "hashed_password": get_password_hash(SEED_PASSWORD_REGULAR),
             "name": "Membro Regular 2",
             "phone": "910000004",
@@ -328,9 +332,10 @@ def seed_all() -> None:
 
         print("Seed completa aplicada com sucesso.", flush=True)
         print("Credenciais de teste:", flush=True)
-        print(f"- SUPER_ADMIN: {users[0].email} / {SEED_PASSWORD_SUPER_ADMIN}", flush=True)
-        print(f"- ADMIN: {users[1].email} / {SEED_PASSWORD_ADMIN}", flush=True)
-        print(f"- REGULAR: {users[2].email} / {SEED_PASSWORD_REGULAR}", flush=True)
+        print(f"- SUPER_ADMIN username: {users[0].username} / {SEED_PASSWORD_SUPER_ADMIN}", flush=True)
+        print(f"- ADMIN username: {users[1].username} / {SEED_PASSWORD_ADMIN}", flush=True)
+        print(f"- REGULAR username: {users[2].username} / {SEED_PASSWORD_REGULAR}", flush=True)
+        print(f"- REGULAR2 username: {users[3].username} / {SEED_PASSWORD_REGULAR}", flush=True)
     except Exception:
         db.rollback()
         raise

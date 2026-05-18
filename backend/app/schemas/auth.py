@@ -1,8 +1,8 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from app.schemas.user import UserRead
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    username: str
     password: str
 
 class TokenResponse(BaseModel):

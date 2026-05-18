@@ -1,4 +1,4 @@
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timezone, UTC
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -74,7 +74,11 @@ def read_home(
             for post in newsletters
         ]
     )
-    recent_feed.sort(key=lambda item: item.published_at, reverse=True)
+    recent_feed.sort(
+        key=lambda item: item.published_at if item.published_at.tzinfo is not None
+        else item.published_at.replace(tzinfo=UTC),
+        reverse=True,
+    )
 
     return HomeResponse(
         name=current_user.name,
