@@ -61,7 +61,7 @@ def change_my_password(
 @router.get("/", response_model=list[UserRead])
 def list_members(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles([SystemRole.ADMIN, SystemRole.SUPER_ADMIN])),
+    current_user: User = Depends(require_roles(SystemRole.ADMIN, SystemRole.SUPER_ADMIN)),
 ):
     return db.query(User).all()
 
@@ -70,10 +70,11 @@ def list_members(
 def create_member(
     payload: UserAdminCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles([SystemRole.ADMIN, SystemRole.SUPER_ADMIN])),
+    current_user: User = Depends(require_roles(SystemRole.ADMIN, SystemRole.SUPER_ADMIN)),
 ):
-    new_user = User(**payload.dict())
-    new_user.password = get_password_hash(payload.password)
+    data = payload.model_dump()
+    raw_password = data.pop("password")
+    new_user = User(**data, hashed_password=get_password_hash(raw_password))
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
@@ -85,13 +86,17 @@ def update_member(
     member_id: int,
     payload: UserAdminUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles([SystemRole.ADMIN, SystemRole.SUPER_ADMIN])),
+    current_user: User = Depends(require_roles(SystemRole.ADMIN, SystemRole.SUPER_ADMIN)),
 ):
     member = db.query(User).filter(User.id == member_id).first()
     if not member:
         raise HTTPException(status_code=404, detail="Member not found")
 
-    for key, value in payload.dict(exclude_unset=True).items():
+    updates = payload.model_dump(exclude_unset=True)
+    if "password" in updates:
+        member.hashed_password = get_password_hash(updates.pop("password"))
+
+    for key, value in updates.items():
         setattr(member, key, value)
 
     db.commit()
@@ -103,7 +108,7 @@ def update_member(
 def delete_member(
     member_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles([SystemRole.ADMIN, SystemRole.SUPER_ADMIN])),
+    current_user: User = Depends(require_roles(SystemRole.ADMIN, SystemRole.SUPER_ADMIN)),
 ):
     member = db.query(User).filter(User.id == member_id).first()
     if not member:

@@ -58,6 +58,32 @@ def presences_calendar(
     return list_presences(db=db, current_user=current_user)
 
 
+@router.get("/analytics/members", response_model=list[PresenceAnalyticsMemberRead])
+def member_analytics(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(SystemRole.ADMIN, SystemRole.SUPER_ADMIN)),
+):
+    members = db.query(User).order_by(User.name.asc()).all()
+    analytics: list[PresenceAnalyticsMemberRead] = []
+
+    for member in members:
+        records = db.query(EventAttendance).filter(EventAttendance.user_id == member.id).all()
+        analytics.append(
+            PresenceAnalyticsMemberRead(
+                user_id=member.id,
+                name=member.name,
+                naipe=member.musical_role.value if member.musical_role else None,
+                total_events=len(records),
+                present=sum(1 for item in records if item.status == AttendanceStatus.PRESENT),
+                tardy=sum(1 for item in records if item.status == AttendanceStatus.TARDY),
+                absent=sum(1 for item in records if item.status == AttendanceStatus.ABSENT),
+                justified=sum(1 for item in records if item.status == AttendanceStatus.JUSTIFIED),
+            )
+        )
+
+    return analytics
+
+
 @router.get("/{event_id}/members", response_model=list[PresenceMemberStatusRead])
 def list_event_members(
     event_id: int,
@@ -133,27 +159,3 @@ def bulk_mark_presence(
     return {"updated": updated}
 
 
-@router.get("/analytics/members", response_model=list[PresenceAnalyticsMemberRead])
-def member_analytics(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles(SystemRole.ADMIN, SystemRole.SUPER_ADMIN)),
-):
-    members = db.query(User).order_by(User.name.asc()).all()
-    analytics: list[PresenceAnalyticsMemberRead] = []
-
-    for member in members:
-        records = db.query(EventAttendance).filter(EventAttendance.user_id == member.id).all()
-        analytics.append(
-            PresenceAnalyticsMemberRead(
-                user_id=member.id,
-                name=member.name,
-                naipe=member.musical_role.value if member.musical_role else None,
-                total_events=len(records),
-                present=sum(1 for item in records if item.status == AttendanceStatus.PRESENT),
-                tardy=sum(1 for item in records if item.status == AttendanceStatus.TARDY),
-                absent=sum(1 for item in records if item.status == AttendanceStatus.ABSENT),
-                justified=sum(1 for item in records if item.status == AttendanceStatus.JUSTIFIED),
-            )
-        )
-
-    return analytics
