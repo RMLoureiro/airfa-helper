@@ -6,6 +6,7 @@ class SystemRole(enum.Enum):
     REGULAR = "REGULAR"
 
 class MusicalRole(enum.Enum):
+    MAESTRO = "MAESTRO"
     FLUTE_PLAYER = "FLUTE_PLAYER"
     CLARINET_PLAYER = "CLARINET_PLAYER"
     SAXOPHONE_PLAYER = "SAXOPHONE_PLAYER"

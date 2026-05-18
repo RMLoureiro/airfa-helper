@@ -56,6 +56,9 @@ def read_home(
             title=event.title,
             description=event.description,
             published_at=event.start_time,
+            event_type=event.type.value,
+            facebook_link=event.facebook_link,
+            instagram_link=event.instagram_link,
         )
         for event in events
     ]
@@ -85,6 +88,8 @@ def read_home(
                 "start_time": event.start_time,
                 "location": event.location,
                 "type": event.type.value,
+                "facebook_link": event.facebook_link,
+                "instagram_link": event.instagram_link,
             }
             for event in events
         ],

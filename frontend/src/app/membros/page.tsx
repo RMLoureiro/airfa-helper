@@ -1,8 +1,7 @@
 "use client";
 
 import AuthenticatedShell from '@/components/AuthenticatedShell';
-import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { FormEvent, useEffect, useState } from 'react';
 
 type MemberItem = {
   id: number;
@@ -16,101 +15,28 @@ type MemberItem = {
   musical_role?: string | null;
 };
 
-type MemberForm = {
-  email: string;
-  name: string;
-  password: string;
-  phone: string;
-  birth_date: string;
-  address: string;
-  join_year: string;
-  system_role: 'SUPER_ADMIN' | 'ADMIN' | 'REGULAR';
-  musical_role: string;
-};
-
-const musicalRoles = [
-  '',
-  'FLUTE_PLAYER',
-  'CLARINET_PLAYER',
-  'SAXOPHONE_PLAYER',
-  'TROMBONE_PLAYER',
-  'EUPHONIUM_PLAYER',
-  'TUBA_PLAYER',
-  'FRENCH_HORN_PLAYER',
-  'TRUMPET_PLAYER',
-  'PERCUSSION_PLAYER',
-];
-
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
 
 export default function MembersPage() {
-  const router = useRouter();
   const [members, setMembers] = useState<MemberItem[]>([]);
-  const [role, setRole] = useState('REGULAR');
-  const [query, setQuery] = useState('');
-  const [roleFilter, setRoleFilter] = useState<'ALL' | MemberItem['system_role']>('ALL');
-  const [naipeFilter, setNaipeFilter] = useState('ALL');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingMember, setEditingMember] = useState<MemberItem | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [message, setMessage] = useState('');
-  const [form, setForm] = useState<MemberForm>({
+  const [newMember, setNewMember] = useState({
     email: '',
     name: '',
     password: '',
-    phone: '',
-    birth_date: '',
-    address: '',
-    join_year: '',
-    system_role: 'REGULAR',
-    musical_role: '',
+    system_role: 'REGULAR' as 'SUPER_ADMIN' | 'ADMIN' | 'REGULAR',
   });
-
-  const isSuperAdmin = role === 'SUPER_ADMIN';
-
-  const filteredMembers = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
-
-    return members.filter((member) => {
-      const matchesQuery =
-        !normalizedQuery ||
-        member.name.toLowerCase().includes(normalizedQuery) ||
-        member.email.toLowerCase().includes(normalizedQuery) ||
-        (member.phone ?? '').toLowerCase().includes(normalizedQuery);
-
-      const matchesRole = roleFilter === 'ALL' || member.system_role === roleFilter;
-      const matchesNaipe = naipeFilter === 'ALL' || (member.musical_role ?? 'NONE') === naipeFilter;
-
-      return matchesQuery && matchesRole && matchesNaipe;
-    });
-  }, [members, naipeFilter, query, roleFilter]);
-
-  const subtitle = useMemo(() => {
-    if (isSuperAdmin) {
-      return 'Gestão completa de membros e papéis.';
-    }
-    return 'Consulta de membros disponível para administradores.';
-  }, [isSuperAdmin]);
 
   async function loadMembers() {
     const token = localStorage.getItem('airfa_token');
     if (!token) {
-      router.push('/login');
       return;
     }
 
     const response = await fetch(`${apiUrl}/api/v1/members`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-
-    if (response.status === 401) {
-      router.push('/login');
-      return;
-    }
-
-    if (response.status === 403) {
-      router.push('/home');
-      return;
-    }
 
     if (!response.ok) {
       throw new Error('Não foi possível carregar os membros.');
@@ -125,444 +51,229 @@ export default function MembersPage() {
     if (storedUser) {
       try {
         const parsed = JSON.parse(storedUser) as { system_role?: string };
-        setRole(parsed.system_role ?? 'REGULAR');
+        setIsAdmin(parsed.system_role === 'ADMIN' || parsed.system_role === 'SUPER_ADMIN');
       } catch {
-        setRole('REGULAR');
+        setIsAdmin(false);
       }
     }
 
     loadMembers().catch((error) => {
       setMessage(error instanceof Error ? error.message : 'Falha ao carregar membros.');
+      setMembers([]);
     });
   }, []);
 
-  function openCreateModal() {
-    setEditingMember(null);
-    setForm({
-      email: '',
-      name: '',
-      password: '',
-      phone: '',
-      birth_date: '',
-      address: '',
-      join_year: '',
-      system_role: 'REGULAR',
-      musical_role: '',
-    });
-    setMessage('');
-    setIsModalOpen(true);
-  }
-
-  function openEditModal(member: MemberItem) {
-    setEditingMember(member);
-    setForm({
-      email: member.email,
-      name: member.name,
-      password: '',
-      phone: member.phone ?? '',
-      birth_date: member.birth_date ?? '',
-      address: member.address ?? '',
-      join_year: member.join_year ? String(member.join_year) : '',
-      system_role: member.system_role,
-      musical_role: member.musical_role ?? '',
-    });
-    setMessage('');
-    setIsModalOpen(true);
-  }
-
-  async function saveMember(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (!isSuperAdmin) {
-      return;
-    }
-
+  const handleCreateMember = async (e: FormEvent) => {
+    e.preventDefault();
     const token = localStorage.getItem('airfa_token');
     if (!token) {
-      router.push('/login');
       return;
     }
 
-    const isEditing = Boolean(editingMember);
-    const url = isEditing ? `${apiUrl}/api/v1/members/${editingMember?.id}` : `${apiUrl}/api/v1/members`;
+    const response = await fetch(`${apiUrl}/api/v1/members`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(newMember),
+    });
 
-    const payload: Record<string, unknown> = {
-      email: form.email,
-      name: form.name,
-      phone: form.phone || null,
-      birth_date: form.birth_date || null,
-      address: form.address || null,
-      join_year: form.join_year ? Number(form.join_year) : null,
-      system_role: form.system_role,
-      musical_role: form.musical_role || null,
-    };
-
-    if (!isEditing || form.password) {
-      payload.password = form.password;
+    if (!response.ok) {
+      setMessage('Não foi possível criar o membro.');
+      return;
     }
 
-    try {
-      const response = await fetch(url, {
-        method: isEditing ? 'PUT' : 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
+    const data = (await response.json()) as MemberItem;
+    setMembers((prev) => [...prev, data]);
+    setNewMember({ email: '', name: '', password: '', system_role: 'REGULAR' });
+    setMessage('Membro criado com sucesso.');
+  };
 
-      if (!response.ok) {
-        const errorBody = (await response.json().catch(() => null)) as { detail?: string } | null;
-        throw new Error(errorBody?.detail ?? 'Não foi possível guardar o membro.');
-      }
-
-      setIsModalOpen(false);
-      setMessage(isEditing ? 'Membro atualizado com sucesso.' : 'Membro criado com sucesso.');
-      await loadMembers();
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Falha ao guardar membro.');
+  const handleDeleteMember = async (id: number) => {
+    const token = localStorage.getItem('airfa_token');
+    if (!token) {
+      return;
     }
-  }
+
+    const response = await fetch(`${apiUrl}/api/v1/members/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+      setMessage('Não foi possível remover o membro.');
+      return;
+    }
+
+    setMembers((prev) => prev.filter((member) => member.id !== id));
+    setMessage('Membro removido com sucesso.');
+  };
 
   return (
-    <AuthenticatedShell title="Membros" subtitle={subtitle}>
+    <AuthenticatedShell title="Membros" subtitle="Gestão de utilizadores e permissões.">
       <section className="section">
-        <header className="section-header">
-          <div>
-            <h1>Membros</h1>
-            <p className="section-note">{filteredMembers.length} de {members.length} membros.</p>
-          </div>
-          {isSuperAdmin ? (
-            <button type="button" onClick={openCreateModal}>
-              Novo membro
-            </button>
-          ) : null}
-        </header>
-
-        <div className="filters">
-          <label>
-            Pesquisar
-            <input
-              type="search"
-              placeholder="Nome, email ou telemóvel"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-            />
-          </label>
-
-          <label>
-            Papel
-            <select value={roleFilter} onChange={(event) => setRoleFilter(event.target.value as typeof roleFilter)}>
-              <option value="ALL">Todos</option>
-              <option value="SUPER_ADMIN">SUPER_ADMIN</option>
-              <option value="ADMIN">ADMIN</option>
-              <option value="REGULAR">REGULAR</option>
-            </select>
-          </label>
-
-          <label>
-            Naipe
-            <select value={naipeFilter} onChange={(event) => setNaipeFilter(event.target.value)}>
-              <option value="ALL">Todos</option>
-              <option value="NONE">Sem naipe</option>
-              {musicalRoles
-                .filter((item) => item)
-                .map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-            </select>
-          </label>
+        <div className="header">
+          <h1>Membros</h1>
         </div>
 
         {message ? <p className="message">{message}</p> : null}
 
-        <div className="grid">
-          {filteredMembers.map((member) => (
-            <article key={member.id} className="card">
-              <div className="card-top">
-                <h2>{member.name}</h2>
+        <div className="list">
+          {members.map((member) => (
+            <article key={member.id} className="item">
+              <div>
+                <strong>{member.name}</strong>
+                <p>{member.email}</p>
                 <span className="badge">{member.system_role}</span>
               </div>
-              <p>{member.email}</p>
-              <p>{member.musical_role ?? 'Sem naipe definido'}</p>
-              <p>{member.phone ?? 'Sem contacto'}</p>
-              {isSuperAdmin ? (
-                <button type="button" onClick={() => openEditModal(member)}>
-                  Editar
+              {isAdmin ? (
+                <button type="button" className="danger" onClick={() => handleDeleteMember(member.id)}>
+                  Remover
                 </button>
               ) : null}
             </article>
           ))}
         </div>
 
-        {isModalOpen ? (
-          <div className="modal-backdrop" onClick={() => setIsModalOpen(false)}>
-            <div className="modal" onClick={(event) => event.stopPropagation()}>
-              <h2>{editingMember ? 'Editar membro' : 'Novo membro'}</h2>
-              <form className="form" onSubmit={saveMember}>
-                <label>
-                  Email
-                  <input
-                    type="email"
-                    value={form.email}
-                    onChange={(event) => setForm({ ...form, email: event.target.value })}
-                    required
-                  />
-                </label>
-
-                <label>
-                  Nome
-                  <input
-                    value={form.name}
-                    onChange={(event) => setForm({ ...form, name: event.target.value })}
-                    required
-                  />
-                </label>
-
-                <label>
-                  Password {editingMember ? '(opcional)' : ''}
-                  <input
-                    type="password"
-                    value={form.password}
-                    onChange={(event) => setForm({ ...form, password: event.target.value })}
-                    required={!editingMember}
-                  />
-                </label>
-
-                <label>
-                  Papel do sistema
-                  <select
-                    value={form.system_role}
-                    onChange={(event) =>
-                      setForm({ ...form, system_role: event.target.value as MemberForm['system_role'] })
-                    }
-                  >
-                    <option value="REGULAR">REGULAR</option>
-                    <option value="ADMIN">ADMIN</option>
-                    <option value="SUPER_ADMIN">SUPER_ADMIN</option>
-                  </select>
-                </label>
-
-                <label>
-                  Naipe
-                  <select
-                    value={form.musical_role}
-                    onChange={(event) => setForm({ ...form, musical_role: event.target.value })}
-                  >
-                    {musicalRoles.map((roleOption) => (
-                      <option key={roleOption || 'none'} value={roleOption}>
-                        {roleOption || 'Sem naipe'}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label>
-                  Telemóvel
-                  <input
-                    value={form.phone}
-                    onChange={(event) => setForm({ ...form, phone: event.target.value })}
-                  />
-                </label>
-
-                <label>
-                  Data de nascimento
-                  <input
-                    type="date"
-                    value={form.birth_date}
-                    onChange={(event) => setForm({ ...form, birth_date: event.target.value })}
-                  />
-                </label>
-
-                <label>
-                  Morada
-                  <input
-                    value={form.address}
-                    onChange={(event) => setForm({ ...form, address: event.target.value })}
-                  />
-                </label>
-
-                <label>
-                  Ano de entrada
-                  <input
-                    type="number"
-                    min="1900"
-                    max="2100"
-                    value={form.join_year}
-                    onChange={(event) => setForm({ ...form, join_year: event.target.value })}
-                  />
-                </label>
-
-                <div className="modal-actions">
-                  <button type="button" className="secondary" onClick={() => setIsModalOpen(false)}>
-                    Cancelar
-                  </button>
-                  <button type="submit">{editingMember ? 'Guardar alterações' : 'Criar membro'}</button>
-                </div>
-              </form>
-            </div>
-          </div>
+        {isAdmin ? (
+          <form className="form" onSubmit={handleCreateMember}>
+            <h2>Novo membro</h2>
+            <label>
+              Email
+              <input
+                type="email"
+                required
+                value={newMember.email}
+                onChange={(e) => setNewMember({ ...newMember, email: e.target.value })}
+              />
+            </label>
+            <label>
+              Nome
+              <input
+                type="text"
+                required
+                value={newMember.name}
+                onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
+              />
+            </label>
+            <label>
+              Password
+              <input
+                type="password"
+                required
+                value={newMember.password}
+                onChange={(e) => setNewMember({ ...newMember, password: e.target.value })}
+              />
+            </label>
+            <label>
+              Papel
+              <select
+                value={newMember.system_role}
+                onChange={(e) =>
+                  setNewMember({
+                    ...newMember,
+                    system_role: e.target.value as 'SUPER_ADMIN' | 'ADMIN' | 'REGULAR',
+                  })
+                }
+              >
+                <option value="REGULAR">REGULAR</option>
+                <option value="ADMIN">ADMIN</option>
+                <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+              </select>
+            </label>
+            <button type="submit">Criar membro</button>
+          </form>
         ) : null}
       </section>
 
       <style jsx>{`
         .section {
           display: grid;
-          gap: 20px;
-        }
-
-        .section-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          gap: 16px;
+          gap: 18px;
         }
 
         h1,
-        h2 {
-          margin: 0;
-        }
-
-        .grid {
-          display: grid;
-          gap: 16px;
-          grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-        }
-
-        .filters {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-          gap: 12px;
-          padding: 16px;
-          border: 1px solid var(--border);
-          border-radius: 18px;
-          background: var(--panel-soft);
-        }
-
-        .filters label {
-          display: grid;
-          gap: 8px;
-          color: var(--text);
-        }
-
-        .filters input,
-        .filters select {
-          width: 100%;
-          background: rgba(255, 255, 255, 0.03);
-          color: var(--text);
-          border: 1px solid var(--border);
-          border-radius: 12px;
-          padding: 10px 12px;
-          outline: none;
-        }
-
-        .card {
-          display: grid;
-          gap: 8px;
-          padding: 18px;
-          border-radius: 18px;
-          border: 1px solid var(--border);
-          background: var(--panel-soft);
-        }
-
-        .card-top {
-          display: flex;
-          justify-content: space-between;
-          gap: 10px;
-          align-items: center;
-        }
-
-        .badge {
-          width: fit-content;
-          padding: 6px 10px;
-          border-radius: 999px;
-          background: rgba(125, 211, 252, 0.12);
-          color: var(--accent);
-          font-size: 12px;
-        }
-
+        h2,
         p {
-          color: var(--muted);
           margin: 0;
         }
 
         .message {
-          margin: 0;
           color: var(--muted);
         }
 
-        .section-note {
-          margin: 6px 0 0;
-          color: var(--muted);
-        }
-
-        button {
-          border: 0;
-          border-radius: 12px;
-          padding: 10px 14px;
-          background: linear-gradient(135deg, var(--accent), var(--accent-strong));
-          color: #08111f;
-          font-weight: 700;
-          cursor: pointer;
-        }
-
-        .modal-backdrop {
-          position: fixed;
-          inset: 0;
-          background: rgba(3, 6, 12, 0.72);
+        .list {
           display: grid;
-          place-items: center;
-          padding: 24px;
+          gap: 12px;
         }
 
-        .modal {
-          width: min(100%, 680px);
-          display: grid;
-          gap: 14px;
-          padding: 22px;
-          border-radius: 20px;
+        .item {
+          display: flex;
+          justify-content: space-between;
+          gap: 16px;
+          align-items: center;
           border: 1px solid var(--border);
-          background: #121821;
-          box-shadow: var(--shadow);
-          max-height: 92vh;
-          overflow: auto;
+          border-radius: 14px;
+          background: var(--panel-soft);
+          padding: 14px;
+        }
+
+        .item p {
+          color: var(--muted);
+          font-size: 14px;
+        }
+
+        .badge {
+          display: inline-block;
+          margin-top: 6px;
+          font-size: 12px;
+          border: 1px solid var(--border);
+          border-radius: 999px;
+          padding: 4px 10px;
+          color: var(--accent);
+          background: rgba(125, 211, 252, 0.12);
         }
 
         .form {
           display: grid;
           gap: 10px;
+          border: 1px solid var(--border);
+          border-radius: 16px;
+          padding: 14px;
+          background: rgba(255, 255, 255, 0.02);
         }
 
         label {
           display: grid;
-          gap: 8px;
-          color: var(--text);
+          gap: 6px;
+          font-size: 14px;
+          color: var(--muted);
         }
 
         input,
         select {
-          width: 100%;
-          background: rgba(255, 255, 255, 0.03);
-          color: var(--text);
+          border-radius: 10px;
           border: 1px solid var(--border);
-          border-radius: 12px;
+          background: rgba(13, 17, 23, 0.7);
+          color: var(--text);
           padding: 10px 12px;
-          outline: none;
         }
 
-        .modal-actions {
-          display: flex;
-          justify-content: flex-end;
-          gap: 12px;
-          margin-top: 8px;
+        button {
+          border: 0;
+          border-radius: 10px;
+          padding: 10px 14px;
+          color: #08111f;
+          background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+          font-weight: 700;
+          cursor: pointer;
+          width: fit-content;
         }
 
-        .secondary {
-          background: transparent;
+        .danger {
+          background: rgba(251, 113, 133, 0.18);
           color: var(--text);
-          border: 1px solid var(--border);
         }
       `}</style>
     </AuthenticatedShell>

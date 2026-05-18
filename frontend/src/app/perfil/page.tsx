@@ -25,6 +25,24 @@ type ProfileForm = {
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
 
+const SYSTEM_ROLE_LABELS: Record<string, string> = {
+  SUPER_ADMIN: 'Super Admin',
+  ADMIN: 'Admin',
+};
+
+const MUSICAL_ROLE_LABELS: Record<string, string> = {
+  MAESTRO: 'Maestro',
+  FLUTE_PLAYER:       'Flautista',
+  CLARINET_PLAYER:    'Clarinete',
+  SAXOPHONE_PLAYER:   'Saxofone',
+  TROMBONE_PLAYER:    'Trombone',
+  EUPHONIUM_PLAYER:   'Eufônio',
+  TUBA_PLAYER:        'Tuba',
+  FRENCH_HORN_PLAYER: 'Trompa',
+  TRUMPET_PLAYER:     'Trompete',
+  PERCUSSION_PLAYER:  'Percussão',
+};
+
 export default function ProfilePage() {
   const router = useRouter();
   const [me, setMe] = useState<MeResponse | null>(null);
@@ -172,7 +190,18 @@ export default function ProfilePage() {
 
           <div className="identity">
             <span>{me?.email ?? '...'}</span>
-            <strong>{me?.system_role ?? '...'}</strong>
+            <div className="identity-badges">
+              {me?.musical_role && (
+                <span className="badge badge-musical">
+                  {MUSICAL_ROLE_LABELS[me.musical_role] ?? me.musical_role}
+                </span>
+              )}
+              {(me?.system_role === 'ADMIN' || me?.system_role === 'SUPER_ADMIN') && (
+                <span className={`badge badge-role badge-role-${me.system_role.toLowerCase()}`}>
+                  {SYSTEM_ROLE_LABELS[me.system_role]}
+                </span>
+              )}
+            </div>
           </div>
 
           <form className="form" onSubmit={handleSaveProfile}>
@@ -271,12 +300,46 @@ export default function ProfilePage() {
         .identity {
           display: flex;
           justify-content: space-between;
+          align-items: center;
           gap: 12px;
           padding: 12px 14px;
           border-radius: 12px;
           border: 1px solid var(--border);
           background: var(--panel-soft);
           color: var(--muted);
+        }
+
+        .identity-badges {
+          display: flex;
+          gap: 6px;
+          flex-wrap: wrap;
+          justify-content: flex-end;
+        }
+
+        .badge {
+          display: inline-block;
+          font-size: 11px;
+          padding: 3px 10px;
+          border-radius: 999px;
+          font-weight: 600;
+        }
+
+        .badge-musical {
+          background: rgba(125,211,252,0.12);
+          color: #7dd3fc;
+          border: 1px solid rgba(125,211,252,0.28);
+        }
+
+        .badge-role-admin {
+          background: rgba(251,191,36,0.14);
+          color: #fbbf24;
+          border: 1px solid rgba(251,191,36,0.28);
+        }
+
+        .badge-role-super_admin {
+          background: rgba(167,139,250,0.14);
+          color: #a78bfa;
+          border: 1px solid rgba(167,139,250,0.28);
         }
 
         .form {

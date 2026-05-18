@@ -4,11 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:turbo": "next dev --turbo",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test:e2e": "npm run build && playwright test"
+    "test:e2e": "bun run build && playwright test"
   },
+  "packageManager": "bun@1.3.14",
   "dependencies": {
     "next": "14.1.0",
     "react": "18.2.0",

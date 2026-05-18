@@ -54,7 +54,7 @@ def _seed_users(db: Session) -> tuple[User, User, User]:
     super_admin = _upsert_user(
         db,
         {
-            "email": os.getenv("SUPER_ADMIN_EMAIL", "superadmin@airfa.pt"),
+            "username": os.getenv("SUPER_ADMIN_USERNAME", "superadmin"),
             "hashed_password": get_password_hash(SEED_PASSWORD_SUPER_ADMIN),
             "name": os.getenv("SUPER_ADMIN_NAME", "Super Admin Airfa"),
             "phone": "910000001",
@@ -69,7 +69,7 @@ def _seed_users(db: Session) -> tuple[User, User, User]:
     admin = _upsert_user(
         db,
         {
-            "email": os.getenv("ADMIN_EMAIL", "admin@airfa.pt"),
+            "username": os.getenv("ADMIN_USERNAME", "admin"),
             "hashed_password": get_password_hash(SEED_PASSWORD_ADMIN),
             "name": "Admin Airfa",
             "phone": "910000002",
@@ -84,7 +84,7 @@ def _seed_users(db: Session) -> tuple[User, User, User]:
     regular = _upsert_user(
         db,
         {
-            "email": os.getenv("REGULAR_EMAIL", "membro@airfa.pt"),
+            "username": os.getenv("REGULAR_USERNAME", "membro"),
             "hashed_password": get_password_hash(SEED_PASSWORD_REGULAR),
             "name": "Membro Regular",
             "phone": "910000003",

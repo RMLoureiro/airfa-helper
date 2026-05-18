@@ -45,11 +45,8 @@ export default function LoginPage() {
     <main className="login-shell">
       <section className="login-card">
         <div className="login-brand">
-          <span className="eyebrow">Airfa Helper</span>
-          <h1>Gestão da banda filarmónica</h1>
-          <p>
-            Acesso centralizado para membros, admins e super-admins, com interface em português.
-          </p>
+          <span className="eyebrow">banda airfa</span>
+          <h1>Gestão banda filarmónica</h1>
         </div>
 
         <form className="login-form" onSubmit={handleSubmit}>

@@ -111,6 +111,63 @@ pytest -q tests/test_api_error_responses.py tests/test_api_happy_paths.py
 - Os PDFs do repertório são gravados em disco local e expostos por pasta por obra.
 - A aplicação assume o português de Portugal na interface.
 
+## Como correr localmente (WSL + Windows)
+
+> O backend corre em WSL (Ubuntu) e o frontend em qualquer terminal com Node.js.
+
+### 1. PostgreSQL
+
+Certifica-te que o PostgreSQL está a correr no Windows na porta `5432` com o utilizador `airfa` e a base de dados `airfa`.
+
+### 2. Backend (WSL)
+
+Abre uma sessão WSL e executa:
+
+```bash
+cd /mnt/c/Users/Loureiro/Desktop/Dev/airfa-helper/backend
+source .venv/bin/activate
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+A API fica disponível em **http://localhost:8000**. Documentação interactiva em **http://localhost:8000/docs**.
+
+### 3. Seed da base de dados (primeira vez)
+
+Após o backend estar em execução, num segundo tab WSL:
+
+```bash
+cd /mnt/c/Users/Loureiro/Desktop/Dev/airfa-helper/backend
+source .venv/bin/activate
+python -m app.seed.seed
+```
+
+Cria os seguintes utilizadores de teste (password: `admin123`):
+
+| Role | Email |
+|------|-------|
+| SUPER_ADMIN | superadmin@airfa.pt |
+| ADMIN | admin@airfa.pt |
+| REGULAR | membro@airfa.pt |
+
+### 4. Frontend (WSL — requer bun)
+
+Instalar bun (primeira vez):
+```bash
+curl -fsSL https://bun.sh/install | bash
+exec /usr/bin/zsh   # ou bash, conforme o teu shell
+```
+
+Correr o frontend com hot reload:
+```bash
+cd /mnt/c/Users/Loureiro/Desktop/Dev/airfa-helper/frontend
+bun install        # só na primeira vez
+bun run dev        # hot reload activo via Next.js Turbopack
+```
+
+A aplicação fica disponível em **http://localhost:3000**.
+
+---
+
 ## Estado atual
 
 O núcleo funcional está implementado e validado com testes de API para cenários de erro e de sucesso.

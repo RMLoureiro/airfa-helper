@@ -1,11 +1,11 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from typing import Optional
 from datetime import date
 from app.models.enums import SystemRole, MusicalRole
 from app.schemas.base import ReadSchema
 
 class UserBase(BaseModel):
-    email: EmailStr
+    username: str
     name: str
     phone: Optional[str] = None
     birth_date: Optional[date] = None
@@ -19,7 +19,7 @@ class UserCreate(UserBase):
 
 
 class UserAdminCreate(BaseModel):
-    email: EmailStr
+    username: str
     name: str
     password: str
     phone: str | None = None
@@ -31,7 +31,7 @@ class UserAdminCreate(BaseModel):
 
 
 class UserAdminUpdate(BaseModel):
-    email: EmailStr | None = None
+    username: str | None = None
     name: str | None = None
     password: str | None = None
     phone: str | None = None

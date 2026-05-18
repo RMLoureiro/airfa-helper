@@ -17,6 +17,8 @@ class UpcomingEventRead(BaseModel):
     start_time: datetime
     location: str | None = None
     type: str
+    facebook_link: str | None = None
+    instagram_link: str | None = None
 
 
 class HomeFeedItemRead(BaseModel):
@@ -25,6 +27,9 @@ class HomeFeedItemRead(BaseModel):
     title: str
     description: str | None = None
     published_at: datetime
+    event_type: str | None = None
+    facebook_link: str | None = None
+    instagram_link: str | None = None
 
 
 class HomeResponse(BaseModel):
