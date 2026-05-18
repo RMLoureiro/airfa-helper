@@ -6,14 +6,14 @@ import { useEffect, useState, type ReactNode } from 'react';
 
 const navigation = [
   { href: '/home', label: 'Início' },
-  { href: '/perfil', label: 'Sobre mim' },
-  { href: '/membros', label: 'Membros' },
-  { href: '/events', label: 'Eventos' },
-  { href: '/newsletter', label: 'Newsletter' },
   { href: '/presencas', label: 'Presenças' },
+  { href: '/events', label: 'Eventos' },
   { href: '/instrumentos', label: 'Instrumentos' },
   { href: '/repertorio', label: 'Repertório' },
   { href: '/notificacoes', label: 'Notificações' },
+  { href: '/newsletter', label: 'Newsletter' },
+  { href: '/perfil', label: 'Sobre mim' },
+  { href: '/membros', label: 'Membros' },
 ];
 
 type AuthenticatedShellProps = {
@@ -29,6 +29,14 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
   const [name, setName] = useState('');
   const [role, setRole] = useState('');
   const [musicalRole, setMusicalRole] = useState('');
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    return localStorage.getItem('airfa_theme') !== 'light';
+  });
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('light', !darkMode);
+  }, [darkMode]);
 
   useEffect(() => {
     const token = localStorage.getItem('airfa_token');
@@ -61,6 +69,14 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
     router.push('/login');
   }
 
+  function toggleTheme() {
+    setDarkMode(prev => {
+      const next = !prev;
+      localStorage.setItem('airfa_theme', next ? 'dark' : 'light');
+      return next;
+    });
+  }
+
   const activeNav = pathname ?? '/home';
   const canSeeMembers = role === 'ADMIN' || role === 'SUPER_ADMIN';
 
@@ -88,6 +104,31 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
         </nav>
 
         <div className="user-area">
+          <button
+            type="button"
+            className={`theme-toggle${darkMode ? ' is-dark' : ' is-light'}`}
+            onClick={toggleTheme}
+            aria-label={darkMode ? 'Mudar para modo claro' : 'Mudar para modo escuro'}
+          >
+            <span className="toggle-track">
+              <span className="toggle-thumb">
+                <svg className="icon-moon" viewBox="0 0 24 24" width="13" height="13" fill="white" aria-hidden="true">
+                  <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/>
+                </svg>
+                <svg className="icon-sun" viewBox="0 0 24 24" width="13" height="13" fill="#fcd34d" aria-hidden="true">
+                  <circle cx="12" cy="12" r="4"/>
+                  <rect x="11" y="1.5" width="2" height="3.5" rx="1"/>
+                  <rect x="11" y="1.5" width="2" height="3.5" rx="1" transform="rotate(45 12 12)"/>
+                  <rect x="11" y="1.5" width="2" height="3.5" rx="1" transform="rotate(90 12 12)"/>
+                  <rect x="11" y="1.5" width="2" height="3.5" rx="1" transform="rotate(135 12 12)"/>
+                  <rect x="11" y="1.5" width="2" height="3.5" rx="1" transform="rotate(180 12 12)"/>
+                  <rect x="11" y="1.5" width="2" height="3.5" rx="1" transform="rotate(225 12 12)"/>
+                  <rect x="11" y="1.5" width="2" height="3.5" rx="1" transform="rotate(270 12 12)"/>
+                  <rect x="11" y="1.5" width="2" height="3.5" rx="1" transform="rotate(315 12 12)"/>
+                </svg>
+              </span>
+            </span>
+          </button>
           <div className="user-info">
             <strong>{name || 'Utilizador'}</strong>
             <div className="user-badges">
@@ -147,7 +188,7 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
           gap: 16px;
           padding: 0 28px;
           height: 64px;
-          background: rgba(13, 17, 23, 0.95);
+          background: var(--topbar-bg);
           border-bottom: 1px solid var(--border);
           backdrop-filter: blur(20px);
         }
@@ -179,8 +220,8 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
         .nav :global(a.nav-link) {
           padding: 9px 20px;
           border-radius: 12px;
-          border: 1px solid rgba(255, 255, 255, 0.09);
-          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid var(--nav-link-border);
+          background: var(--nav-link-bg);
           font-size: 13px;
           font-weight: 600;
           white-space: nowrap;
@@ -201,7 +242,7 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
         }
 
         .nav :global(a.nav-link.active) {
-          color: #fff;
+          color: var(--nav-active-color);
           background: linear-gradient(135deg, rgba(125, 211, 252, 0.3), rgba(56, 189, 248, 0.16));
           border-color: rgba(125, 211, 252, 0.55);
           box-shadow: 0 0 0 1px rgba(125, 211, 252, 0.25), 0 8px 18px rgba(56, 189, 248, 0.18);
@@ -269,7 +310,7 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
           border: 1px solid rgba(167,139,250,0.28);
         }
 
-        .user-area button {
+        .user-area button:not(.theme-toggle) {
           border: 1px solid rgba(251, 113, 133, 0.35);
           border-radius: 10px;
           padding: 6px 14px;
@@ -280,7 +321,7 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
           transition: background 0.15s;
         }
 
-        .user-area button:hover {
+        .user-area button:not(.theme-toggle):hover {
           background: rgba(251, 113, 133, 0.25);
         }
 
@@ -323,6 +364,134 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
             order: 3;
             width: 100%;
           }
+        }
+
+        .theme-toggle {
+          border: none;
+          padding: 0;
+          background: transparent !important;
+          cursor: pointer;
+          flex-shrink: 0;
+          outline: none;
+        }
+
+        .toggle-track {
+          position: relative;
+          display: block;
+          background: rgba(125, 211, 252, 0.08);
+          border: 1px solid rgba(125, 211, 252, 0.25);
+          border-radius: 999px;
+          width: 64px;
+          height: 34px;
+          transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+          box-sizing: border-box;
+        }
+
+        .theme-toggle:hover .toggle-track {
+          background: rgba(125, 211, 252, 0.14);
+          border-color: rgba(125, 211, 252, 0.5);
+          box-shadow: 0 0 0 3px rgba(125, 211, 252, 0.1);
+        }
+
+        .toggle-icon {
+          display: none;
+        }
+
+        .toggle-moon {
+          display: none;
+        }
+
+        .toggle-sun {
+          display: none;
+        }
+
+        .theme-toggle.is-light .toggle-moon {
+          display: none;
+        }
+
+        .theme-toggle.is-light .toggle-sun {
+          display: none;
+        }
+
+        .toggle-thumb {
+          position: absolute;
+          top: 5px;
+          left: 5px;
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #1d4ed8, #1e3a8a);
+          box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+          transition: left 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+          z-index: 2;
+          display: grid;
+          place-items: center;
+        }
+
+        .icon-moon,
+        .icon-sun {
+          grid-row: 1;
+          grid-column: 1;
+          display: block;
+          transition: opacity 0.2s;
+        }
+
+        .icon-moon {
+          opacity: 1;
+        }
+
+        .icon-sun {
+          opacity: 0;
+        }
+
+        .theme-toggle.is-light .icon-moon {
+          opacity: 0;
+        }
+
+        .theme-toggle.is-light .icon-sun {
+          opacity: 1;
+        }
+
+        .theme-toggle.is-light .toggle-thumb {
+          left: calc(100% - 29px);
+        }
+
+        :global(html.light) .toggle-track {
+          background: rgba(14, 165, 233, 0.1);
+          border-color: rgba(14, 165, 233, 0.3);
+        }
+
+        :global(html.light) .theme-toggle:hover .toggle-track {
+          background: rgba(14, 165, 233, 0.18);
+          border-color: rgba(14, 165, 233, 0.5);
+          box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.12);
+        }
+
+        :global(html.light) .badge-musical {
+          background: rgba(14, 165, 233, 0.18);
+          color: #0284c7;
+          border-color: rgba(14, 165, 233, 0.45);
+        }
+
+        :global(html.light) .badge-role-admin {
+          background: rgba(245, 158, 11, 0.18);
+          color: #b45309;
+          border-color: rgba(245, 158, 11, 0.45);
+        }
+
+        :global(html.light) .badge-role-super {
+          background: rgba(139, 92, 246, 0.18);
+          color: #7c3aed;
+          border-color: rgba(139, 92, 246, 0.45);
+        }
+
+        :global(html.light) .user-area button:not(.theme-toggle) {
+          border-color: rgba(239, 68, 68, 0.45);
+          background: rgba(239, 68, 68, 0.1);
+        }
+
+        :global(html.light) .user-area button:not(.theme-toggle):hover {
+          background: rgba(239, 68, 68, 0.2);
         }
       `}</style>
     </div>

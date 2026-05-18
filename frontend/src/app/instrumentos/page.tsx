@@ -261,7 +261,7 @@ export default function InstrumentosPage() {
         textarea,
         select {
           width: 100%;
-          background: rgba(255, 255, 255, 0.03);
+          background: var(--input-bg);
           color: var(--text);
           border: 1px solid var(--border);
           border-radius: 14px;

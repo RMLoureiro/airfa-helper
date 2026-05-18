@@ -341,7 +341,7 @@ export default function RepertorioPage() {
           padding: 8px 12px;
           border-radius: 999px;
           border: 1px solid var(--border);
-          background: rgba(255, 255, 255, 0.03);
+          background: var(--input-bg);
         }
 
         .upload-inline {
@@ -391,7 +391,7 @@ export default function RepertorioPage() {
         input,
         select {
           width: 100%;
-          background: rgba(255, 255, 255, 0.03);
+          background: var(--input-bg);
           color: var(--text);
           border: 1px solid var(--border);
           border-radius: 14px;

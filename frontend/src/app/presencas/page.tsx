@@ -284,7 +284,7 @@ export default function PresencasPage() {
           padding: 14px;
           border-radius: 14px;
           border: 1px solid var(--border);
-          background: rgba(255, 255, 255, 0.03);
+          background: var(--input-bg);
         }
 
         .modal-backdrop {
@@ -325,7 +325,7 @@ export default function PresencasPage() {
         }
 
         select {
-          background: rgba(255, 255, 255, 0.03);
+          background: var(--input-bg);
           color: var(--text);
           border: 1px solid var(--border);
           border-radius: 10px;

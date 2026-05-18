@@ -255,7 +255,7 @@ export default function MembersPage() {
         select {
           border-radius: 10px;
           border: 1px solid var(--border);
-          background: rgba(13, 17, 23, 0.7);
+          background: var(--panel-soft);
           color: var(--text);
           padding: 10px 12px;
         }

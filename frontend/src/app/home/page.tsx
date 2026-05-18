@@ -119,7 +119,7 @@ function EventModal({ event, onClose }: { event: EventItem; onClose: () => void 
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          background: '#161b22',
+          background: 'var(--panel)',
           border: '1px solid rgba(125,211,252,0.3)',
           borderRadius: '20px',
           padding: '32px',
@@ -127,7 +127,7 @@ function EventModal({ event, onClose }: { event: EventItem; onClose: () => void 
           width: '100%',
           position: 'relative',
           boxShadow: '0 32px 80px rgba(0,0,0,0.6)',
-          color: '#e6edf3',
+          color: 'var(--text)',
           fontFamily: 'inherit',
         }}
       >
@@ -137,17 +137,17 @@ function EventModal({ event, onClose }: { event: EventItem; onClose: () => void 
           onClick={onClose}
           style={{
             position: 'absolute', top: '16px', right: '16px',
-            background: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.1)',
+            background: 'var(--btn-subtle)',
+            border: '1px solid var(--btn-subtle-border)',
             borderRadius: '8px',
-            color: '#9aa7b4',
+            color: 'var(--muted)',
             width: '34px', height: '34px',
             fontSize: '16px', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             transition: 'background 0.15s',
           }}
           onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(251,113,133,0.2)'; (e.currentTarget as HTMLButtonElement).style.color = '#fb7185'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.06)'; (e.currentTarget as HTMLButtonElement).style.color = '#9aa7b4'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--btn-subtle)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--muted)'; }}
         >
           ✕
         </button>
@@ -332,10 +332,10 @@ function MiniCalendar({ events, onEventClick }: { events: EventItem[]; onEventCl
         </div>
       )}
       <style jsx>{`
-        .calendar { background: rgba(22,27,34,0.84); border: 1px solid var(--border); border-radius: 12px; padding: 16px; position: relative; user-select: none; }
+        .calendar { background: var(--panel-alpha); border: 1px solid var(--border); border-radius: 12px; padding: 16px; position: relative; user-select: none; }
         .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-        .cal-nav { background: rgba(255,255,255,0.06); border: 1px solid var(--border); border-radius: 5px; color: var(--text); width: 40px; height: 40px; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
-        .cal-nav:hover { background: rgba(255,255,255,0.12); }
+        .cal-nav { background: var(--btn-subtle); border: 1px solid var(--border); border-radius: 5px; color: var(--text); width: 40px; height: 40px; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
+        .cal-nav:hover { background: var(--nav-link-border); }
         .cal-title { font-weight: 600; font-size: 20px; }
         .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
         .cal-weekday { text-align: center; font-size: 14px; color: var(--muted); padding-bottom: 2px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
@@ -344,13 +344,13 @@ function MiniCalendar({ events, onEventClick }: { events: EventItem[]; onEventCl
         .cal-day.has-events:hover { background: rgba(125,211,252,0.18); border-color: rgba(125,211,252,0.4); }
         .cal-day.today { background: rgba(56,189,248,0.2); border-color: rgba(56,189,248,0.5); font-weight: 700; color: var(--accent); }
         .dot { position: absolute; bottom: 0px; width: 4px; height: 4px; border-radius: 50%; background: var(--accent); }
-        .cal-tooltip { position: absolute; z-index: 50; background: #1a2233; border: 1px solid rgba(125,211,252,0.3); border-radius: 14px; padding: 12px 14px; min-width: 200px; max-width: 280px; box-shadow: 0 12px 40px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 10px; pointer-events: auto; }
+        .cal-tooltip { position: absolute; z-index: 50; background: var(--panel); border: 1px solid rgba(125,211,252,0.3); border-radius: 14px; padding: 12px 14px; min-width: 200px; max-width: 280px; box-shadow: 0 12px 40px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 10px; pointer-events: auto; }
         .tooltip-event { display: flex; flex-direction: column; gap: 4px; border-radius: 8px; padding: 4px; transition: background 0.12s; }
         .tooltip-event:hover { background: rgba(125,211,252,0.08); }
         .tooltip-event strong { font-size: 13px; }
         .tooltip-meta { font-size: 11px; color: var(--muted); }
         .tooltip-hint { font-size: 10px; color: rgba(125,211,252,0.5); margin-top: 2px; }
-        .badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 999px; font-weight: 600; width: fit-content; }
+        .badge { display: inline-block; font-size: 12px; padding: 3px 10px; border-radius: 999px; font-weight: 600; width: fit-content; }
         .badge-concert { background: rgba(251,191,36,0.18); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
         .badge-rehearsal { background: rgba(125,211,252,0.15); color: #7dd3fc; border: 1px solid rgba(125,211,252,0.3); }
         .badge-special { background: rgba(167,139,250,0.15); color: #a78bfa; border: 1px solid rgba(167,139,250,0.3); }
@@ -510,7 +510,7 @@ export default function HomePage() {
 
         /* events */
         .event-list { display: flex; flex-direction: column; gap: 8px; }
-        .event-card { background: rgba(22,27,34,0.84); border: 1px solid var(--border); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 8px; transition: border-color 0.15s; }
+        .event-card { background: var(--panel-alpha); border: 1px solid var(--border); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 8px; transition: border-color 0.15s; }
         .event-card:hover { border-color: rgba(125,211,252,0.25); }
         .event-card-top { display: flex; gap: 7px; align-items: flex-start; }
         .event-date-block { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(125,211,252,0.1); border: 1px solid rgba(125,211,252,0.25); border-radius: 7px; width: 38px; height: 42px; }
@@ -522,7 +522,7 @@ export default function HomePage() {
         .event-meta { font-size: 13px; color: var(--muted); }
         .event-desc { font-size: 14px; color: var(--muted); margin: 2px 0 0; line-height: 1.35; }
 
-        .badge { display: inline-block; font-size: 8px; padding: 1px 6px; border-radius: 999px; font-weight: 600; }
+        .badge { display: inline-block; font-size: 12px; padding: 3px 10px; border-radius: 999px; font-weight: 600; }
         .badge-concert { background: rgba(251,191,36,0.18); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
         .badge-rehearsal { background: rgba(125,211,252,0.15); color: #7dd3fc; border: 1px solid rgba(125,211,252,0.3); }
         .badge-special { background: rgba(167,139,250,0.15); color: #a78bfa; border: 1px solid rgba(167,139,250,0.3); }
@@ -539,7 +539,7 @@ export default function HomePage() {
 
         /* feed */
         .feed-list { display: flex; flex-direction: column; gap: 10px; }
-        .feed-card { background: rgba(22,27,34,0.84); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 7px; transition: border-color 0.15s; }
+        .feed-card { background: var(--panel-alpha); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 7px; transition: border-color 0.15s; }
         .feed-card:hover { border-color: rgba(125,211,252,0.2); }
         .feed-card-header { display: flex; justify-content: space-between; align-items: center; gap: 7px; }
         .newsletter-badge { background: rgba(74,222,128,0.12); color: #4ade80; border: 1px solid rgba(74,222,128,0.25); font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.08em; }

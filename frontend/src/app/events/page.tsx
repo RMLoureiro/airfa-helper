@@ -366,7 +366,7 @@ export default function EventsPage() {
           padding: 8px 12px;
           border-radius: 999px;
           border: 1px solid var(--border);
-          background: rgba(255, 255, 255, 0.03);
+          background: var(--input-bg);
         }
 
         .actions {
@@ -413,7 +413,7 @@ export default function EventsPage() {
         textarea,
         select {
           width: 100%;
-          background: rgba(255, 255, 255, 0.03);
+          background: var(--input-bg);
           color: var(--text);
           border: 1px solid var(--border);
           border-radius: 12px;

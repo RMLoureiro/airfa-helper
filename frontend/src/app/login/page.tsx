@@ -85,7 +85,7 @@ export default function LoginPage() {
           grid-template-columns: 1.2fr 0.8fr;
           gap: 28px;
           padding: 28px;
-          background: rgba(22, 27, 34, 0.84);
+          background: var(--panel-alpha);
           border: 1px solid var(--border);
           border-radius: var(--radius);
           box-shadow: var(--shadow);
