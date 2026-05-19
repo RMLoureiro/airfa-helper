@@ -33,7 +33,10 @@ def list_presences(
     for event in events:
         attendance = db.query(EventAttendance).filter(EventAttendance.event_id == event.id).all()
         present_count = sum(1 for item in attendance if item.status == AttendanceStatus.PRESENT)
-        missing_count = sum(1 for item in attendance if item.status in {AttendanceStatus.ABSENT, AttendanceStatus.JUSTIFIED})
+        tardy_count = sum(1 for item in attendance if item.status == AttendanceStatus.TARDY)
+        absent_count = sum(1 for item in attendance if item.status == AttendanceStatus.ABSENT)
+        justified_count = sum(1 for item in attendance if item.status == AttendanceStatus.JUSTIFIED)
+        missing_count = absent_count + justified_count
         my_status = next((item.status.value for item in attendance if item.user_id == current_user.id), None)
         result.append(
             {
@@ -43,6 +46,9 @@ def list_presences(
                 "start_time": event.start_time,
                 "location": event.location,
                 "present_count": present_count,
+                "tardy_count": tardy_count,
+                "absent_count": absent_count,
+                "justified_count": justified_count,
                 "missing_count": missing_count,
                 "my_status": my_status,
             }

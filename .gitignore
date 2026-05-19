@@ -35,6 +35,9 @@ db_data/
 # VSCode
 .vscode/
 
+# Agent skills
+.github/skills/
+
 # Others
 *.sqlite3
 REQUIREMENTS.md

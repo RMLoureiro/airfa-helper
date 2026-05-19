@@ -124,11 +124,93 @@ def _seed_events(db: Session) -> list[Event]:
 
     now = datetime.now(timezone.utc)
     events = [
+        # ── Past rehearsals ───────────────────────────────────────────
+        Event(
+            title="Ensaio de Janeiro",
+            description="Primeiro ensaio do ano.",
+            start_time=now - timedelta(days=138),
+            end_time=now - timedelta(days=138) + timedelta(hours=2),
+            location="Sede da Banda",
+            type=EventType.REHEARSAL,
+        ),
+        Event(
+            title="Ensaio de Fevereiro",
+            description="Preparação para o carnaval.",
+            start_time=now - timedelta(days=104),
+            end_time=now - timedelta(days=104) + timedelta(hours=2),
+            location="Sede da Banda",
+            type=EventType.REHEARSAL,
+        ),
+        Event(
+            title="Ensaio Especial de Fevereiro",
+            description="Ensaio extra antes do desfile.",
+            start_time=now - timedelta(days=97),
+            end_time=now - timedelta(days=97) + timedelta(hours=2),
+            location="Pavilhão Municipal",
+            type=EventType.SPECIAL_REHEARSAL,
+        ),
+        Event(
+            title="Concerto de Carnaval",
+            description="Atuação no desfile de carnaval.",
+            start_time=now - timedelta(days=90),
+            end_time=now - timedelta(days=90) + timedelta(hours=3),
+            location="Praça Central",
+            type=EventType.CONCERT,
+        ),
+        Event(
+            title="Ensaio de Março",
+            description="Ensaio regular de março.",
+            start_time=now - timedelta(days=73),
+            end_time=now - timedelta(days=73) + timedelta(hours=2),
+            location="Sede da Banda",
+            type=EventType.REHEARSAL,
+        ),
+        Event(
+            title="Ensaio de Abril",
+            description="Preparação para o concerto da Páscoa.",
+            start_time=now - timedelta(days=45),
+            end_time=now - timedelta(days=45) + timedelta(hours=2),
+            location="Sede da Banda",
+            type=EventType.REHEARSAL,
+        ),
+        Event(
+            title="Concerto da Páscoa",
+            description="Concerto especial de Páscoa.",
+            start_time=now - timedelta(days=38),
+            end_time=now - timedelta(days=38) + timedelta(hours=3),
+            location="Igreja Matriz",
+            type=EventType.CONCERT,
+        ),
+        Event(
+            title="Ensaio de Maio I",
+            description="Ensaio da primeira semana de maio.",
+            start_time=now - timedelta(days=18),
+            end_time=now - timedelta(days=18) + timedelta(hours=2),
+            location="Sede da Banda",
+            type=EventType.REHEARSAL,
+        ),
+        Event(
+            title="Ensaio de Maio II",
+            description="Ensaio da segunda semana de maio.",
+            start_time=now - timedelta(days=11),
+            end_time=now - timedelta(days=11) + timedelta(hours=2),
+            location="Sede da Banda",
+            type=EventType.REHEARSAL,
+        ),
+        Event(
+            title="Concerto do Dia da Banda",
+            description="Celebração do aniversário da banda.",
+            start_time=now - timedelta(days=4),
+            end_time=now - timedelta(days=4) + timedelta(hours=3),
+            location="Praça Central",
+            type=EventType.CONCERT,
+        ),
+        # ── Upcoming ─────────────────────────────────────────────────
         Event(
             title="Ensaio Geral de Primavera",
-            description="Preparacao do concerto anual.",
+            description="Preparação do concerto anual.",
             start_time=now + timedelta(days=2),
-            end_time=now + timedelta(days=2, hours=2),
+            end_time=now + timedelta(days=2) + timedelta(hours=2),
             location="Sede da Banda",
             type=EventType.REHEARSAL,
             facebook_link="https://facebook.com/airfa/evento1",
@@ -136,13 +218,29 @@ def _seed_events(db: Session) -> list[Event]:
         ),
         Event(
             title="Concerto da Vila",
-            description="Atuacao na praca central.",
+            description="Atuação na praça central.",
             start_time=now + timedelta(days=7),
-            end_time=now + timedelta(days=7, hours=3),
-            location="Praca Central",
+            end_time=now + timedelta(days=7) + timedelta(hours=3),
+            location="Praça Central",
             type=EventType.CONCERT,
             facebook_link="https://facebook.com/airfa/evento2",
             instagram_link="https://instagram.com/airfa/evento2",
+        ),
+        Event(
+            title="Ensaio de Junho",
+            description="Preparação para o verão.",
+            start_time=now + timedelta(days=14),
+            end_time=now + timedelta(days=14) + timedelta(hours=2),
+            location="Sede da Banda",
+            type=EventType.REHEARSAL,
+        ),
+        Event(
+            title="Concerto de São João",
+            description="Concerto das festas de São João.",
+            start_time=now + timedelta(days=32),
+            end_time=now + timedelta(days=32) + timedelta(hours=3),
+            location="Parque da Cidade",
+            type=EventType.CONCERT,
         ),
     ]
     db.add_all(events)
@@ -152,16 +250,46 @@ def _seed_events(db: Session) -> list[Event]:
 
 def _seed_attendance(db: Session, events: list[Event], users: tuple[User, User, User, User]) -> None:
     super_admin, admin, regular, regular2 = users
-    records = [
-        EventAttendance(event_id=events[0].id, user_id=super_admin.id, status=AttendanceStatus.PRESENT),
-        EventAttendance(event_id=events[0].id, user_id=admin.id, status=AttendanceStatus.TARDY),
-        EventAttendance(event_id=events[0].id, user_id=regular.id, status=AttendanceStatus.JUSTIFIED),
-        EventAttendance(event_id=events[0].id, user_id=regular2.id, status=AttendanceStatus.JUSTIFIED),
-        EventAttendance(event_id=events[1].id, user_id=super_admin.id, status=AttendanceStatus.PRESENT),
-        EventAttendance(event_id=events[1].id, user_id=admin.id, status=AttendanceStatus.PRESENT),
-        EventAttendance(event_id=events[1].id, user_id=regular.id, status=AttendanceStatus.ABSENT),
-        EventAttendance(event_id=events[1].id, user_id=regular2.id, status=AttendanceStatus.ABSENT),
+
+    # Status patterns per user across past events (indices 0–9)
+    # super_admin: mostly present
+    # admin: mostly present, some tardy
+    # regular: mix of present/absent/justified
+    # regular2: mix of absent/present
+    patterns: list[tuple[AttendanceStatus | None, AttendanceStatus | None, AttendanceStatus | None, AttendanceStatus | None]] = [
+        # idx 0 – Ensaio de Janeiro
+        (AttendanceStatus.PRESENT,  AttendanceStatus.PRESENT,   AttendanceStatus.ABSENT,    AttendanceStatus.PRESENT),
+        # idx 1 – Ensaio de Fevereiro
+        (AttendanceStatus.PRESENT,  AttendanceStatus.TARDY,     AttendanceStatus.PRESENT,   AttendanceStatus.ABSENT),
+        # idx 2 – Ensaio Especial de Fevereiro
+        (AttendanceStatus.PRESENT,  AttendanceStatus.PRESENT,   AttendanceStatus.JUSTIFIED, AttendanceStatus.PRESENT),
+        # idx 3 – Concerto de Carnaval
+        (AttendanceStatus.PRESENT,  AttendanceStatus.PRESENT,   AttendanceStatus.PRESENT,   AttendanceStatus.ABSENT),
+        # idx 4 – Ensaio de Março
+        (AttendanceStatus.TARDY,    AttendanceStatus.PRESENT,   AttendanceStatus.ABSENT,    AttendanceStatus.JUSTIFIED),
+        # idx 5 – Ensaio de Abril
+        (AttendanceStatus.PRESENT,  AttendanceStatus.ABSENT,    AttendanceStatus.PRESENT,   AttendanceStatus.PRESENT),
+        # idx 6 – Concerto da Páscoa
+        (AttendanceStatus.PRESENT,  AttendanceStatus.PRESENT,   AttendanceStatus.TARDY,     AttendanceStatus.PRESENT),
+        # idx 7 – Ensaio de Maio I
+        (AttendanceStatus.PRESENT,  AttendanceStatus.TARDY,     AttendanceStatus.PRESENT,   AttendanceStatus.ABSENT),
+        # idx 8 – Ensaio de Maio II
+        (AttendanceStatus.PRESENT,  AttendanceStatus.PRESENT,   AttendanceStatus.JUSTIFIED, AttendanceStatus.PRESENT),
+        # idx 9 – Concerto do Dia da Banda
+        (AttendanceStatus.PRESENT,  AttendanceStatus.PRESENT,   AttendanceStatus.ABSENT,    AttendanceStatus.TARDY),
     ]
+
+    records: list[EventAttendance] = []
+    for idx, (sa_s, ad_s, re_s, r2_s) in enumerate(patterns):
+        ev = events[idx]
+        records += [
+            EventAttendance(event_id=ev.id, user_id=super_admin.id, status=sa_s),
+            EventAttendance(event_id=ev.id, user_id=admin.id,       status=ad_s),
+            EventAttendance(event_id=ev.id, user_id=regular.id,     status=re_s),
+            EventAttendance(event_id=ev.id, user_id=regular2.id,    status=r2_s),
+        ]
+
+    # Upcoming events (indices 10–13) — no attendance yet
     db.add_all(records)
 
 

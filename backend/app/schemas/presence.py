@@ -12,7 +12,10 @@ class PresenceEventRead(BaseModel):
     start_time: datetime
     location: str | None = None
     present_count: int
-    missing_count: int
+    tardy_count: int = 0
+    absent_count: int = 0
+    justified_count: int = 0
+    missing_count: int  # absent_count + justified_count (kept for compatibility)
     my_status: str | None = None
 
 

@@ -143,25 +143,20 @@ python -m app.seed.seed
 
 Cria os seguintes utilizadores de teste (password: `admin123`):
 
-| Role | Email |
-|------|-------|
-| SUPER_ADMIN | superadmin@airfa.pt |
-| ADMIN | admin@airfa.pt |
-| REGULAR | membro@airfa.pt |
+| Role | Username (login) | Nome |
+|------|-----------------|------|
+| SUPER_ADMIN | `superadmin` | Super Admin Airfa |
+| ADMIN | `admin` | Admin Airfa |
+| REGULAR | `membro` | Membro Regular |
+| REGULAR | `membro2` | Membro Regular 2 |
 
-### 4. Frontend (WSL — requer bun)
-
-Instalar bun (primeira vez):
-```bash
-curl -fsSL https://bun.sh/install | bash
-exec /usr/bin/zsh   # ou bash, conforme o teu shell
-```
+### 4. Frontend (Windows — PowerShell)
 
 Correr o frontend com hot reload:
-```bash
-cd /mnt/c/Users/Loureiro/Desktop/Dev/airfa-helper/frontend
-bun install        # só na primeira vez
-bun run dev        # hot reload activo via Next.js Turbopack
+```powershell
+cd C:\Users\Loureiro\Desktop\Dev\airfa-helper\frontend
+npm install        # só na primeira vez
+npm run dev        # hot reload activo (webpack polling)
 ```
 
 A aplicação fica disponível em **http://localhost:3000**.
