@@ -363,6 +363,8 @@ export default function PresencasPage() {
   const [saving, setSaving] = useState(false);
   const [showAltEvents, setShowAltEvents] = useState(false);
   const [filterType, setFilterType] = useState<'REHEARSAL' | 'CONCERT' | null>(null);
+  const [analyticsNaipe, setAnalyticsNaipe] = useState<string | null>(null);
+  const [analyticsSort, setAnalyticsSort] = useState<'az' | 'za' | 'presences' | 'absences'>('az');
 
   useEffect(() => {
     const token = localStorage.getItem('airfa_token');
@@ -467,6 +469,16 @@ export default function PresencasPage() {
   const concertTardy       = countTardy(concerts);
   const concertJustified   = countJustified(concerts);
   const concertAbsent      = countAbsentOnly(concerts);
+
+  const availableNaipes = Array.from(new Set(analytics.map(m => m.naipe ?? ''))).filter(Boolean).sort();
+  const filteredAnalytics = analytics
+    .filter(m => !analyticsNaipe || m.naipe === analyticsNaipe)
+    .sort((a, b) => {
+      if (analyticsSort === 'az') return a.name.localeCompare(b.name, 'pt');
+      if (analyticsSort === 'za') return b.name.localeCompare(a.name, 'pt');
+      if (analyticsSort === 'presences') return (b.present + b.tardy) - (a.present + a.tardy);
+      return (b.absent + b.justified) - (a.absent + a.justified);
+    });
 
   return (
     <AuthenticatedShell title="Presenças">
@@ -598,27 +610,52 @@ export default function PresencasPage() {
           {/* ── ADMIN ANALYTICS ──────────────────────────────────────── */}
           {isAdmin && analytics.length > 0 && (
             <section className="analytics-section">
-              <div className="analytics-grid">
-                {analytics.map(member => {
+              <div className="analytics-controls">
+                <div className="analytics-filter-group">
+                  <button type="button" className={`analytics-pill${analyticsNaipe === null ? ' analytics-pill-active' : ''}`} onClick={() => setAnalyticsNaipe(null)}>Todos</button>
+                  {availableNaipes.map(n => (
+                    <button key={n} type="button" className={`analytics-pill${analyticsNaipe === n ? ' analytics-pill-active' : ''}`} onClick={() => setAnalyticsNaipe(v => v === n ? null : n)}>
+                      {MUSICAL_ROLE_LABEL[n] ?? n}
+                    </button>
+                  ))}
+                </div>
+                <div className="analytics-sort-group">
+                  <button type="button" className={`analytics-sort-btn${analyticsSort === 'az' || analyticsSort === 'za' ? ' analytics-sort-active' : ''}`} onClick={() => setAnalyticsSort(s => s === 'az' ? 'za' : 'az')}>
+                    {analyticsSort === 'za' ? 'Z→A' : 'A→Z'}
+                  </button>
+                  <button type="button" className={`analytics-sort-btn${analyticsSort === 'presences' || analyticsSort === 'absences' ? ' analytics-sort-active' : ''}`} onClick={() => setAnalyticsSort(s => s === 'presences' ? 'absences' : 'presences')}>
+                    {analyticsSort === 'absences' ? '↑ Faltas' : '↑ Presenças'}
+                  </button>
+                </div>
+              </div>
+              <div className="analytics-list">
+                {filteredAnalytics.map(member => {
                   const mp = member.present + member.tardy;
                   const ma = member.absent + member.justified;
                   const mt = member.total_events;
                   const pct = mt > 0 ? Math.round((mp / mt) * 100) : 0;
                   return (
-                    <article key={member.user_id} className="analytics-card">
-                      <strong className="analytics-name">{member.name}</strong>
-                      <span className="analytics-naipe">
-                        {MUSICAL_ROLE_LABEL[member.naipe ?? ''] ?? member.naipe ?? 'Sem naipe'}
-                      </span>
+                    <div key={member.user_id} className="analytics-row">
+                      <div className="analytics-identity">
+                        <strong className="analytics-name">{member.name}</strong>
+                        <span className="analytics-naipe">{MUSICAL_ROLE_LABEL[member.naipe ?? ''] ?? member.naipe ?? 'Sem naipe'}</span>
+                      </div>
                       <div className="analytics-bar-track">
-                        <div className="analytics-bar-fill" style={{ width: `${pct}%` }} />
+                        {mt > 0 && <>
+                          <div className="analytics-bar-seg seg-present"  style={{ width: `${(member.present   / mt) * 100}%` }} />
+                          <div className="analytics-bar-seg seg-tardy"    style={{ width: `${(member.tardy     / mt) * 100}%` }} />
+                          <div className="analytics-bar-seg seg-justified"style={{ width: `${(member.justified / mt) * 100}%` }} />
+                          <div className="analytics-bar-seg seg-absent"   style={{ width: `${(member.absent    / mt) * 100}%` }} />
+                        </>}
                       </div>
                       <div className="analytics-stats">
                         <span className="text-green">✓ {mp}</span>
                         <span className="text-red">✗ {ma}</span>
-                        <span className="text-muted">{pct}%</span>
+                        {member.tardy > 0 && <span className="tardy-sub">⟳ {member.tardy}</span>}
+                        {member.justified > 0 && <span className="justified-sub">~ {member.justified}</span>}
+                        <span className="text-muted analytics-pct">{pct}%</span>
                       </div>
-                    </article>
+                    </div>
                   );
                 })}
               </div>
@@ -750,13 +787,29 @@ export default function PresencasPage() {
 
         /* Analytics */
         .analytics-section { margin-top: 24px; display: flex; flex-direction: column; gap: 14px; }
-        .analytics-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
-        .analytics-card { display: flex; flex-direction: column; gap: 6px; padding: 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--panel-soft); }
-        .analytics-name  { font-size: 13px; font-weight: 700; }
+        .analytics-controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+        .analytics-filter-group { display: flex; gap: 6px; flex-wrap: wrap; }
+        .analytics-sort-group   { display: flex; gap: 6px; flex-wrap: wrap; }
+        .analytics-pill { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--muted); transition: background 0.15s, color 0.15s, border-color 0.15s; }
+        .analytics-pill:hover { color: var(--text); border-color: var(--muted); }
+        .analytics-pill.analytics-pill-active { background: rgba(125,211,252,0.12); color: var(--accent); border-color: rgba(125,211,252,0.4); }
+        .analytics-sort-btn { padding: 4px 11px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--muted); transition: background 0.15s, color 0.15s, border-color 0.15s; }
+        .analytics-sort-btn:hover { color: var(--text); border-color: var(--muted); }
+        .analytics-sort-btn.analytics-sort-active { background: rgba(125,211,252,0.12); color: var(--accent); border-color: rgba(125,211,252,0.4); }
+        .analytics-list { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: var(--panel); }
+        .analytics-row { display: grid; grid-template-columns: 220px 1fr auto; align-items: center; gap: 16px; padding: 10px 18px; border-bottom: 1px solid var(--border); }
+        .analytics-row:last-child { border-bottom: none; }
+        .analytics-identity { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+        .analytics-name  { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .analytics-naipe { font-size: 11px; color: var(--muted); }
-        .analytics-bar-track { height: 5px; border-radius: 999px; background: rgba(251,113,133,0.25); overflow: hidden; margin: 2px 0; }
-        .analytics-bar-fill  { height: 100%; border-radius: 999px; background: rgba(74,222,128,0.7); transition: width 0.4s ease; }
-        .analytics-stats { display: flex; gap: 8px; font-size: 11px; font-weight: 600; flex-wrap: wrap; }
+        .analytics-bar-track { height: 6px; border-radius: 999px; background: var(--border); overflow: hidden; display: flex; }
+        .analytics-bar-seg { height: 100%; transition: width 0.4s ease; }
+        .seg-present   { background: #4ade80; }
+        .seg-tardy     { background: #fbbf24; }
+        .seg-justified { background: #7dd3fc; }
+        .seg-absent    { background: #fb7185; }
+        .analytics-stats { display: flex; gap: 10px; font-size: 11px; font-weight: 600; align-items: center; }
+        .analytics-pct { min-width: 34px; text-align: right; }
         .text-green { color: #4ade80; }
         .text-red   { color: #fb7185; }
         .text-muted { color: var(--muted); }
