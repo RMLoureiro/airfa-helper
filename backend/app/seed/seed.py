@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 from datetime import date, datetime, timedelta, timezone
 
@@ -33,6 +34,8 @@ from app.models.user import User
 SEED_PASSWORD_SUPER_ADMIN = os.getenv("SEED_SUPER_ADMIN_PASSWORD", "admin123")
 SEED_PASSWORD_ADMIN = os.getenv("SEED_ADMIN_PASSWORD", "admin123")
 SEED_PASSWORD_REGULAR = os.getenv("SEED_REGULAR_PASSWORD", "admin123")
+
+_logger = logging.getLogger(__name__)
 
 
 def _upsert_user(db: Session, payload: dict) -> User:
@@ -444,8 +447,6 @@ def _seed_reports(db: Session, users: tuple[User, User, User, User]) -> None:
 def seed_all() -> None:
     db: Session = SessionLocal()
     try:
-        print(f"Using database URL: {db.bind.url}", flush=True)
-
         users = _seed_users(db)
         events = _seed_events(db)
         _seed_attendance(db, events, users)
@@ -458,12 +459,13 @@ def seed_all() -> None:
 
         db.commit()
 
-        print("Seed completa aplicada com sucesso.", flush=True)
-        print("Credenciais de teste:", flush=True)
-        print(f"- SUPER_ADMIN username: {users[0].username} / {SEED_PASSWORD_SUPER_ADMIN}", flush=True)
-        print(f"- ADMIN username: {users[1].username} / {SEED_PASSWORD_ADMIN}", flush=True)
-        print(f"- REGULAR username: {users[2].username} / {SEED_PASSWORD_REGULAR}", flush=True)
-        print(f"- REGULAR2 username: {users[3].username} / {SEED_PASSWORD_REGULAR}", flush=True)
+        _logger.info("Seed completa aplicada com sucesso.")
+        _logger.info(
+            "Utilizadores de seed criados: %s, %s, %s, %s. "
+            "Use SEED_SUPER_ADMIN_PASSWORD / SEED_ADMIN_PASSWORD / SEED_REGULAR_PASSWORD "
+            "para personalizar as passwords (por omissão: admin123).",
+            users[0].username, users[1].username, users[2].username, users[3].username,
+        )
     except Exception:
         db.rollback()
         raise

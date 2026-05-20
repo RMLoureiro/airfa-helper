@@ -1,415 +1,299 @@
 "use client";
 
 import AuthenticatedShell from '@/components/AuthenticatedShell';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type RepertoireItem = {
   id: number;
   title: string;
+  composer?: string | null;
+  arranger?: string | null;
+  state: string;
+  notes?: string | null;
   youtube_link?: string | null;
-  folder_path?: string | null;
-  state: 'CURRENT' | 'OLD' | 'FUTURE';
-  files?: Array<{
-    name: string;
-    download_url: string;
-  }>;
+  pdf_filename?: string | null;
 };
 
 type RepertoireForm = {
   title: string;
-  youtube_link: string;
-  folder_path: string;
+  composer: string;
+  arranger: string;
   state: 'CURRENT' | 'OLD' | 'FUTURE';
+  notes: string;
+  youtube_link: string;
 };
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
 
+const STATE_LABEL: Record<string, string> = { CURRENT: 'Atual', OLD: 'Arquivo', FUTURE: 'Em estudo' };
+const STATE_BADGE: Record<string, string> = { CURRENT: 'badge-current', OLD: 'badge-old', FUTURE: 'badge-future' };
+
+const EMPTY_FORM: RepertoireForm = { title: '', composer: '', arranger: '', state: 'CURRENT', notes: '', youtube_link: '' };
+
 export default function RepertorioPage() {
-  const [repertoire, setRepertoire] = useState<RepertoireItem[]>([]);
+  const [items, setItems] = useState<RepertoireItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [filterState, setFilterState] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [uploadingForId, setUploadingForId] = useState<number | null>(null);
-  const [message, setMessage] = useState('');
-  const [form, setForm] = useState<RepertoireForm>({
-    title: '',
-    youtube_link: '',
-    folder_path: '',
-    state: 'CURRENT',
-  });
+  const [editingItem, setEditingItem] = useState<RepertoireItem | null>(null);
+  const [form, setForm] = useState<RepertoireForm>(EMPTY_FORM);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
 
-  async function loadRepertoire() {
+  async function loadItems() {
     const token = localStorage.getItem('airfa_token');
-    if (!token) {
-      return;
-    }
-
-    const response = await fetch(`${apiUrl}/api/v1/repertoire`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    const data = (await response.json()) as RepertoireItem[];
-    setRepertoire(data);
+    if (!token) return;
+    const res = await fetch(`${apiUrl}/api/v1/repertoire`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json();
+    setItems(Array.isArray(data) ? data : []);
+    setLoading(false);
   }
 
   useEffect(() => {
-    loadRepertoire().catch(() => setRepertoire([]));
-
+    loadItems().catch(() => setLoading(false));
     const storedUser = localStorage.getItem('airfa_user');
     if (storedUser) {
       try {
-        const parsed = JSON.parse(storedUser) as { system_role?: string };
-        setIsAdmin(parsed.system_role === 'ADMIN' || parsed.system_role === 'SUPER_ADMIN');
-      } catch {
-        setIsAdmin(false);
-      }
+        const u = JSON.parse(storedUser) as { system_role?: string };
+        setIsAdmin(u.system_role === 'ADMIN' || u.system_role === 'SUPER_ADMIN');
+        setIsSuperAdmin(u.system_role === 'SUPER_ADMIN');
+      } catch { /* ignore */ }
     }
   }, []);
 
-  async function createWork() {
-    const token = localStorage.getItem('airfa_token');
-    if (!token) {
-      return;
-    }
-
-    setMessage('');
-
-    try {
-      const createResponse = await fetch(`${apiUrl}/api/v1/repertoire`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: form.title,
-          youtube_link: form.youtube_link || null,
-          folder_path: form.folder_path || null,
-          state: form.state,
-        }),
-      });
-
-      if (!createResponse.ok) {
-        throw new Error('Não foi possível criar a obra.');
-      }
-
-      const created = (await createResponse.json()) as RepertoireItem;
-
-      if (selectedFiles.length > 0) {
-        const uploadForm = new FormData();
-        selectedFiles.forEach((file) => uploadForm.append('files', file));
-
-        const uploadResponse = await fetch(`${apiUrl}/api/v1/repertoire/${created.id}/files`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
-          body: uploadForm,
-        });
-
-        if (!uploadResponse.ok) {
-          throw new Error('A obra foi criada, mas o upload dos PDFs falhou.');
-        }
-      }
-
-      setIsModalOpen(false);
-      setSelectedFiles([]);
-      setForm({ title: '', youtube_link: '', folder_path: '', state: 'CURRENT' });
-      setMessage('Obra criada com sucesso.');
-      await loadRepertoire();
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Falha ao criar obra.');
-    }
+  function openCreate() { setEditingItem(null); setForm(EMPTY_FORM); setPdfFile(null); setIsModalOpen(true); }
+  function openEdit(item: RepertoireItem) {
+    setEditingItem(item);
+    setForm({ title: item.title, composer: item.composer ?? '', arranger: item.arranger ?? '', state: item.state as RepertoireForm['state'], notes: item.notes ?? '', youtube_link: item.youtube_link ?? '' });
+    setPdfFile(null);
+    setIsModalOpen(true);
   }
 
-  async function uploadFilesToExistingWork(repertoireId: number, files: File[]) {
+  async function saveItem() {
     const token = localStorage.getItem('airfa_token');
-    if (!token || files.length === 0) {
-      return;
+    if (!token) return;
+    const payload = { ...form, composer: form.composer || null, arranger: form.arranger || null, notes: form.notes || null, youtube_link: form.youtube_link || null };
+    const isEditing = Boolean(editingItem);
+    const savedRes = await fetch(isEditing ? `${apiUrl}/api/v1/repertoire/${editingItem?.id}` : `${apiUrl}/api/v1/repertoire`, {
+      method: isEditing ? 'PUT' : 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const saved = await savedRes.json();
+    if (pdfFile && saved.id) {
+      const fd = new FormData();
+      fd.append('file', pdfFile);
+      await fetch(`${apiUrl}/api/v1/repertoire/${saved.id}/pdf`, { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: fd });
     }
-
-    setUploadingForId(repertoireId);
-    setMessage('');
-
-    try {
-      const formData = new FormData();
-      files.forEach((file) => formData.append('files', file));
-
-      const response = await fetch(`${apiUrl}/api/v1/repertoire/${repertoireId}/files`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Não foi possível carregar os PDFs.');
-      }
-
-      setMessage('PDFs carregados com sucesso.');
-      await loadRepertoire();
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Falha no upload dos PDFs.');
-    } finally {
-      setUploadingForId(null);
-    }
+    setIsModalOpen(false);
+    await loadItems();
   }
+
+  async function removeItem(id: number) {
+    if (!window.confirm('Remover esta obra?')) return;
+    const token = localStorage.getItem('airfa_token');
+    if (!token) return;
+    await fetch(`${apiUrl}/api/v1/repertoire/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    await loadItems();
+  }
+
+  async function downloadPdf(item: RepertoireItem) {
+    const token = localStorage.getItem('airfa_token');
+    if (!token) return;
+    const res = await fetch(`${apiUrl}/api/v1/repertoire/${item.id}/pdf`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) return;
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = item.pdf_filename ?? `${item.title}.pdf`; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  const displayed = items.filter(i => !filterState || i.state === filterState);
 
   return (
-    <AuthenticatedShell title="Repertório" subtitle="Obras atuais, antigas e futuras.">
-      <section className="section">
-        <div className="section-header">
-          <h1>Repertório</h1>
-          {isAdmin ? (
-            <button type="button" onClick={() => setIsModalOpen(true)}>
-              Adicionar obra
-            </button>
-          ) : null}
+    <AuthenticatedShell title="Repertório">
+      <div className="page">
+        <div className="toolbar">
+          <div className="filter-pills">
+            {[null, 'CURRENT', 'FUTURE', 'OLD'].map(s => (
+              <button key={s ?? 'all'} type="button" className={`fpill${filterState === s ? ' active' : ''}`} onClick={() => setFilterState(s)}>
+                {s === null ? 'Todos' : STATE_LABEL[s]}
+              </button>
+            ))}
+          </div>
+          {isAdmin && <button type="button" className="btn-primary" onClick={openCreate}>+ Nova obra</button>}
         </div>
 
-        {message ? <p className="message">{message}</p> : null}
-
-        <div className="grid">
-          {repertoire.map((item) => (
-            <article key={item.title} className="card">
-              <span className="badge">{item.state}</span>
-              <h2>{item.title}</h2>
-              <p>{item.youtube_link ?? 'Sem link YouTube'}</p>
-              <div className="files">
-                {item.files?.length ? (
-                  item.files.map((file) => (
-                    <a key={file.name} href={`${apiUrl}${file.download_url}`} target="_blank" rel="noreferrer">
-                      {file.name}
-                    </a>
-                  ))
-                ) : (
-                  <span className="empty">Sem PDFs disponíveis</span>
-                )}
+        {loading ? (
+          <div className="loading">A carregar…</div>
+        ) : displayed.length === 0 ? (
+          <div className="empty">Sem obras nesta categoria.</div>
+        ) : (
+          <div className="list">
+            {displayed.map(item => (
+              <div key={item.id} className="row">
+                <div className="row-left">
+                  <div className="row-title-row">
+                    <h3 className="row-title">{item.title}</h3>
+                    <span className={`badge ${STATE_BADGE[item.state] ?? 'badge-other'}`}>{STATE_LABEL[item.state] ?? item.state}</span>
+                  </div>
+                  {(item.composer || item.arranger) && (
+                    <div className="row-meta">
+                      {item.composer && <span>🎼 {item.composer}</span>}
+                      {item.arranger && <span>· arr. {item.arranger}</span>}
+                    </div>
+                  )}
+                  {item.notes && <p className="row-notes">{item.notes}</p>}
+                </div>
+                <div className="row-actions">
+                  {item.youtube_link && (
+                    <a href={item.youtube_link} target="_blank" rel="noopener noreferrer" className="action-link yt" title="YouTube">▶</a>
+                  )}
+                  {item.pdf_filename && (
+                    <button type="button" className="action-link pdf" title="Descarregar PDF" onClick={() => downloadPdf(item)}>↓ PDF</button>
+                  )}
+                  {isAdmin && (
+                    <>
+                      <button type="button" className="action-btn" onClick={() => openEdit(item)}>Editar</button>
+                      {isSuperAdmin && <button type="button" className="action-btn danger" onClick={() => removeItem(item.id)}>Remover</button>}
+                    </>
+                  )}
+                </div>
               </div>
+            ))}
+          </div>
+        )}
 
-              {isAdmin ? (
-                <label className="upload-inline">
-                  <span>{uploadingForId === item.id ? 'A carregar...' : 'Carregar PDFs'}</span>
-                  <input
-                    type="file"
-                    accept="application/pdf,.pdf"
-                    multiple
-                    onChange={(event) => {
-                      const files = Array.from(event.target.files ?? []);
-                      if (files.length > 0) {
-                        uploadFilesToExistingWork(item.id, files).catch(() => {
-                          setMessage('Falha no upload dos PDFs.');
-                        });
-                      }
-                      event.currentTarget.value = '';
-                    }}
-                  />
-                </label>
-              ) : null}
-            </article>
-          ))}
-        </div>
-
-        {isModalOpen ? (
+        {isModalOpen && (
           <div className="modal-backdrop" onClick={() => setIsModalOpen(false)}>
-            <div className="modal" onClick={(event) => event.stopPropagation()}>
-              <h2>Adicionar obra</h2>
-
-              <label>
-                Título
-                <input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} />
-              </label>
-
-              <label>
-                Link YouTube
-                <input
-                  value={form.youtube_link}
-                  onChange={(event) => setForm({ ...form, youtube_link: event.target.value })}
-                />
-              </label>
-
-              <label>
-                Pasta (opcional)
-                <input
-                  value={form.folder_path}
-                  onChange={(event) => setForm({ ...form, folder_path: event.target.value })}
-                />
-              </label>
-
-              <label>
-                Estado
-                <select
-                  value={form.state}
-                  onChange={(event) => setForm({ ...form, state: event.target.value as RepertoireForm['state'] })}
-                >
-                  <option value="CURRENT">Atual</option>
-                  <option value="OLD">Antigo</option>
-                  <option value="FUTURE">Futuro</option>
-                </select>
-              </label>
-
-              <label>
-                PDFs
-                <input
-                  type="file"
-                  accept="application/pdf,.pdf"
-                  multiple
-                  onChange={(event) => setSelectedFiles(Array.from(event.target.files ?? []))}
-                />
-              </label>
-
-              <div className="modal-actions">
-                <button type="button" className="secondary" onClick={() => setIsModalOpen(false)}>
-                  Cancelar
-                </button>
-                <button type="button" onClick={createWork}>
-                  Guardar obra
-                </button>
+            <div className="modal" onClick={e => e.stopPropagation()}>
+              <div className="mh">
+                <h2 className="mt">{editingItem ? 'Editar obra' : 'Nova obra'}</h2>
+                <button type="button" className="mc" onClick={() => setIsModalOpen(false)}>✕</button>
+              </div>
+              <div className="form-grid">
+                <label className="field span-2">
+                  Título
+                  <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Título da obra" />
+                </label>
+                <label className="field">
+                  Compositor
+                  <input value={form.composer} onChange={e => setForm({ ...form, composer: e.target.value })} placeholder="Compositor" />
+                </label>
+                <label className="field">
+                  Arranjador
+                  <input value={form.arranger} onChange={e => setForm({ ...form, arranger: e.target.value })} placeholder="Arranjador" />
+                </label>
+                <label className="field">
+                  Estado
+                  <select value={form.state} onChange={e => setForm({ ...form, state: e.target.value as RepertoireForm['state'] })}>
+                    <option value="CURRENT">Atual</option>
+                    <option value="FUTURE">Em estudo</option>
+                    <option value="OLD">Arquivo</option>
+                  </select>
+                </label>
+                <label className="field">
+                  Link YouTube
+                  <input value={form.youtube_link} onChange={e => setForm({ ...form, youtube_link: e.target.value })} placeholder="https://youtube.com/..." />
+                </label>
+                <label className="field span-2">
+                  Notas
+                  <textarea rows={3} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Notas opcionais…" />
+                </label>
+                <label className="field span-2">
+                  Partitura PDF
+                  <input type="file" accept="application/pdf" ref={pdfInputRef} onChange={e => setPdfFile(e.target.files?.[0] ?? null)} />
+                  {pdfFile && <span style={{ fontSize: 12, color: 'var(--muted)' }}>{pdfFile.name}</span>}
+                </label>
+              </div>
+              <div className="mf">
+                <button type="button" className="btn-secondary" onClick={() => setIsModalOpen(false)}>Cancelar</button>
+                <button type="button" className="btn-primary" onClick={saveItem}>Guardar</button>
               </div>
             </div>
           </div>
-        ) : null}
-      </section>
+        )}
+      </div>
 
       <style jsx>{`
-        .section {
-          display: grid;
-          gap: 20px;
-        }
+        .page { display: flex; flex-direction: column; gap: 20px; }
+        .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+        .filter-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+        .fpill { padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 13px; cursor: pointer; transition: all 0.12s; }
+        .fpill:hover { background: var(--surface-2); color: var(--text-2); }
+        .fpill.active { background: var(--accent-dim); color: var(--accent-2); border-color: var(--accent); }
 
-        .section-header {
+        .loading, .empty { color: var(--muted); font-style: italic; text-align: center; padding: 48px; }
+
+        .list { display: flex; flex-direction: column; gap: 2px; }
+
+        .row {
           display: flex;
-          justify-content: space-between;
           align-items: center;
-          gap: 16px;
-        }
-
-        h1,
-        h2 {
-          margin: 0;
-        }
-
-        button {
-          border: 0;
-          border-radius: 14px;
-          padding: 12px 16px;
-          background: linear-gradient(135deg, var(--accent), var(--accent-strong));
-          color: #08111f;
-          font-weight: 700;
-        }
-
-        .grid {
-          display: grid;
-          gap: 16px;
-          grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-        }
-
-        .card {
-          display: grid;
           gap: 12px;
-          padding: 18px;
-          border-radius: 18px;
+          padding: 14px 16px;
+          background: var(--surface);
           border: 1px solid var(--border);
-          background: var(--panel-soft);
+          border-radius: 8px;
+          transition: border-color 0.12s;
         }
+        .row:hover { border-color: var(--border-strong); }
 
-        .badge {
-          width: fit-content;
-          padding: 6px 10px;
-          border-radius: 999px;
-          background: rgba(125, 211, 252, 0.12);
-          color: var(--accent);
+        .row-left { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+
+        .row-title-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+        .row-title { font-size: 15px; font-weight: 600; color: var(--text); margin: 0; }
+
+        .row-meta { font-size: 12px; color: var(--muted); display: flex; gap: 6px; flex-wrap: wrap; }
+
+        .row-notes { font-size: 12px; color: var(--text-2); margin: 0; line-height: 1.5; }
+
+        .row-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+        .action-link {
+          padding: 5px 10px;
+          border-radius: 5px;
+          border: 1px solid var(--border);
           font-size: 12px;
-        }
-
-        p,
-        a,
-        .empty {
-          color: var(--muted);
-          margin: 0;
-        }
-
-        .message {
-          margin: 0;
-          color: var(--muted);
-        }
-
-        .files {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 10px;
-        }
-
-        .files a {
-          padding: 8px 12px;
-          border-radius: 999px;
-          border: 1px solid var(--border);
-          background: var(--input-bg);
-        }
-
-        .upload-inline {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          border: 1px solid var(--border);
-          border-radius: 999px;
-          padding: 8px 12px;
+          font-weight: 600;
+          text-decoration: none;
           cursor: pointer;
-          color: var(--text);
-          width: fit-content;
-          background: rgba(255, 255, 255, 0.02);
-        }
-
-        .upload-inline input {
-          display: none;
-        }
-
-        .modal-backdrop {
-          position: fixed;
-          inset: 0;
-          background: rgba(3, 6, 12, 0.72);
-          display: grid;
-          place-items: center;
-          padding: 24px;
-        }
-
-        .modal {
-          width: min(100%, 560px);
-          display: grid;
-          gap: 14px;
-          padding: 22px;
-          border-radius: 20px;
-          border: 1px solid var(--border);
-          background: #121821;
-          box-shadow: var(--shadow);
-        }
-
-        label {
-          display: grid;
-          gap: 8px;
-          color: var(--text);
-        }
-
-        input,
-        select {
-          width: 100%;
-          background: var(--input-bg);
-          color: var(--text);
-          border: 1px solid var(--border);
-          border-radius: 14px;
-          padding: 12px 14px;
-          outline: none;
-        }
-
-        .modal-actions {
-          display: flex;
-          justify-content: flex-end;
-          gap: 12px;
-          margin-top: 8px;
-        }
-
-        .secondary {
           background: transparent;
-          color: var(--text);
-          border: 1px solid var(--border);
+          transition: all 0.12s;
+        }
+        .yt { color: #ff4e45; border-color: rgba(255,78,69,0.3); }
+        .yt:hover { background: rgba(255,78,69,0.1); }
+        .pdf { color: var(--accent); border-color: var(--accent); }
+        .pdf:hover { background: var(--accent-dim); }
+
+        .action-btn { padding: 5px 10px; border-radius: 5px; border: 1px solid var(--border); background: transparent; color: var(--text-2); font-size: 12px; cursor: pointer; transition: all 0.12s; }
+        .action-btn:hover { background: var(--surface-2); }
+        .action-btn.danger { color: var(--danger); border-color: rgba(194,78,66,0.3); }
+        .action-btn.danger:hover { background: var(--danger-dim); }
+
+        /* Modal */
+        .mh { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .mt { font-family: var(--font-display, serif); font-size: 22px; font-weight: 600; margin: 0; }
+        .mc { width: 30px; height: 30px; border-radius: 5px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; padding: 0; }
+        .mc:hover { border-color: var(--danger); color: var(--danger); }
+
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+        .field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 500; color: var(--text-2); }
+        .span-2 { grid-column: span 2; }
+
+        .mf { display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border); padding-top: 16px; }
+        .btn-primary { padding: 8px 16px; border-radius: 6px; border: none; background: var(--accent); color: #0B0A08; font-size: 13px; font-weight: 700; cursor: pointer; transition: background 0.15s; }
+        .btn-primary:hover { background: var(--accent-2); }
+        .btn-secondary { padding: 8px 16px; border-radius: 6px; border: 1px solid var(--border-strong); background: transparent; color: var(--text-2); font-size: 13px; cursor: pointer; }
+        .btn-secondary:hover { background: var(--surface-3); }
+
+        @media (max-width: 600px) {
+          .form-grid { grid-template-columns: 1fr; }
+          .span-2 { grid-column: span 1; }
         }
       `}</style>
     </AuthenticatedShell>

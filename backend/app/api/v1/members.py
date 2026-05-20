@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from sqlalchemy.orm import Session
 
-from app.core.security import get_password_hash
+from app.core.security import get_password_hash, verify_password
 from app.deps.auth import get_current_user, get_db, require_roles
 from app.models.enums import SystemRole
 from app.models.user import User
@@ -49,8 +49,11 @@ def change_my_password(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if len(payload.new_password) < 8:
-        raise HTTPException(status_code=400, detail="A password deve ter pelo menos 8 caracteres")
+    if not verify_password(payload.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="A password atual está incorreta")
+
+    if len(payload.new_password) < 12:
+        raise HTTPException(status_code=400, detail="A nova password deve ter pelo menos 12 caracteres")
 
     current_user.hashed_password = get_password_hash(payload.new_password)
     db.add(current_user)

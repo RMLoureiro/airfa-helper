@@ -121,16 +121,24 @@ async def upload_repertoire_files(
     folder = _ensure_repertoire_folder(db, repertoire)
     uploaded: list[str] = []
 
+    max_file_size = 10 * 1024 * 1024  # 10 MB
+
     for upload in files:
         filename = _sanitize_filename(upload.filename or "")
         if not filename.lower().endswith(".pdf"):
             raise HTTPException(status_code=400, detail="Apenas ficheiros PDF são permitidos")
+
+        if upload.content_type not in ("application/pdf", "application/octet-stream"):
+            raise HTTPException(status_code=400, detail="Tipo de ficheiro não permitido")
 
         destination = (folder / filename).resolve()
         if folder not in destination.parents:
             raise HTTPException(status_code=400, detail="Nome de ficheiro inválido")
 
         content = await upload.read()
+        if len(content) > max_file_size:
+            raise HTTPException(status_code=413, detail="Ficheiro demasiado grande (máximo 10 MB)")
+
         destination.write_bytes(content)
         uploaded.append(filename)
 

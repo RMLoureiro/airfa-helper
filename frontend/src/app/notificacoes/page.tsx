@@ -5,141 +5,215 @@ import { useEffect, useState } from 'react';
 
 type NotificationItem = {
   id: number;
-  type: string;
-  content: string;
-  read: boolean;
+  title: string;
+  message: string;
+  is_read: boolean;
   created_at: string;
+  notification_type?: string | null;
 };
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
 
+function relativeTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return 'agora';
+  if (m < 60) return `há ${m} min`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `há ${h}h`;
+  const d = Math.floor(h / 24);
+  return `há ${d} dia${d !== 1 ? 's' : ''}`;
+}
+
 export default function NotificacoesPage() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  async function loadNotifications() {
     const token = localStorage.getItem('airfa_token');
-    if (!token) {
-      return;
-    }
-
-    fetch(`${apiUrl}/api/v1/notifications`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((response) => response.json())
-      .then(setNotifications)
-      .catch(() => setNotifications([]));
-  }, []);
-
-  async function markAsRead(notificationId: number) {
-    const token = localStorage.getItem('airfa_token');
-    if (!token) {
-      return;
-    }
-
-    await fetch(`${apiUrl}/api/v1/notifications/${notificationId}/read`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    setNotifications((current) =>
-      current.map((item) => (item.id === notificationId ? { ...item, read: true } : item)),
-    );
+    if (!token) return;
+    const res = await fetch(`${apiUrl}/api/v1/notifications`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json();
+    setNotifications(Array.isArray(data) ? data : []);
+    setLoading(false);
   }
 
-  return (
-    <AuthenticatedShell title="Notificações" subtitle="Centro de notificações in-app da banda.">
-      <section className="section">
-        <div className="section-header">
-          <h1>Notificações</h1>
-        </div>
+  async function markRead(id: number) {
+    const token = localStorage.getItem('airfa_token');
+    if (!token) return;
+    await fetch(`${apiUrl}/api/v1/notifications/${id}/read`, { method: 'PUT', headers: { Authorization: `Bearer ${token}` } });
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+  }
 
-        <div className="grid">
-          {notifications.length ? (
-            notifications.map((notification) => (
-              <article key={notification.id} className={`card ${notification.read ? 'read' : ''}`}>
-                <span className="badge">{notification.type}</span>
-                <h2>{notification.content}</h2>
-                <p>{new Date(notification.created_at).toLocaleString('pt-PT')}</p>
-                {!notification.read ? (
-                  <button type="button" onClick={() => markAsRead(notification.id)}>
-                    Marcar como lida
-                  </button>
-                ) : (
-                  <span className="read-label">Lida</span>
-                )}
-              </article>
-            ))
-          ) : (
-            <p className="muted">Sem notificações para mostrar.</p>
+  async function markAllRead() {
+    const token = localStorage.getItem('airfa_token');
+    if (!token) return;
+    await fetch(`${apiUrl}/api/v1/notifications/read-all`, { method: 'PUT', headers: { Authorization: `Bearer ${token}` } });
+    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+  }
+
+  useEffect(() => { loadNotifications().catch(() => setLoading(false)); }, []);
+
+  const unread = notifications.filter(n => !n.is_read).length;
+
+  return (
+    <AuthenticatedShell title="Notificações">
+      <div className="page">
+        <div className="toolbar">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span className="section-label-mono">Todas as notificações</span>
+            {unread > 0 && <span className="unread-badge">{unread} por ler</span>}
+          </div>
+          {unread > 0 && (
+            <button type="button" className="mark-all-btn" onClick={markAllRead}>Marcar todas como lidas</button>
           )}
         </div>
-      </section>
+
+        {loading ? (
+          <div className="loading">A carregar…</div>
+        ) : notifications.length === 0 ? (
+          <div className="empty">
+            <div style={{ fontSize: 40, marginBottom: 12 }}>🔔</div>
+            <p>Sem notificações.</p>
+          </div>
+        ) : (
+          <div className="list">
+            {notifications.map(n => (
+              <div
+                key={n.id}
+                className={`notif-item${n.is_read ? '' : ' unread'}`}
+                onClick={() => !n.is_read && markRead(n.id)}
+              >
+                <div className="notif-indicator" />
+                <div className="notif-body">
+                  <div className="notif-top">
+                    <span className="notif-title">{n.title}</span>
+                    <span className="notif-time">{relativeTime(n.created_at)}</span>
+                  </div>
+                  <p className="notif-msg">{n.message}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <style jsx>{`
-        .section {
-          display: grid;
-          gap: 20px;
-        }
+        .page { display: flex; flex-direction: column; gap: 16px; max-width: 720px; }
 
-        .section-header {
+        .toolbar {
           display: flex;
-          justify-content: space-between;
           align-items: center;
-          gap: 16px;
-        }
-
-        h1,
-        h2 {
-          margin: 0;
-        }
-
-        .grid {
-          display: grid;
-          gap: 16px;
-        }
-
-        .card {
-          display: grid;
+          justify-content: space-between;
           gap: 12px;
-          padding: 18px;
-          border-radius: 18px;
-          border: 1px solid var(--border);
-          background: var(--panel-soft);
+          flex-wrap: wrap;
         }
 
-        .card.read {
-          opacity: 0.72;
-        }
-
-        .badge {
-          width: fit-content;
-          padding: 6px 10px;
-          border-radius: 999px;
-          background: rgba(125, 211, 252, 0.12);
-          color: var(--accent);
-          font-size: 12px;
-        }
-
-        p,
-        .muted {
+        .section-label-mono {
+          font-family: var(--font-mono, monospace);
+          font-size: 11px;
+          font-weight: 500;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
           color: var(--muted);
-          margin: 0;
         }
 
-        button {
-          width: fit-content;
-          border: 0;
-          border-radius: 14px;
-          padding: 12px 16px;
-          background: linear-gradient(135deg, var(--accent), var(--accent-strong));
-          color: #08111f;
-          font-weight: 700;
+        .unread-badge {
+          font-size: 11px;
+          padding: 2px 8px;
+          border-radius: 10px;
+          background: var(--accent-dim);
+          color: var(--accent-2);
+          border: 1px solid var(--accent);
+          font-family: var(--font-mono, monospace);
+          font-weight: 600;
+        }
+
+        .mark-all-btn {
+          padding: 6px 12px;
+          border-radius: 5px;
+          border: 1px solid var(--border);
+          background: transparent;
+          color: var(--muted);
+          font-size: 12px;
+          cursor: pointer;
+          transition: all 0.12s;
+        }
+        .mark-all-btn:hover { background: var(--surface-2); color: var(--text-2); }
+
+        .loading, .empty {
+          color: var(--muted);
+          font-style: italic;
+          text-align: center;
+          padding: 48px;
+          font-size: 14px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .list { display: flex; flex-direction: column; gap: 2px; }
+
+        .notif-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 14px;
+          padding: 14px 16px;
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          cursor: default;
+          transition: border-color 0.12s;
+        }
+        .notif-item.unread {
+          background: var(--surface-2);
+          border-left: 3px solid var(--accent);
           cursor: pointer;
         }
+        .notif-item.unread:hover { border-color: var(--accent); background: var(--surface-3); }
 
-        .read-label {
-          color: var(--success);
-          font-weight: 700;
+        .notif-indicator {
+          margin-top: 6px;
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          flex-shrink: 0;
+          background: transparent;
+          transition: background 0.15s;
+        }
+        .notif-item.unread .notif-indicator { background: var(--accent); }
+
+        .notif-body { flex: 1; min-width: 0; }
+
+        .notif-top {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 12px;
+          margin-bottom: 4px;
+        }
+
+        .notif-title {
+          font-size: 14px;
+          font-weight: 600;
+          color: var(--text);
+          line-height: 1.3;
+        }
+
+        .notif-time {
+          font-family: var(--font-mono, monospace);
+          font-size: 11px;
+          color: var(--muted);
+          flex-shrink: 0;
+          margin-top: 2px;
+        }
+
+        .notif-msg {
+          font-size: 13px;
+          color: var(--text-2);
+          margin: 0;
+          line-height: 1.5;
         }
       `}</style>
     </AuthenticatedShell>

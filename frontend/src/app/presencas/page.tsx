@@ -35,33 +35,20 @@ type PresenceAnalyticsItem = {
   justified: number;
 };
 
-// ─── Constants ────────────────────────────────────────────────────────────────
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+
 const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const WEEKDAYS = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
 
-const EVENT_TYPE_LABEL: Record<string, string> = {
-  REHEARSAL: 'Ensaio',
-  SPECIAL_REHEARSAL: 'Ensaio Especial',
-  CONCERT: 'Concerto',
-  OTHER: 'Outro',
-};
+const EVENT_TYPE_LABEL: Record<string, string> = { REHEARSAL: 'Ensaio', SPECIAL_REHEARSAL: 'Ensaio Especial', CONCERT: 'Concerto', OTHER: 'Outro' };
 
 const MUSICAL_ROLE_LABEL: Record<string, string> = {
-  MAESTRO: 'Maestro',
-  FLUTE_PLAYER: 'Flauta',
-  CLARINET_PLAYER: 'Clarinete',
-  SAXOPHONE_PLAYER: 'Saxofone',
-  TROMBONE_PLAYER: 'Trombone',
-  EUPHONIUM_PLAYER: 'Eufônio',
-  TUBA_PLAYER: 'Tuba',
-  FRENCH_HORN_PLAYER: 'Trompa',
-  TRUMPET_PLAYER: 'Trompete',
+  MAESTRO: 'Maestro', FLUTE_PLAYER: 'Flauta', CLARINET_PLAYER: 'Clarinete',
+  SAXOPHONE_PLAYER: 'Saxofone', TROMBONE_PLAYER: 'Trombone', EUPHONIUM_PLAYER: 'Eufônio',
+  TUBA_PLAYER: 'Tuba', FRENCH_HORN_PLAYER: 'Trompa', TRUMPET_PLAYER: 'Trompete',
   PERCUSSION_PLAYER: 'Percussão',
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-/** Maps a raw status to a canonical color-class: 'present' | 'absent' | null */
 function normalizeColor(status: string | null | undefined): 'present' | 'absent' | null {
   if (!status) return null;
   if (status === 'PRESENT' || status === 'TARDY') return 'present';
@@ -69,37 +56,15 @@ function normalizeColor(status: string | null | undefined): 'present' | 'absent'
   return null;
 }
 
-/** Human label for a status, respecting the isAdmin flag */
 function statusLabel(status: string | null | undefined, isAdmin: boolean): string {
   if (!status) return 'Sem registo';
   if (isAdmin) {
-    const map: Record<string, string> = {
-      PRESENT: 'Presente', TARDY: 'Atrasado', ABSENT: 'Falta', JUSTIFIED: 'Justificado',
-    };
+    const map: Record<string, string> = { PRESENT: 'Presente', TARDY: 'Atrasado', ABSENT: 'Falta', JUSTIFIED: 'Justificado' };
     return map[status] ?? status;
   }
   if (status === 'PRESENT' || status === 'TARDY') return 'Presente';
   if (status === 'ABSENT' || status === 'JUSTIFIED') return 'Falta';
   return 'Sem registo';
-}
-
-function countPresent(items: PresenceItem[]): number {
-  return items.filter(i => normalizeColor(i.my_status) === 'present').length;
-}
-function countAbsent(items: PresenceItem[]): number {
-  return items.filter(i => normalizeColor(i.my_status) === 'absent').length;
-}
-function countPresentOnly(items: PresenceItem[]): number {
-  return items.filter(i => i.my_status === 'PRESENT').length;
-}
-function countTardy(items: PresenceItem[]): number {
-  return items.filter(i => i.my_status === 'TARDY').length;
-}
-function countJustified(items: PresenceItem[]): number {
-  return items.filter(i => i.my_status === 'JUSTIFIED').length;
-}
-function countAbsentOnly(items: PresenceItem[]): number {
-  return items.filter(i => i.my_status === 'ABSENT').length;
 }
 
 // ─── DonutChart ───────────────────────────────────────────────────────────────
@@ -109,25 +74,22 @@ function DonutChart({ present, tardy, justified, absent, label }: {
 }) {
   const [hovered, setHovered] = useState<SegKey | null>(null);
   const total = present + tardy + justified + absent;
-  const r = 38;
-  const sw = 11;
-  const circ = 2 * Math.PI * r;
-  const gap = 0;
+  const r = 38; const sw = 11; const circ = 2 * Math.PI * r;
 
   function arcLen(n: number) { return total > 0 ? (n / total) * circ : 0; }
 
   const segDefs: { key: SegKey; n: number; color: string; dim: string; tip: string }[] = [
-    { key: 'present',   n: present,   color: '#4ade80', dim: 'rgba(74,222,128,0.65)',   tip: `✓ ${present} presente${present !== 1 ? 's' : ''}` },
-    { key: 'tardy',     n: tardy,     color: '#fbbf24', dim: 'rgba(251,191,36,0.65)',   tip: `⟳ ${tardy} atrasado${tardy !== 1 ? 's' : ''}` },
-    { key: 'justified', n: justified, color: '#7dd3fc', dim: 'rgba(125,211,252,0.65)',  tip: `~ ${justified} justificado${justified !== 1 ? 's' : ''}` },
-    { key: 'absent',    n: absent,    color: '#fb7185', dim: 'rgba(251,113,133,0.65)',  tip: `✗ ${absent} falta${absent !== 1 ? 's' : ''}` },
+    { key: 'present',   n: present,   color: 'var(--success)',   dim: 'rgba(78,152,104,0.5)',  tip: `✓ ${present} presente${present !== 1 ? 's' : ''}` },
+    { key: 'tardy',     n: tardy,     color: 'var(--accent)',    dim: 'rgba(200,133,43,0.5)',  tip: `⟳ ${tardy} atrasado${tardy !== 1 ? 's' : ''}` },
+    { key: 'justified', n: justified, color: 'var(--rehearsal-color)', dim: 'rgba(74,126,196,0.5)', tip: `~ ${justified} justificado${justified !== 1 ? 's' : ''}` },
+    { key: 'absent',    n: absent,    color: 'var(--danger)',    dim: 'rgba(194,78,66,0.5)',   tip: `✗ ${absent} falta${absent !== 1 ? 's' : ''}` },
   ];
 
   let offset = 0;
   const arcs = segDefs.map(seg => {
     const len = arcLen(seg.n);
     const start = offset;
-    if (seg.n > 0) offset += len + gap;
+    if (seg.n > 0) offset += len;
     return { ...seg, len, start };
   });
 
@@ -135,52 +97,51 @@ function DonutChart({ present, tardy, justified, absent, label }: {
   const hoveredSeg = segDefs.find(s => s.key === hovered);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-      <div style={{ position: 'relative' }}>
-        <svg width="150" height="150" viewBox="0 0 110 110" style={{ overflow: 'visible' }}>
-          {total === 0 && (
-            <circle cx="55" cy="55" r={r} fill="none" stroke="rgba(125,211,252,0.1)" strokeWidth={sw} />
-          )}
-          {arcs.map(arc => arc.n > 0 && (
-            <circle
-              key={arc.key}
-              cx="55" cy="55" r={r} fill="none"
-              stroke={hovered === arc.key ? arc.color : arc.dim}
-              strokeWidth={sw}
-              strokeDasharray={`${Math.max(0, arc.len - gap)} ${circ}`}
-              strokeDashoffset={-arc.start}
-              transform="rotate(-90 55 55)"
-              style={{ cursor: 'pointer', transition: 'stroke 0.15s' }}
-              onMouseEnter={() => setHovered(arc.key)}
-              onMouseLeave={() => setHovered(null)}
-            />
-          ))}
-          <text x="55" y="51" textAnchor="middle" dominantBaseline="middle"
-            fill="var(--text, #e6edf3)" fontSize="18" fontWeight="700"
-            style={{ fontFamily: 'inherit', pointerEvents: 'none' }}>
-            {pct}%
-          </text>
-          <text x="55" y="66" textAnchor="middle"
-            fill="var(--muted, #9aa7b4)" fontSize="10" fontWeight="600"
-            style={{ fontFamily: 'inherit', pointerEvents: 'none' }}>
-            {total > 0 ? `${present + tardy}/${total}` : '—'}
-          </text>
-        </svg>
-        {hovered && hoveredSeg && (
-          <div style={{
-            position: 'absolute', bottom: '108%', left: '50%', transform: 'translateX(-50%)',
-            background: 'var(--panel, #161b22)', border: '1px solid var(--border, rgba(125,211,252,0.2))',
-            borderRadius: 10, padding: '6px 12px', fontSize: 12, fontWeight: 600,
-            whiteSpace: 'nowrap', boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
-            pointerEvents: 'none', zIndex: 20, color: hoveredSeg.color,
-          }}>
-            {hoveredSeg.tip}
-          </div>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, position: 'relative' }}>
+      <svg width="110" height="110" viewBox="0 0 110 110" style={{ overflow: 'visible' }}>
+        {total === 0 && (
+          <circle cx="55" cy="55" r={r} fill="none" stroke="var(--border)" strokeWidth={sw} />
         )}
-      </div>
+        {arcs.map(arc => arc.n > 0 && (
+          <circle
+            key={arc.key}
+            cx="55" cy="55" r={r} fill="none"
+            stroke={hovered === arc.key ? arc.color : arc.dim}
+            strokeWidth={sw}
+            strokeDasharray={`${Math.max(0, arc.len - 1)} ${circ}`}
+            strokeDashoffset={-arc.start}
+            transform="rotate(-90 55 55)"
+            style={{ cursor: 'pointer', transition: 'stroke 0.15s' }}
+            onMouseEnter={() => setHovered(arc.key)}
+            onMouseLeave={() => setHovered(null)}
+          />
+        ))}
+        <text x="55" y="51" textAnchor="middle" dominantBaseline="middle"
+          fill="var(--text)" fontSize="17" fontWeight="700"
+          style={{ fontFamily: 'var(--font-display, serif)', pointerEvents: 'none' }}>
+          {pct}%
+        </text>
+        <text x="55" y="65" textAnchor="middle"
+          fill="var(--muted)" fontSize="10"
+          style={{ fontFamily: 'var(--font-mono, monospace)', pointerEvents: 'none' }}>
+          {total > 0 ? `${present + tardy}/${total}` : '—'}
+        </text>
+      </svg>
+      {hovered && hoveredSeg && (
+        <div style={{
+          position: 'absolute', bottom: '115%', left: '50%', transform: 'translateX(-50%)',
+          background: 'var(--surface-3)', border: '1px solid var(--border-strong)',
+          borderRadius: 7, padding: '5px 10px', fontSize: 12, fontWeight: 600,
+          whiteSpace: 'nowrap', boxShadow: 'var(--shadow-md)',
+          pointerEvents: 'none', zIndex: 20, color: hoveredSeg.color,
+        }}>
+          {hoveredSeg.tip}
+        </div>
+      )}
       <span style={{
-        fontSize: 12, fontWeight: 700, color: 'var(--muted, #9aa7b4)',
-        letterSpacing: '0.07em', textTransform: 'uppercase' as const,
+        fontSize: 11, fontWeight: 600, color: 'var(--muted)',
+        letterSpacing: '0.07em', textTransform: 'uppercase',
+        fontFamily: 'var(--font-mono, monospace)',
       }}>
         {label}
       </span>
@@ -210,14 +171,8 @@ function PresenceCalendar({ attendance, isAdmin }: { attendance: PresenceItem[];
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDow = (new Date(year, month, 1).getDay() + 6) % 7;
 
-  function prev() {
-    if (month === 0) { setMonth(11); setYear(y => y - 1); } else setMonth(m => m - 1);
-    setTooltip(null);
-  }
-  function next() {
-    if (month === 11) { setMonth(0); setYear(y => y + 1); } else setMonth(m => m + 1);
-    setTooltip(null);
-  }
+  function prev() { if (month === 0) { setMonth(11); setYear(y => y - 1); } else setMonth(m => m - 1); setTooltip(null); }
+  function next() { if (month === 11) { setMonth(0); setYear(y => y + 1); } else setMonth(m => m + 1); setTooltip(null); }
   function scheduleClose() { closeTimer.current = setTimeout(() => setTooltip(null), 180); }
   function cancelClose() { if (closeTimer.current) clearTimeout(closeTimer.current); }
 
@@ -235,16 +190,15 @@ function PresenceCalendar({ attendance, isAdmin }: { attendance: PresenceItem[];
     if (!items) return '';
     const colors = items.map(i => normalizeColor(i.my_status));
     const hasPresent = colors.some(c => c === 'present');
-    const hasAbsent  = colors.some(c => c === 'absent');
-    const hasNone    = colors.some(c => c === null);
+    const hasAbsent = colors.some(c => c === 'absent');
+    const hasNone = colors.some(c => c === null);
     if (hasPresent && !hasAbsent && !hasNone) return 'day-present';
-    if (hasAbsent  && !hasPresent && !hasNone) return 'day-absent';
-    if (hasNone    && !hasPresent && !hasAbsent) return 'day-norecord';
+    if (hasAbsent && !hasPresent && !hasNone) return 'day-absent';
+    if (hasNone && !hasPresent && !hasAbsent) return 'day-norecord';
     return 'day-mixed';
   }
 
-  const isToday = (d: number) =>
-    d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+  const isToday = (d: number) => d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
 
   const cells: (number | null)[] = [];
   for (let i = 0; i < firstDow; i++) cells.push(null);
@@ -273,7 +227,6 @@ function PresenceCalendar({ attendance, isAdmin }: { attendance: PresenceItem[];
           )
         )}
       </div>
-
       {tooltip && itemsByDay[tooltip.day] && (
         <div
           className="cal-tooltip"
@@ -285,25 +238,28 @@ function PresenceCalendar({ attendance, isAdmin }: { attendance: PresenceItem[];
             const color = normalizeColor(item.my_status);
             const total = item.present_count + item.missing_count;
             return (
-              <div key={item.id} className="tooltip-item">
-                <div className="tooltip-title">{item.title}</div>
-                <div className="tooltip-row">
-                  <span className="tooltip-type">{EVENT_TYPE_LABEL[item.type] ?? item.type}</span>
-                  <span className={`tooltip-status ${color === 'present' ? 'status-present' : color === 'absent' ? 'status-absent' : 'status-none'}`}>
+              <div key={item.id} style={{ display: 'flex', flexDirection: 'column', gap: 3, padding: '4px 0' }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{item.title}</div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <span style={{ fontSize: 11, color: 'var(--muted)' }}>{EVENT_TYPE_LABEL[item.type] ?? item.type}</span>
+                  <span style={{
+                    fontSize: 11, fontWeight: 700, padding: '1px 6px', borderRadius: 4,
+                    background: color === 'present' ? 'var(--success-dim)' : color === 'absent' ? 'var(--danger-dim)' : 'var(--surface-3)',
+                    color: color === 'present' ? 'var(--success)' : color === 'absent' ? 'var(--danger)' : 'var(--muted)',
+                  }}>
                     {statusLabel(item.my_status, isAdmin)}
                   </span>
                 </div>
-                <div className="tooltip-meta">
+                <div style={{ fontSize: 11, color: 'var(--muted)' }}>
                   {new Date(item.start_time).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}
                   {item.location && ` · ${item.location}`}
                 </div>
                 {isAdmin && total > 0 && (
-                  <div className="tooltip-stats">
-                    <span className="tstat-present">✓ {item.present_count}</span>
-                    <span className="tstat-tardy">⟳ {item.tardy_count}</span>
-                    <span className="tstat-absent">✗ {item.missing_count - item.justified_count}</span>
-                    <span className="tstat-justified">~ {item.justified_count}</span>
-                    <span className="tstat-total">{item.present_count + item.tardy_count}/{total}</span>
+                  <div style={{ display: 'flex', gap: 8, fontSize: 11, borderTop: '1px solid var(--border)', paddingTop: 3, marginTop: 2 }}>
+                    <span style={{ color: 'var(--success)' }}>✓ {item.present_count}</span>
+                    <span style={{ color: 'var(--accent)' }}>⟳ {item.tardy_count}</span>
+                    <span style={{ color: 'var(--danger)' }}>✗ {item.missing_count}</span>
+                    <span style={{ color: 'var(--rehearsal-color)', marginLeft: 'auto' }}>~ {item.justified_count}</span>
                   </div>
                 )}
               </div>
@@ -311,42 +267,6 @@ function PresenceCalendar({ attendance, isAdmin }: { attendance: PresenceItem[];
           })}
         </div>
       )}
-
-      <style jsx>{`
-        .calendar { background: var(--panel-alpha); border: 1px solid var(--border); border-radius: 12px; padding: 16px; position: relative; user-select: none; }
-        .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-        .cal-nav { background: var(--btn-subtle); border: 1px solid var(--border); border-radius: 5px; color: var(--text); width: 40px; height: 40px; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
-        .cal-nav:hover { background: var(--nav-link-border); }
-        .cal-title { font-weight: 600; font-size: 20px; }
-        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
-        .cal-weekday { text-align: center; font-size: 14px; color: var(--muted); padding-bottom: 2px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
-        .cal-day { position: relative; aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 4px; border: 1px solid transparent; background: transparent; color: var(--text); font-size: 18px; cursor: default; transition: background 0.15s, border-color 0.15s; }
-        .day-present { background: rgba(74,222,128,0.18); border-color: rgba(74,222,128,0.45); color: #4ade80; font-weight: 700; cursor: pointer; }
-        .day-present:hover { background: rgba(74,222,128,0.3); }
-        .day-absent { background: rgba(251,113,133,0.18); border-color: rgba(251,113,133,0.45); color: #fb7185; font-weight: 700; cursor: pointer; }
-        .day-absent:hover { background: rgba(251,113,133,0.3); }
-        .day-norecord { background: rgba(125,211,252,0.08); border-color: rgba(125,211,252,0.22); cursor: pointer; }
-        .day-norecord:hover { background: rgba(125,211,252,0.16); }
-        .day-mixed { background: rgba(251,191,36,0.14); border-color: rgba(251,191,36,0.35); color: #fbbf24; font-weight: 700; cursor: pointer; }
-        .day-mixed:hover { background: rgba(251,191,36,0.25); }
-        .cal-day.today { outline: 2px solid var(--accent); outline-offset: 1px; font-weight: 700; }
-        .cal-tooltip { position: absolute; z-index: 50; background: var(--panel); border: 1px solid rgba(125,211,252,0.3); border-radius: 12px; padding: 12px 14px; min-width: 200px; max-width: 260px; box-shadow: 0 12px 40px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 10px; pointer-events: auto; }
-        .tooltip-item { display: flex; flex-direction: column; gap: 4px; }
-        .tooltip-title { font-size: 13px; font-weight: 600; }
-        .tooltip-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-        .tooltip-type { font-size: 11px; color: var(--muted); }
-        .tooltip-status { font-size: 11px; font-weight: 700; border-radius: 6px; padding: 2px 8px; }
-        .status-present { background: rgba(74,222,128,0.18); color: #4ade80; }
-        .status-absent { background: rgba(251,113,133,0.18); color: #fb7185; }
-        .status-none { background: rgba(156,163,175,0.14); color: #9ca3af; }
-        .tooltip-meta { font-size: 11px; color: var(--muted); }
-        .tooltip-stats { display: flex; gap: 8px; align-items: center; margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--border); }
-        .tstat-present   { font-size: 11px; font-weight: 700; color: #4ade80; }
-        .tstat-tardy     { font-size: 11px; font-weight: 700; color: #fbbf24; }
-        .tstat-absent    { font-size: 11px; font-weight: 700; color: #fb7185; }
-        .tstat-justified { font-size: 11px; font-weight: 700; color: #7dd3fc; }
-        .tstat-total     { font-size: 11px; color: var(--muted); margin-left: auto; }
-      `}</style>
     </div>
   );
 }
@@ -413,62 +333,49 @@ export default function PresencasPage() {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        items: memberStatuses
-          .filter(i => i.status)
-          .map(i => ({ user_id: i.user_id, status: i.status })),
+        items: memberStatuses.filter(i => i.status).map(i => ({ user_id: i.user_id, status: i.status })),
       }),
     });
     setSaving(false);
     setIsModalOpen(false);
     const t2 = localStorage.getItem('airfa_token');
     if (t2) {
-      fetch(`${apiUrl}/api/v1/presences`, { headers: { Authorization: `Bearer ${t2}` } })
-        .then(r => r.json()).then(setAttendance).catch(() => {});
-      fetch(`${apiUrl}/api/v1/presences/analytics/members`, { headers: { Authorization: `Bearer ${t2}` } })
-        .then(r => r.json()).then(setAnalytics).catch(() => {});
+      fetch(`${apiUrl}/api/v1/presences`, { headers: { Authorization: `Bearer ${t2}` } }).then(r => r.json()).then(setAttendance).catch(() => {});
+      if (isAdmin) fetch(`${apiUrl}/api/v1/presences/analytics/members`, { headers: { Authorization: `Bearer ${t2}` } }).then(r => r.json()).then(setAnalytics).catch(() => {});
     }
   }
 
-  // ─── Derived stats ────────────────────────────────────────────────────────
+  // Derived
   const rehearsals = attendance.filter(i => i.type === 'REHEARSAL' || i.type === 'SPECIAL_REHEARSAL');
-  const concerts   = attendance.filter(i => i.type === 'CONCERT');
-
+  const concerts = attendance.filter(i => i.type === 'CONCERT');
   const todayStr = new Date().toDateString();
   const todayStart = new Date(new Date().setHours(0, 0, 0, 0));
-  const todayEvents = attendance
-    .filter(i => new Date(i.start_time).toDateString() === todayStr)
-    .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
-  const futureEvents = attendance
-    .filter(i => new Date(i.start_time) > new Date(new Date().setHours(23, 59, 59, 999)))
-    .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
-  const pastEvents = attendance
-    .filter(i => new Date(i.start_time) < todayStart)
-    .sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime());
+  const todayEvents = attendance.filter(i => new Date(i.start_time).toDateString() === todayStr).sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+  const futureEvents = attendance.filter(i => new Date(i.start_time) > new Date(new Date().setHours(23, 59, 59, 999))).sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+  const pastEvents = attendance.filter(i => new Date(i.start_time) < todayStart).sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime());
 
-  // Admin: default=hoje+futuros, alt=passados | User: default=hoje+passados, alt=futuros
   const defaultEvents = isAdmin ? [...todayEvents, ...futureEvents] : [...todayEvents, ...pastEvents];
-  const altEvents     = isAdmin ? pastEvents : futureEvents;
-  const altCount      = altEvents.length;
-  const altLabel      = isAdmin ? 'Eventos passados' : 'Próximos eventos';
-  const panelLabel    = showAltEvents
-    ? (isAdmin ? 'Eventos passados' : 'Próximos eventos')
-    : (isAdmin ? 'Marcar presenças' : 'As minhas presenças');
+  const altEvents = isAdmin ? pastEvents : futureEvents;
+  const altCount = altEvents.length;
+  const altLabel = isAdmin ? 'Eventos passados' : 'Próximos eventos';
+  const panelLabel = showAltEvents ? (isAdmin ? 'Eventos passados' : 'Próximos eventos') : (isAdmin ? 'Marcar presenças' : 'As minhas presenças');
 
   const displayedEvents = (showAltEvents ? altEvents : defaultEvents)
     .filter(i => !filterType || i.type === filterType || (filterType === 'REHEARSAL' && i.type === 'SPECIAL_REHEARSAL'));
 
-  const totalPresent     = countPresent(attendance);
-  const totalAbsent      = countAbsent(attendance);
-  const totalTardy       = attendance.filter(i => i.my_status === 'TARDY').length;
-  const totalJustified   = attendance.filter(i => i.my_status === 'JUSTIFIED').length;
-  const rehearsalPresent   = countPresentOnly(rehearsals);
-  const rehearsalTardy     = countTardy(rehearsals);
-  const rehearsalJustified = countJustified(rehearsals);
-  const rehearsalAbsent    = countAbsentOnly(rehearsals);
-  const concertPresent     = countPresentOnly(concerts);
-  const concertTardy       = countTardy(concerts);
-  const concertJustified   = countJustified(concerts);
-  const concertAbsent      = countAbsentOnly(concerts);
+  const totalPresent = attendance.filter(i => normalizeColor(i.my_status) === 'present').length;
+  const totalAbsent = attendance.filter(i => normalizeColor(i.my_status) === 'absent').length;
+  const totalTardy = attendance.filter(i => i.my_status === 'TARDY').length;
+  const totalJustified = attendance.filter(i => i.my_status === 'JUSTIFIED').length;
+
+  const rP = rehearsals.filter(i => i.my_status === 'PRESENT').length;
+  const rT = rehearsals.filter(i => i.my_status === 'TARDY').length;
+  const rJ = rehearsals.filter(i => i.my_status === 'JUSTIFIED').length;
+  const rA = rehearsals.filter(i => i.my_status === 'ABSENT').length;
+  const cP = concerts.filter(i => i.my_status === 'PRESENT').length;
+  const cT = concerts.filter(i => i.my_status === 'TARDY').length;
+  const cJ = concerts.filter(i => i.my_status === 'JUSTIFIED').length;
+  const cA = concerts.filter(i => i.my_status === 'ABSENT').length;
 
   const availableNaipes = Array.from(new Set(analytics.map(m => m.naipe ?? ''))).filter(Boolean).sort();
   const filteredAnalytics = analytics
@@ -483,151 +390,127 @@ export default function PresencasPage() {
   return (
     <AuthenticatedShell title="Presenças">
       {loading ? (
-        <div className="loading">A carregar…</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300, color: 'var(--muted)' }}>
+          <span style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 12, letterSpacing: '0.08em' }}>A carregar…</span>
+        </div>
       ) : (
-        <>
-          {/* ── CALENDAR LABEL (above grid, right-aligned) ───────────── */}
-          <div className="cal-label-row">
-            <div className="section-label">Calendário de presenças</div>
+        <div className="page">
+          {/* ── Stats strip ── */}
+          <div className="stats-strip">
+            <div className="stat-card">
+              <span className="stat-value" style={{ color: 'var(--success)' }}>{totalPresent}</span>
+              <span className="stat-label">Presenças</span>
+              {isAdmin && totalTardy > 0 && <span className="stat-sub">⟳ {totalTardy} atrasados</span>}
+            </div>
+            <div className="stat-card">
+              <span className="stat-value" style={{ color: 'var(--danger)' }}>{totalAbsent}</span>
+              <span className="stat-label">Faltas</span>
+              {isAdmin && totalJustified > 0 && <span className="stat-sub">~ {totalJustified} justificadas</span>}
+            </div>
+            <div className="stat-card">
+              <span className="stat-value" style={{ color: 'var(--accent)' }}>{attendance.length}</span>
+              <span className="stat-label">Total de eventos</span>
+            </div>
+            <div className="stat-card chart-card">
+              <DonutChart present={isAdmin ? rP : rP + rT} tardy={isAdmin ? rT : 0} justified={isAdmin ? rJ : 0} absent={isAdmin ? rA : rA + rJ} label="Ensaios" />
+              <DonutChart present={isAdmin ? cP : cP + cT} tardy={isAdmin ? cT : 0} justified={isAdmin ? cJ : 0} absent={isAdmin ? cA : cA + cJ} label="Concertos" />
+            </div>
           </div>
 
-          {/* ── MAIN GRID ────────────────────────────────────────────── */}
-          <div className="page-grid">
-            {/* LEFT COLUMN */}
-            <div className="left-col">
-              {/* Events panel - visible to all users */}
-              {attendance.length > 0 && (
-                <div className="admin-events-panel">
-                  <div className="section-label-row">
-                    <div className="section-label">{panelLabel}</div>
-                    <div className="filter-pills">
-                      <button type="button" className={`filter-pill${filterType === null ? ' filter-active' : ''}`} onClick={() => setFilterType(null)}>Todos</button>
-                      <button type="button" className={`filter-pill${filterType === 'REHEARSAL' ? ' filter-active' : ''}`} onClick={() => setFilterType(f => f === 'REHEARSAL' ? null : 'REHEARSAL')}>Ensaios</button>
-                      <button type="button" className={`filter-pill${filterType === 'CONCERT' ? ' filter-active' : ''}`} onClick={() => setFilterType(f => f === 'CONCERT' ? null : 'CONCERT')}>Concertos</button>
-                    </div>
-                    {altCount > 0 && (
-                      <button type="button" className="toggle-past-btn" onClick={() => setShowAltEvents(v => !v)}>
-                        {showAltEvents ? '← Voltar' : `${altLabel} (${altCount})`}
-                      </button>
-                    )}
-                  </div>
-                  {displayedEvents.length === 0 && (
-                    <div className="no-today-events">Sem eventos</div>
-                  )}
-                  {displayedEvents.map(item => (
-                    <div key={item.id} className="event-row">
-                      <div>
-                        <div className="event-row-title">{item.title}</div>
-                        <div className="event-row-meta">
-                          {EVENT_TYPE_LABEL[item.type] ?? item.type}
-                          {' · '}
-                          {new Date(item.start_time).toLocaleDateString('pt-PT', { day: '2-digit', month: 'short', year: 'numeric' })}
+          {/* ── Main grid ── */}
+          <div className="col-header">
+            <span className="col-title">{panelLabel}</span>
+            <div className="col-controls">
+              <div className="filter-pills">
+                <button type="button" className={`fpill${filterType === null ? ' active' : ''}`} onClick={() => setFilterType(null)}>Todos</button>
+                <button type="button" className={`fpill${filterType === 'REHEARSAL' ? ' active' : ''}`} onClick={() => setFilterType(f => f === 'REHEARSAL' ? null : 'REHEARSAL')}>Ensaios</button>
+                <button type="button" className={`fpill${filterType === 'CONCERT' ? ' active' : ''}`} onClick={() => setFilterType(f => f === 'CONCERT' ? null : 'CONCERT')}>Concertos</button>
+              </div>
+              {altCount > 0 && (
+                <button type="button" className="toggle-btn" onClick={() => setShowAltEvents(v => !v)}>
+                  {showAltEvents ? '← Voltar' : `${altLabel} (${altCount})`}
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="main-grid">
+            {/* Left: events list */}
+            <div className="events-col">
+              {displayedEvents.length === 0 ? (
+                <div className="empty">Sem eventos.</div>
+              ) : (
+                <div className="event-list">
+                  {displayedEvents.map(item => {
+                    const displayStatus = !isAdmin && item.my_status === 'TARDY' ? 'PRESENT'
+                      : !isAdmin && item.my_status === 'JUSTIFIED' ? 'ABSENT'
+                      : item.my_status;
+                    return (
+                      <div key={item.id} className="event-row">
+                        <div className="event-row-left">
+                          <span className="event-row-title">{item.title}</span>
+                          <span className="event-row-meta">
+                            {EVENT_TYPE_LABEL[item.type] ?? item.type} · {new Date(item.start_time).toLocaleDateString('pt-PT', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </span>
+                        </div>
+                        <div className="event-row-right">
+                          {displayStatus && (
+                            <span className={`status-badge status-${displayStatus.toLowerCase()}`}>
+                              {displayStatus === 'PRESENT' ? '✓ Presente'
+                                : displayStatus === 'TARDY' ? '⟳ Atrasado'
+                                : displayStatus === 'JUSTIFIED' ? '~ Justificado'
+                                : '✗ Falta'}
+                            </span>
+                          )}
+                          {isAdmin && (
+                            <button type="button" className="mark-btn" onClick={() => openMarkModal(item)}>
+                              Marcar
+                            </button>
+                          )}
                         </div>
                       </div>
-                      <div className="event-row-right">
-                        {item.my_status && (() => {
-                          const displayStatus = !isAdmin && item.my_status === 'TARDY' ? 'PRESENT'
-                            : !isAdmin && item.my_status === 'JUSTIFIED' ? 'ABSENT'
-                            : item.my_status;
-                          const label = displayStatus === 'PRESENT' ? '✓ Presente'
-                            : displayStatus === 'TARDY' ? '⟳ Atrasado'
-                            : displayStatus === 'JUSTIFIED' ? '~ Justificado'
-                            : '✗ Falta';
-                          return (
-                            <span className={`my-status-badge my-status-${displayStatus.toLowerCase()}`}>
-                              {label}
-                            </span>
-                          );
-                        })()}
-                        {isAdmin && (
-                          <button type="button" className="mark-btn" onClick={() => openMarkModal(item)}>
-                            Marcar
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
-
-              <div className="charts-stats-col">
-              <div className="charts-panel">
-                <div className="section-label">Estatísticas</div>
-                <div className="charts-row">
-                  <DonutChart
-                    present={isAdmin ? rehearsalPresent : rehearsalPresent + rehearsalTardy}
-                    tardy={isAdmin ? rehearsalTardy : 0}
-                    justified={isAdmin ? rehearsalJustified : 0}
-                    absent={isAdmin ? rehearsalAbsent : rehearsalAbsent + rehearsalJustified}
-                    label="Ensaios" />
-                  <DonutChart
-                    present={isAdmin ? concertPresent : concertPresent + concertTardy}
-                    tardy={isAdmin ? concertTardy : 0}
-                    justified={isAdmin ? concertJustified : 0}
-                    absent={isAdmin ? concertAbsent : concertAbsent + concertJustified}
-                    label="Concertos" />
-                </div>
-              </div>
-
-              <div className="stats-box">
-                <div className="stat-row">
-                  <span className="stat-icon present-icon">✓</span>
-                  <div>
-                    <div className="stat-value">{totalPresent}</div>
-                    <div className="stat-label">Presenças totais</div>
-                    {isAdmin && totalTardy > 0 && (
-                      <div className="stat-sub tardy-sub">⟳ {totalTardy} atrasado{totalTardy !== 1 ? 's' : ''}</div>
-                    )}
-                  </div>
-                </div>
-                <div className="stat-divider" />
-                <div className="stat-row">
-                  <span className="stat-icon absent-icon">✗</span>
-                  <div>
-                    <div className="stat-value">{totalAbsent}</div>
-                    <div className="stat-label">Faltas totais</div>
-                    {isAdmin && totalJustified > 0 && (
-                      <div className="stat-sub justified-sub">~ {totalJustified} justificada{totalJustified !== 1 ? 's' : ''}</div>
-                    )}
-                  </div>
-                </div>
-              </div>
-              </div>
             </div>
 
-            {/* RIGHT COLUMN */}
-            <div className="right-col">
+            {/* Right: calendar */}
+            <div className="cal-col">
               <PresenceCalendar attendance={attendance} isAdmin={isAdmin} />
               <div className="legend">
-                <span className="legend-item"><span className="legend-dot present-dot" /> Presente</span>
-                <span className="legend-item"><span className="legend-dot absent-dot" /> Falta</span>
-                <span className="legend-item"><span className="legend-dot norecord-dot" /> Sem registo</span>
-                <span className="legend-item"><span className="legend-dot mixed-dot" /> Misto</span>
+                <span className="leg"><span className="ldot" style={{ background: 'var(--success)' }} /> Presente</span>
+                <span className="leg"><span className="ldot" style={{ background: 'var(--danger)' }} /> Falta</span>
+                <span className="leg"><span className="ldot" style={{ background: 'var(--accent)' }} /> Sem registo</span>
+                <span className="leg"><span className="ldot" style={{ background: 'var(--muted)' }} /> Misto</span>
               </div>
             </div>
           </div>
 
-          {/* ── ADMIN ANALYTICS ──────────────────────────────────────── */}
+          {/* ── Analytics (admin) ── */}
           {isAdmin && analytics.length > 0 && (
-            <section className="analytics-section">
-              <div className="analytics-controls">
-                <div className="analytics-filter-group">
-                  <button type="button" className={`analytics-pill${analyticsNaipe === null ? ' analytics-pill-active' : ''}`} onClick={() => setAnalyticsNaipe(null)}>Todos</button>
-                  {availableNaipes.map(n => (
-                    <button key={n} type="button" className={`analytics-pill${analyticsNaipe === n ? ' analytics-pill-active' : ''}`} onClick={() => setAnalyticsNaipe(v => v === n ? null : n)}>
-                      {MUSICAL_ROLE_LABEL[n] ?? n}
+            <section className="analytics">
+              <div className="analytics-header">
+                <span className="col-title">Análise de membros</span>
+                <div className="analytics-controls">
+                  <div className="filter-pills">
+                    <button type="button" className={`fpill${analyticsNaipe === null ? ' active' : ''}`} onClick={() => setAnalyticsNaipe(null)}>Todos</button>
+                    {availableNaipes.map(n => (
+                      <button key={n} type="button" className={`fpill${analyticsNaipe === n ? ' active' : ''}`} onClick={() => setAnalyticsNaipe(v => v === n ? null : n)}>
+                        {MUSICAL_ROLE_LABEL[n] ?? n}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="sort-group">
+                    <button type="button" className={`sort-btn${analyticsSort === 'az' || analyticsSort === 'za' ? ' active' : ''}`} onClick={() => setAnalyticsSort(s => s === 'az' ? 'za' : 'az')}>
+                      {analyticsSort === 'za' ? 'Z→A' : 'A→Z'}
                     </button>
-                  ))}
-                </div>
-                <div className="analytics-sort-group">
-                  <button type="button" className={`analytics-sort-btn${analyticsSort === 'az' || analyticsSort === 'za' ? ' analytics-sort-active' : ''}`} onClick={() => setAnalyticsSort(s => s === 'az' ? 'za' : 'az')}>
-                    {analyticsSort === 'za' ? 'Z→A' : 'A→Z'}
-                  </button>
-                  <button type="button" className={`analytics-sort-btn${analyticsSort === 'presences' || analyticsSort === 'absences' ? ' analytics-sort-active' : ''}`} onClick={() => setAnalyticsSort(s => s === 'presences' ? 'absences' : 'presences')}>
-                    {analyticsSort === 'absences' ? '↑ Faltas' : '↑ Presenças'}
-                  </button>
+                    <button type="button" className={`sort-btn${analyticsSort === 'presences' || analyticsSort === 'absences' ? ' active' : ''}`} onClick={() => setAnalyticsSort(s => s === 'presences' ? 'absences' : 'presences')}>
+                      {analyticsSort === 'absences' ? '↑ Faltas' : '↑ Presenças'}
+                    </button>
+                  </div>
                 </div>
               </div>
+
               <div className="analytics-list">
                 {filteredAnalytics.map(member => {
                   const mp = member.present + member.tardy;
@@ -637,23 +520,25 @@ export default function PresencasPage() {
                   return (
                     <div key={member.user_id} className="analytics-row">
                       <div className="analytics-identity">
-                        <strong className="analytics-name">{member.name}</strong>
-                        <span className="analytics-naipe">{MUSICAL_ROLE_LABEL[member.naipe ?? ''] ?? member.naipe ?? 'Sem naipe'}</span>
+                        <strong>{member.name}</strong>
+                        <span className="analytics-naipe">{MUSICAL_ROLE_LABEL[member.naipe ?? ''] ?? member.naipe ?? '—'}</span>
                       </div>
-                      <div className="analytics-bar-track">
-                        {mt > 0 && <>
-                          <div className="analytics-bar-seg seg-present"  style={{ width: `${(member.present   / mt) * 100}%` }} />
-                          <div className="analytics-bar-seg seg-tardy"    style={{ width: `${(member.tardy     / mt) * 100}%` }} />
-                          <div className="analytics-bar-seg seg-justified"style={{ width: `${(member.justified / mt) * 100}%` }} />
-                          <div className="analytics-bar-seg seg-absent"   style={{ width: `${(member.absent    / mt) * 100}%` }} />
-                        </>}
+                      <div className="bar-track">
+                        {mt > 0 && (
+                          <>
+                            <div className="bar-seg" style={{ width: `${(member.present / mt) * 100}%`, background: 'var(--success)' }} />
+                            <div className="bar-seg" style={{ width: `${(member.tardy / mt) * 100}%`, background: 'var(--accent)' }} />
+                            <div className="bar-seg" style={{ width: `${(member.justified / mt) * 100}%`, background: 'var(--rehearsal-color)' }} />
+                            <div className="bar-seg" style={{ width: `${(member.absent / mt) * 100}%`, background: 'var(--danger)' }} />
+                          </>
+                        )}
                       </div>
-                      <div className="analytics-stats">
-                        <span className="text-green">✓ {mp}</span>
-                        <span className="text-red">✗ {ma}</span>
-                        {member.tardy > 0 && <span className="tardy-sub">⟳ {member.tardy}</span>}
-                        {member.justified > 0 && <span className="justified-sub">~ {member.justified}</span>}
-                        <span className="text-muted analytics-pct">{pct}%</span>
+                      <div className="analytics-nums">
+                        <span style={{ color: 'var(--success)' }}>✓ {mp}</span>
+                        <span style={{ color: 'var(--danger)' }}>✗ {ma}</span>
+                        {member.tardy > 0 && <span style={{ color: 'var(--accent)', fontSize: 11 }}>⟳ {member.tardy}</span>}
+                        {member.justified > 0 && <span style={{ color: 'var(--rehearsal-color)', fontSize: 11 }}>~ {member.justified}</span>}
+                        <span style={{ color: 'var(--muted)', fontSize: 11, marginLeft: 'auto' }}>{pct}%</span>
                       </div>
                     </div>
                   );
@@ -661,55 +546,65 @@ export default function PresencasPage() {
               </div>
             </section>
           )}
-        </>
+        </div>
       )}
 
-      {/* ── MARKING MODAL ─────────────────────────────────────────────── */}
+      {/* ── Marking modal ── */}
       {isModalOpen && selectedEvent && (
         <div className="modal-backdrop" onClick={() => setIsModalOpen(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2 className="modal-title">{selectedEvent.title}</h2>
-              <span className="modal-subtitle">
-                {EVENT_TYPE_LABEL[selectedEvent.type] ?? selectedEvent.type}
-                {' · '}
-                {new Date(selectedEvent.start_time).toLocaleDateString('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' })}
-              </span>
+          <div className="modal" style={{ maxWidth: 580, maxHeight: '80vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4 }}>
+              <div>
+                <h2 style={{ fontFamily: 'var(--font-display, serif)', fontSize: 22, fontWeight: 600, margin: 0 }}>{selectedEvent.title}</h2>
+                <p style={{ fontSize: 13, color: 'var(--muted)', margin: '4px 0 0' }}>
+                  {EVENT_TYPE_LABEL[selectedEvent.type] ?? selectedEvent.type} · {new Date(selectedEvent.start_time).toLocaleDateString('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' })}
+                </p>
+              </div>
+              <button type="button" onClick={() => setIsModalOpen(false)} style={{
+                flexShrink: 0, width: 30, height: 30, borderRadius: 5, border: '1px solid var(--border)',
+                background: 'transparent', color: 'var(--muted)', cursor: 'pointer', fontSize: 14,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 2,
+              }}>✕</button>
             </div>
-            <div className="member-list">
+
+            <div style={{ borderTop: '1px solid var(--border)', margin: '16px 0', paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
               {memberStatuses.map(member => (
-                <div key={member.user_id} className="member-row">
-                  <div>
-                    <div className="member-name">{member.name}</div>
-                    <div className="member-naipe">
-                      {MUSICAL_ROLE_LABEL[member.naipe ?? ''] ?? member.naipe ?? 'Sem naipe'}
-                    </div>
+                <div key={member.user_id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600 }}>{member.name}</div>
+                    <div style={{ fontSize: 12, color: 'var(--muted)' }}>{MUSICAL_ROLE_LABEL[member.naipe ?? ''] ?? member.naipe ?? '—'}</div>
                   </div>
-                  <div className="status-pills">
-                    {(['PRESENT', 'TARDY', 'ABSENT', 'JUSTIFIED'] as const).map(s => (
-                      <button
-                        key={s}
-                        type="button"
-                        className={`status-pill pill-${s.toLowerCase()}${member.status === s ? ' pill-active' : ''}`}
-                        onClick={() =>
-                          setMemberStatuses(cur =>
-                            cur.map(i =>
-                              i.user_id === member.user_id ? { ...i, status: s } : i
-                            )
-                          )
-                        }
-                      >
-                        {s === 'PRESENT' ? 'Presente' : s === 'TARDY' ? 'Atrasado' : s === 'ABSENT' ? 'Falta' : 'Justificado'}
-                      </button>
-                    ))}
+                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                    {(['PRESENT', 'TARDY', 'ABSENT', 'JUSTIFIED'] as const).map(s => {
+                      const labels: Record<string, string> = { PRESENT: 'P', TARDY: 'A', ABSENT: 'F', JUSTIFIED: 'J' };
+                      const colors: Record<string, string> = { PRESENT: 'var(--success)', TARDY: 'var(--accent)', ABSENT: 'var(--danger)', JUSTIFIED: 'var(--rehearsal-color)' };
+                      const isActive = member.status === s;
+                      return (
+                        <button
+                          key={s}
+                          type="button"
+                          title={s === 'PRESENT' ? 'Presente' : s === 'TARDY' ? 'Atrasado' : s === 'ABSENT' ? 'Falta' : 'Justificado'}
+                          onClick={() => setMemberStatuses(cur => cur.map(i => i.user_id === member.user_id ? { ...i, status: s } : i))}
+                          style={{
+                            width: 32, height: 32, borderRadius: 6,
+                            border: isActive ? `2px solid ${colors[s]}` : '1px solid var(--border)',
+                            background: isActive ? `${colors[s]}22` : 'transparent',
+                            color: isActive ? colors[s] : 'var(--muted)',
+                            fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                            transition: 'all 0.1s',
+                          }}
+                        >
+                          {labels[s]}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               ))}
             </div>
-            <div className="modal-actions">
-              <button type="button" className="btn-secondary" onClick={() => setIsModalOpen(false)}>
-                Cancelar
-              </button>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 8 }}>
+              <button type="button" className="btn-secondary" onClick={() => setIsModalOpen(false)}>Cancelar</button>
               <button type="button" className="btn-primary" onClick={saveMarks} disabled={saving}>
                 {saving ? 'A guardar…' : 'Guardar marcações'}
               </button>
@@ -719,127 +614,335 @@ export default function PresencasPage() {
       )}
 
       <style jsx>{`
-        .loading { color: var(--muted); padding: 40px 0; text-align: center; }
+        .page { display: flex; flex-direction: column; gap: 24px; }
 
-        /* Layout */
-        .cal-label-row { display: flex; justify-content: flex-end; margin-bottom: 6px; }
-        .page-grid { display: grid; grid-template-columns: 1fr 420px; gap: 24px; align-items: start; }
-        .left-col { display: flex; flex-direction: row; gap: 16px; align-items: stretch; }
-        .charts-stats-col { display: flex; flex-direction: column; gap: 16px; flex-shrink: 0; }
-        .right-col { display: flex; flex-direction: column; gap: 20px; align-items: stretch; }
-        .top-row { display: flex; gap: 16px; align-items: stretch; }
-        .section-label { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+        /* Stats strip */
+        .stats-strip {
+          display: grid;
+          grid-template-columns: repeat(3, auto) 1fr;
+          gap: 12px;
+          align-items: stretch;
+        }
 
-        /* Stats box */
-        .stats-box { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 24px 40px; display: flex; flex-direction: column; justify-content: center; gap: 20px; }
-        .stat-row { display: flex; align-items: center; gap: 14px; }
-        .stat-icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700; flex-shrink: 0; }
-        .present-icon { background: rgba(74,222,128,0.15); color: #4ade80; border: 1px solid rgba(74,222,128,0.3); }
-        .absent-icon  { background: rgba(251,113,133,0.15); color: #fb7185; border: 1px solid rgba(251,113,133,0.3); }
-        .stat-value { font-size: 24px; font-weight: 700; line-height: 1; }
-        .stat-label { font-size: 14px; color: var(--muted); margin-top: 4px; }
-        .stat-sub { font-size: 12px; font-weight: 600; margin-top: 3px; }
-        .tardy-sub     { color: #fbbf24; }
-        .justified-sub { color: #7dd3fc; }
-        .stat-divider { height: 1px; background: var(--border); }
+        .stat-card {
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          padding: 16px 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 3px;
+        }
 
-        /* Charts */
-        .charts-stats-col { display: flex; flex-direction: row; gap: 16px; align-self: flex-start; align-items: stretch; }
-        .charts-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; justify-content: center; }
-        .charts-row { display: flex; justify-content: space-around; gap: 12px; margin-top: 14px; }
+        .chart-card {
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          justify-content: center;
+          gap: 28px;
+          padding: 16px 24px;
+        }
 
-        /* Admin events */
-        .admin-events-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; overflow-y: auto; max-height: 420px; }
-        .admin-events-panel .section-label-row { position: sticky; top: -16px; background: var(--panel); z-index: 2; padding: 16px 0 8px; margin: -16px 0 4px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
-        .admin-events-panel .section-label { position: static; margin: 0; padding: 0; border: none; background: none; line-height: 1; white-space: nowrap; }
-        .admin-events-panel::-webkit-scrollbar { width: 5px; }
-        .admin-events-panel::-webkit-scrollbar-track { background: transparent; }
-        .admin-events-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-        .admin-events-panel::-webkit-scrollbar-thumb:hover { background: var(--muted); }
-        .event-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
-        .event-row-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-        .my-status-badge { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
-        .my-status-present   { background: rgba(74,222,128,0.15);  color: #4ade80; border: 1px solid rgba(74,222,128,0.35); }
-        .my-status-tardy     { background: rgba(251,191,36,0.15);  color: #fbbf24; border: 1px solid rgba(251,191,36,0.35); }
-        .my-status-absent    { background: rgba(251,113,133,0.15); color: #fb7185; border: 1px solid rgba(251,113,133,0.35); }
-        .my-status-justified { background: rgba(125,211,252,0.15); color: #7dd3fc; border: 1px solid rgba(125,211,252,0.35); }
-        .event-row:last-child { border-bottom: none; }
-        .event-row-title { font-size: 13px; font-weight: 600; }
-        .event-row-meta  { font-size: 11px; color: var(--muted); margin-top: 2px; }
-        .mark-btn { border: 1px solid rgba(125,211,252,0.3); border-radius: 8px; padding: 5px 12px; background: rgba(125,211,252,0.1); color: var(--accent); font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: background 0.15s; }
-        .mark-btn:hover { background: rgba(125,211,252,0.22); }
-        .toggle-past-btn { padding: 5px 13px; border: 1px solid rgba(125,211,252,0.3); border-radius: 8px; background: rgba(125,211,252,0.08); color: var(--accent); font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background 0.15s, border-color 0.15s; display: inline-flex; align-items: center; line-height: 1; }
-        .toggle-past-btn:hover { background: rgba(125,211,252,0.18); border-color: rgba(125,211,252,0.5); }
-        .filter-pills { display: flex; gap: 6px; flex: 1; }
-        .filter-pill { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--muted); transition: background 0.15s, color 0.15s, border-color 0.15s; }
-        .filter-pill:hover { color: var(--text); border-color: var(--muted); }
-        .filter-pill.filter-active { background: rgba(125,211,252,0.12); color: var(--accent); border-color: rgba(125,211,252,0.4); }
-        .no-today-events { font-size: 13px; color: var(--muted); padding: 8px 0; text-align: center; }
+        .stat-value {
+          font-family: var(--font-display, serif);
+          font-size: 32px;
+          font-weight: 700;
+          line-height: 1;
+        }
 
-        /* Legend */
-        .legend { display: flex; gap: 16px; flex-wrap: wrap; padding-top: 4px; }
-        .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
-        .legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
-        .present-dot  { background: rgba(74,222,128,0.7); }
-        .absent-dot   { background: rgba(251,113,133,0.7); }
-        .norecord-dot { background: rgba(125,211,252,0.45); }
-        .mixed-dot    { background: rgba(251,191,36,0.7); }
+        .stat-label {
+          font-size: 12px;
+          color: var(--muted);
+          font-weight: 500;
+        }
+
+        .stat-sub {
+          font-size: 11px;
+          color: var(--muted);
+          font-family: var(--font-mono, monospace);
+        }
+
+        /* Main grid */
+        .main-grid {
+          display: grid;
+          grid-template-columns: 1fr 300px;
+          gap: 24px;
+          align-items: start;
+        }
+
+        /* Events col */
+        .events-col {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .col-header {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          margin-bottom: 12px;
+        }
+
+        .col-title {
+          font-family: var(--font-mono, monospace);
+          font-size: 11px;
+          font-weight: 500;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: var(--muted);
+        }
+
+        .col-controls {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+
+        .filter-pills { display: flex; gap: 4px; flex-wrap: wrap; }
+
+        .fpill {
+          padding: 4px 10px;
+          border-radius: 5px;
+          border: 1px solid var(--border);
+          background: transparent;
+          color: var(--muted);
+          font-size: 12px;
+          cursor: pointer;
+          transition: all 0.12s;
+        }
+        .fpill:hover { background: var(--surface-2); color: var(--text-2); }
+        .fpill.active { background: var(--accent-dim); color: var(--accent-2); border-color: var(--accent); }
+
+        .toggle-btn {
+          padding: 4px 10px;
+          border-radius: 5px;
+          border: 1px solid var(--border);
+          background: transparent;
+          color: var(--text-2);
+          font-size: 12px;
+          cursor: pointer;
+          transition: all 0.12s;
+        }
+        .toggle-btn:hover { background: var(--surface-2); }
+
+        .empty { color: var(--muted); font-style: italic; font-size: 13px; padding: 16px 0; }
+
+        .event-list { display: flex; flex-direction: column; gap: 1px; }
+
+        .event-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          padding: 11px 14px;
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: 7px;
+          transition: border-color 0.12s;
+        }
+        .event-row:hover { border-color: var(--border-strong); }
+
+        .event-row-left {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          min-width: 0;
+        }
+
+        .event-row-title {
+          font-size: 14px;
+          font-weight: 600;
+          color: var(--text);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .event-row-meta {
+          font-size: 11px;
+          color: var(--muted);
+          font-family: var(--font-mono, monospace);
+        }
+
+        .event-row-right {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-shrink: 0;
+        }
+
+        .status-badge {
+          font-size: 11px;
+          font-weight: 700;
+          padding: 3px 8px;
+          border-radius: 4px;
+          white-space: nowrap;
+        }
+        .status-present   { background: var(--success-dim); color: var(--success); }
+        .status-tardy     { background: var(--accent-dim); color: var(--accent-2); }
+        .status-absent    { background: var(--danger-dim); color: var(--danger); }
+        .status-justified { background: rgba(74,126,196,0.12); color: var(--rehearsal-color); }
+
+        .mark-btn {
+          padding: 4px 10px;
+          border-radius: 5px;
+          border: 1px solid var(--border);
+          background: transparent;
+          color: var(--accent);
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.12s;
+        }
+        .mark-btn:hover { background: var(--accent-dim); border-color: var(--accent); }
+
+        /* Calendar col */
+        .cal-col { display: flex; flex-direction: column; gap: 12px; }
+
+        .legend {
+          display: flex;
+          gap: 12px;
+          flex-wrap: wrap;
+          padding: 8px 2px;
+        }
+
+        .leg {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          font-size: 11px;
+          color: var(--muted);
+          font-family: var(--font-mono, monospace);
+        }
+
+        .ldot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          flex-shrink: 0;
+        }
 
         /* Analytics */
-        .analytics-section { margin-top: 24px; display: flex; flex-direction: column; gap: 14px; }
-        .analytics-controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
-        .analytics-filter-group { display: flex; gap: 6px; flex-wrap: wrap; }
-        .analytics-sort-group   { display: flex; gap: 6px; flex-wrap: wrap; }
-        .analytics-pill { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--muted); transition: background 0.15s, color 0.15s, border-color 0.15s; }
-        .analytics-pill:hover { color: var(--text); border-color: var(--muted); }
-        .analytics-pill.analytics-pill-active { background: rgba(125,211,252,0.12); color: var(--accent); border-color: rgba(125,211,252,0.4); }
-        .analytics-sort-btn { padding: 4px 11px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--muted); transition: background 0.15s, color 0.15s, border-color 0.15s; }
-        .analytics-sort-btn:hover { color: var(--text); border-color: var(--muted); }
-        .analytics-sort-btn.analytics-sort-active { background: rgba(125,211,252,0.12); color: var(--accent); border-color: rgba(125,211,252,0.4); }
-        .analytics-list { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: var(--panel); }
-        .analytics-row { display: grid; grid-template-columns: 220px 1fr auto; align-items: center; gap: 16px; padding: 10px 18px; border-bottom: 1px solid var(--border); }
+        .analytics {
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: 10px;
+          padding: 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+
+        .analytics-header {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 12px;
+          flex-wrap: wrap;
+        }
+
+        .analytics-controls {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+
+        .sort-group { display: flex; gap: 4px; }
+
+        .sort-btn {
+          padding: 4px 10px;
+          border-radius: 5px;
+          border: 1px solid var(--border);
+          background: transparent;
+          color: var(--muted);
+          font-size: 12px;
+          cursor: pointer;
+          transition: all 0.12s;
+        }
+        .sort-btn:hover { background: var(--surface-2); color: var(--text-2); }
+        .sort-btn.active { background: var(--accent-dim); color: var(--accent-2); border-color: var(--accent); }
+
+        .analytics-list { display: flex; flex-direction: column; gap: 4px; }
+
+        .analytics-row {
+          display: grid;
+          grid-template-columns: 200px 1fr 180px;
+          align-items: center;
+          gap: 16px;
+          padding: 10px 4px;
+          border-bottom: 1px solid var(--border);
+        }
         .analytics-row:last-child { border-bottom: none; }
-        .analytics-identity { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-        .analytics-name  { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .analytics-identity {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+
+        .analytics-identity strong { font-size: 14px; color: var(--text); }
         .analytics-naipe { font-size: 11px; color: var(--muted); }
-        .analytics-bar-track { height: 6px; border-radius: 999px; background: var(--border); overflow: hidden; display: flex; }
-        .analytics-bar-seg { height: 100%; transition: width 0.4s ease; }
-        .seg-present   { background: #4ade80; }
-        .seg-tardy     { background: #fbbf24; }
-        .seg-justified { background: #7dd3fc; }
-        .seg-absent    { background: #fb7185; }
-        .analytics-stats { display: flex; gap: 10px; font-size: 11px; font-weight: 600; align-items: center; }
-        .analytics-pct { min-width: 34px; text-align: right; }
-        .text-green { color: #4ade80; }
-        .text-red   { color: #fb7185; }
-        .text-muted { color: var(--muted); }
 
-        /* Modal */
-        .modal-backdrop { position: fixed; inset: 0; background: rgba(3,6,12,0.72); backdrop-filter: blur(4px); display: grid; place-items: center; padding: 24px; z-index: 200; }
-        .modal { width: min(100%, 680px); display: flex; flex-direction: column; gap: 16px; padding: 24px; border-radius: 20px; border: 1px solid var(--border); background: var(--panel); box-shadow: 0 32px 80px rgba(0,0,0,0.55); max-height: 90vh; overflow: hidden; }
-        .modal-header { display: flex; flex-direction: column; gap: 4px; }
-        .modal-title  { margin: 0; font-size: 17px; font-weight: 700; }
-        .modal-subtitle { font-size: 12px; color: var(--muted); }
-        .member-list { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; max-height: 60vh; }
-        .member-row { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; }
-        .member-name  { font-size: 13px; font-weight: 600; }
-        .member-naipe { font-size: 11px; color: var(--muted); margin-top: 2px; }
-        .status-pills { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
-        .status-pill { padding: 5px 11px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--muted); transition: all 0.15s; }
-        .status-pill:hover { opacity: 0.8; }
-        .pill-present.pill-active  { background: rgba(74,222,128,0.18);  color: #4ade80; border-color: rgba(74,222,128,0.5); }
-        .pill-tardy.pill-active    { background: rgba(251,191,36,0.18);  color: #fbbf24; border-color: rgba(251,191,36,0.5); }
-        .pill-absent.pill-active   { background: rgba(251,113,133,0.18); color: #fb7185; border-color: rgba(251,113,133,0.5); }
-        .pill-justified.pill-active { background: rgba(125,211,252,0.18); color: #7dd3fc; border-color: rgba(125,211,252,0.5); }
-        select { background: var(--input-bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 13px; flex-shrink: 0; }
-        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
-        .btn-primary { border: 1px solid rgba(125,211,252,0.3); border-radius: 10px; padding: 8px 20px; background: rgba(125,211,252,0.15); color: var(--accent); font-weight: 600; cursor: pointer; font-size: 13px; transition: background 0.15s; }
-        .btn-primary:hover:not(:disabled) { background: rgba(125,211,252,0.26); }
+        .bar-track {
+          height: 8px;
+          background: var(--surface-2);
+          border-radius: 4px;
+          overflow: hidden;
+          display: flex;
+        }
+
+        .bar-seg {
+          height: 100%;
+          transition: width 0.3s;
+        }
+
+        .analytics-nums {
+          display: flex;
+          gap: 8px;
+          align-items: center;
+          font-size: 13px;
+          font-weight: 600;
+          flex-wrap: wrap;
+        }
+
+        /* Buttons */
+        .btn-primary {
+          padding: 8px 16px;
+          border-radius: 6px;
+          border: none;
+          background: var(--accent);
+          color: #0B0A08;
+          font-size: 13px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: background 0.15s;
+        }
+        .btn-primary:hover:not(:disabled) { background: var(--accent-2); }
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-secondary { border: 1px solid var(--border); border-radius: 10px; padding: 8px 20px; background: transparent; color: var(--muted); font-weight: 600; cursor: pointer; font-size: 13px; transition: background 0.15s; }
-        .btn-secondary:hover { background: var(--btn-subtle); }
 
-        @media (max-width: 900px) { .page-grid { grid-template-columns: 1fr; } .right-col { align-items: flex-start; } .top-row { flex-direction: column; } .cal-label-row { justify-content: flex-start; } }
+        .btn-secondary {
+          padding: 8px 16px;
+          border-radius: 6px;
+          border: 1px solid var(--border-strong);
+          background: transparent;
+          color: var(--text-2);
+          font-size: 13px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: background 0.12s;
+        }
+        .btn-secondary:hover { background: var(--surface-3); }
+
+        @media (max-width: 900px) {
+          .stats-strip { grid-template-columns: 1fr 1fr; }
+          .chart-card { grid-column: span 2; }
+          .main-grid { grid-template-columns: 1fr; }
+          .analytics-row { grid-template-columns: 1fr 1fr; }
+          .bar-track { grid-column: span 2; }
+        }
       `}</style>
     </AuthenticatedShell>
   );

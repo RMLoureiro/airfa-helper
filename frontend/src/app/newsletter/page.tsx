@@ -6,343 +6,282 @@ import { useEffect, useState } from 'react';
 type NewsletterItem = {
   id: number;
   title: string;
-  content: string;
-  author_id: number;
-  author_name?: string | null;
-  created_at: string;
+  body: string;
+  published_at: string;
+  facebook_link?: string | null;
+  instagram_link?: string | null;
 };
 
 type NewsletterForm = {
   title: string;
-  content: string;
+  body: string;
+  facebook_link: string;
+  instagram_link: string;
 };
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
 
+const EMPTY_FORM: NewsletterForm = { title: '', body: '', facebook_link: '', instagram_link: '' };
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' });
+}
+
 export default function NewsletterPage() {
   const [items, setItems] = useState<NewsletterItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<NewsletterItem | null>(null);
-  const [message, setMessage] = useState('');
-  const [form, setForm] = useState<NewsletterForm>({
-    title: '',
-    content: '',
-  });
+  const [form, setForm] = useState<NewsletterForm>(EMPTY_FORM);
 
-  async function loadNewsletter() {
+  async function loadItems() {
     const token = localStorage.getItem('airfa_token');
-    if (!token) {
-      return;
-    }
-
-    const response = await fetch(`${apiUrl}/api/v1/newsletter`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (!response.ok) {
-      throw new Error('Não foi possível carregar a newsletter.');
-    }
-
-    const data = (await response.json()) as NewsletterItem[];
-    setItems(data);
+    if (!token) return;
+    const res = await fetch(`${apiUrl}/api/v1/newsletter`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json();
+    setItems(Array.isArray(data) ? data : []);
+    setLoading(false);
   }
 
   useEffect(() => {
-    loadNewsletter().catch(() => setItems([]));
-
+    loadItems().catch(() => setLoading(false));
     const storedUser = localStorage.getItem('airfa_user');
     if (storedUser) {
       try {
-        const parsed = JSON.parse(storedUser) as { system_role?: string };
-        setIsAdmin(parsed.system_role === 'ADMIN' || parsed.system_role === 'SUPER_ADMIN');
-        setIsSuperAdmin(parsed.system_role === 'SUPER_ADMIN');
-      } catch {
-        setIsAdmin(false);
-        setIsSuperAdmin(false);
-      }
+        const u = JSON.parse(storedUser) as { system_role?: string };
+        setIsAdmin(u.system_role === 'ADMIN' || u.system_role === 'SUPER_ADMIN');
+        setIsSuperAdmin(u.system_role === 'SUPER_ADMIN');
+      } catch { /* ignore */ }
     }
   }, []);
 
-  function openCreateModal() {
-    setEditingItem(null);
-    setForm({ title: '', content: '' });
-    setMessage('');
-    setIsModalOpen(true);
-  }
-
-  function openEditModal(item: NewsletterItem) {
+  function openCreate() { setEditingItem(null); setForm(EMPTY_FORM); setIsModalOpen(true); }
+  function openEdit(item: NewsletterItem) {
     setEditingItem(item);
-    setForm({ title: item.title, content: item.content });
-    setMessage('');
+    setForm({ title: item.title, body: item.body, facebook_link: item.facebook_link ?? '', instagram_link: item.instagram_link ?? '' });
     setIsModalOpen(true);
   }
 
-  async function saveNewsletter() {
+  async function saveItem() {
     const token = localStorage.getItem('airfa_token');
-    if (!token) {
-      return;
-    }
-
+    if (!token) return;
+    const payload = { ...form, facebook_link: form.facebook_link || null, instagram_link: form.instagram_link || null };
     const isEditing = Boolean(editingItem);
-    const url = isEditing ? `${apiUrl}/api/v1/newsletter/${editingItem?.id}` : `${apiUrl}/api/v1/newsletter`;
-    const method = isEditing ? 'PUT' : 'POST';
-
-    try {
-      const response = await fetch(url, {
-        method,
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(form),
-      });
-
-      if (!response.ok) {
-        const errorBody = (await response.json().catch(() => null)) as { detail?: string } | null;
-        throw new Error(errorBody?.detail ?? 'Não foi possível guardar a publicação.');
-      }
-
-      setIsModalOpen(false);
-      setMessage(isEditing ? 'Publicação atualizada com sucesso.' : 'Publicação criada com sucesso.');
-      await loadNewsletter();
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Falha ao guardar newsletter.');
-    }
+    await fetch(isEditing ? `${apiUrl}/api/v1/newsletter/${editingItem?.id}` : `${apiUrl}/api/v1/newsletter`, {
+      method: isEditing ? 'PUT' : 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    setIsModalOpen(false);
+    await loadItems();
   }
 
-  async function removeNewsletter(itemId: number) {
+  async function removeItem(id: number) {
+    if (!window.confirm('Remover esta publicação?')) return;
     const token = localStorage.getItem('airfa_token');
-    if (!token) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`${apiUrl}/api/v1/newsletter/${itemId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!response.ok) {
-        const errorBody = (await response.json().catch(() => null)) as { detail?: string } | null;
-        throw new Error(errorBody?.detail ?? 'Não foi possível remover a publicação.');
-      }
-
-      setMessage('Publicação removida com sucesso.');
-      await loadNewsletter();
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Falha ao remover publicação.');
-    }
+    if (!token) return;
+    await fetch(`${apiUrl}/api/v1/newsletter/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    await loadItems();
   }
 
   return (
-    <AuthenticatedShell title="Newsletter" subtitle="Publicações internas e anúncios da banda.">
-      <section className="section">
-        <div className="section-header">
-          <h1>Newsletter</h1>
-          {isAdmin ? (
-            <button type="button" onClick={openCreateModal}>
-              Nova publicação
-            </button>
-          ) : null}
-        </div>
+    <AuthenticatedShell title="Newsletter">
+      <div className="page">
+        {isAdmin && (
+          <div className="toolbar">
+            <button type="button" className="btn-primary" onClick={openCreate}>+ Nova publicação</button>
+          </div>
+        )}
 
-        {message ? <p className="message">{message}</p> : null}
+        {loading ? (
+          <div className="loading">A carregar…</div>
+        ) : items.length === 0 ? (
+          <div className="empty">Sem publicações.</div>
+        ) : (
+          <div className="feed">
+            {items.map(item => (
+              <article key={item.id} className="article">
+                <header className="article-header">
+                  <time className="article-date">{formatDate(item.published_at)}</time>
+                  {isAdmin && (
+                    <div className="article-actions">
+                      <button type="button" className="action-btn" onClick={() => openEdit(item)}>Editar</button>
+                      {isSuperAdmin && <button type="button" className="action-btn danger" onClick={() => removeItem(item.id)}>Remover</button>}
+                    </div>
+                  )}
+                </header>
+                <h2 className="article-title">{item.title}</h2>
+                <p className="article-body">{item.body}</p>
+                {(item.facebook_link || item.instagram_link) && (
+                  <div className="social-row">
+                    {item.facebook_link && <a href={item.facebook_link} target="_blank" rel="noopener noreferrer" className="social-link fb">Facebook</a>}
+                    {item.instagram_link && <a href={item.instagram_link} target="_blank" rel="noopener noreferrer" className="social-link ig">Instagram</a>}
+                  </div>
+                )}
+              </article>
+            ))}
+          </div>
+        )}
 
-        <div className="grid">
-          {items.map((item) => (
-            <article key={item.id} className="card">
-              <div className="card-top">
-                <h2>{item.title}</h2>
-                <span className="badge">{new Date(item.created_at).toLocaleDateString('pt-PT')}</span>
-              </div>
-              <p className="author">{item.author_name ?? 'Autor desconhecido'}</p>
-              <p className="content">{item.content}</p>
-
-              {isAdmin ? (
-                <div className="actions">
-                  <button type="button" onClick={() => openEditModal(item)}>
-                    Editar
-                  </button>
-                  {isSuperAdmin ? (
-                    <button type="button" className="danger" onClick={() => removeNewsletter(item.id)}>
-                      Remover
-                    </button>
-                  ) : null}
-                </div>
-              ) : null}
-            </article>
-          ))}
-        </div>
-
-        {isModalOpen ? (
+        {isModalOpen && (
           <div className="modal-backdrop" onClick={() => setIsModalOpen(false)}>
-            <div className="modal" onClick={(event) => event.stopPropagation()}>
-              <h2>{editingItem ? 'Editar publicação' : 'Nova publicação'}</h2>
-
-              <label>
-                Título
-                <input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} />
-              </label>
-
-              <label>
-                Conteúdo
-                <textarea
-                  rows={8}
-                  value={form.content}
-                  onChange={(event) => setForm({ ...form, content: event.target.value })}
-                />
-              </label>
-
-              <div className="modal-actions">
-                <button type="button" className="secondary" onClick={() => setIsModalOpen(false)}>
-                  Cancelar
-                </button>
-                <button type="button" onClick={saveNewsletter}>
-                  Guardar
-                </button>
+            <div className="modal" onClick={e => e.stopPropagation()}>
+              <div className="mh">
+                <h2 className="mt">{editingItem ? 'Editar publicação' : 'Nova publicação'}</h2>
+                <button type="button" className="mc" onClick={() => setIsModalOpen(false)}>✕</button>
+              </div>
+              <div className="form">
+                <label className="field">
+                  Título
+                  <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Título da publicação" />
+                </label>
+                <label className="field">
+                  Texto
+                  <textarea rows={5} value={form.body} onChange={e => setForm({ ...form, body: e.target.value })} placeholder="Conteúdo da publicação" />
+                </label>
+                <label className="field">
+                  Link Facebook
+                  <input value={form.facebook_link} onChange={e => setForm({ ...form, facebook_link: e.target.value })} placeholder="https://facebook.com/..." />
+                </label>
+                <label className="field">
+                  Link Instagram
+                  <input value={form.instagram_link} onChange={e => setForm({ ...form, instagram_link: e.target.value })} placeholder="https://instagram.com/..." />
+                </label>
+              </div>
+              <div className="mf">
+                <button type="button" className="btn-secondary" onClick={() => setIsModalOpen(false)}>Cancelar</button>
+                <button type="button" className="btn-primary" onClick={saveItem}>Guardar</button>
               </div>
             </div>
           </div>
-        ) : null}
-      </section>
+        )}
+      </div>
 
       <style jsx>{`
-        .section {
-          display: grid;
-          gap: 20px;
-        }
+        .page { display: flex; flex-direction: column; gap: 20px; max-width: 760px; }
 
-        .section-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          gap: 16px;
-        }
+        .toolbar { display: flex; justify-content: flex-end; }
 
-        h1,
-        h2 {
-          margin: 0;
-        }
-
-        .grid {
-          display: grid;
-          gap: 16px;
-          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        }
-
-        .card {
-          display: grid;
-          gap: 12px;
-          padding: 18px;
-          border-radius: 18px;
-          border: 1px solid var(--border);
-          background: var(--panel-soft);
-        }
-
-        .card-top {
-          display: flex;
-          justify-content: space-between;
-          gap: 12px;
-          align-items: start;
-        }
-
-        .badge {
-          width: fit-content;
-          padding: 6px 10px;
-          border-radius: 999px;
-          background: rgba(125, 211, 252, 0.12);
-          color: var(--accent);
-          font-size: 12px;
-          white-space: nowrap;
-        }
-
-        .author,
-        .content,
-        .message {
+        .loading, .empty {
           color: var(--muted);
-          margin: 0;
+          font-style: italic;
+          text-align: center;
+          padding: 48px;
+          font-size: 14px;
         }
 
-        .content {
+        .feed { display: flex; flex-direction: column; gap: 16px; }
+
+        .article {
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: 10px;
+          padding: 22px 24px;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          transition: border-color 0.15s;
+        }
+        .article:hover { border-color: var(--border-strong); }
+
+        .article-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+        }
+
+        .article-date {
+          font-family: var(--font-mono, monospace);
+          font-size: 11px;
+          color: var(--muted);
+          letter-spacing: 0.04em;
+        }
+
+        .article-actions { display: flex; gap: 6px; }
+
+        .action-btn {
+          padding: 4px 10px;
+          border-radius: 5px;
+          border: 1px solid var(--border);
+          background: transparent;
+          color: var(--text-2);
+          font-size: 12px;
+          cursor: pointer;
+          transition: all 0.12s;
+        }
+        .action-btn:hover { background: var(--surface-2); color: var(--text); }
+        .action-btn.danger { color: var(--danger); border-color: rgba(194,78,66,0.3); }
+        .action-btn.danger:hover { background: var(--danger-dim); }
+
+        .article-title {
+          font-family: var(--font-display, serif);
+          font-size: 22px;
+          font-weight: 600;
+          color: var(--text);
+          margin: 0;
+          line-height: 1.25;
+        }
+
+        .article-body {
+          font-size: 14px;
+          color: var(--text-2);
+          margin: 0;
+          line-height: 1.7;
           white-space: pre-wrap;
         }
 
-        .actions {
+        .social-row { display: flex; gap: 6px; }
+        .social-link {
+          padding: 4px 10px;
+          border-radius: 5px;
+          font-size: 11px;
+          font-weight: 600;
+          text-decoration: none;
+          transition: opacity 0.15s;
+        }
+        .social-link:hover { opacity: 0.8; }
+        .fb { background: rgba(24,119,242,0.12); border: 1px solid rgba(24,119,242,0.28); color: #4e9cf5; }
+        .ig { background: rgba(225,48,108,0.1); border: 1px solid rgba(225,48,108,0.24); color: #e1306c; }
+
+        /* Modal */
+        .mh { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .mt { font-family: var(--font-display, serif); font-size: 22px; font-weight: 600; margin: 0; }
+        .mc {
+          width: 30px; height: 30px; border-radius: 5px; border: 1px solid var(--border);
+          background: transparent; color: var(--muted); cursor: pointer; font-size: 14px;
+          display: flex; align-items: center; justify-content: center; padding: 0;
+        }
+        .mc:hover { border-color: var(--danger); color: var(--danger); }
+
+        .form { display: flex; flex-direction: column; gap: 14px; margin-bottom: 24px; }
+
+        .field {
           display: flex;
-          flex-wrap: wrap;
-          gap: 10px;
+          flex-direction: column;
+          gap: 6px;
+          font-size: 13px;
+          font-weight: 500;
+          color: var(--text-2);
         }
 
-        button {
-          border: 0;
-          border-radius: 14px;
-          padding: 12px 16px;
-          background: linear-gradient(135deg, var(--accent), var(--accent-strong));
-          color: #08111f;
-          font-weight: 700;
-          cursor: pointer;
-        }
+        .mf { display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border); padding-top: 16px; }
 
-        .danger {
-          background: rgba(251, 113, 133, 0.18);
-          color: var(--text);
+        .btn-primary {
+          padding: 8px 16px; border-radius: 6px; border: none;
+          background: var(--accent); color: #0B0A08; font-size: 13px; font-weight: 700;
+          cursor: pointer; transition: background 0.15s;
         }
+        .btn-primary:hover { background: var(--accent-2); }
 
-        .modal-backdrop {
-          position: fixed;
-          inset: 0;
-          background: rgba(3, 6, 12, 0.72);
-          display: grid;
-          place-items: center;
-          padding: 24px;
+        .btn-secondary {
+          padding: 8px 16px; border-radius: 6px; border: 1px solid var(--border-strong);
+          background: transparent; color: var(--text-2); font-size: 13px; font-weight: 500;
+          cursor: pointer; transition: background 0.12s;
         }
-
-        .modal {
-          width: min(100%, 720px);
-          display: grid;
-          gap: 14px;
-          padding: 22px;
-          border-radius: 20px;
-          border: 1px solid var(--border);
-          background: #121821;
-          box-shadow: var(--shadow);
-        }
-
-        label {
-          display: grid;
-          gap: 8px;
-          color: var(--text);
-        }
-
-        input,
-        textarea {
-          width: 100%;
-          background: var(--input-bg);
-          color: var(--text);
-          border: 1px solid var(--border);
-          border-radius: 14px;
-          padding: 12px 14px;
-          outline: none;
-        }
-
-        textarea {
-          resize: vertical;
-        }
-
-        .modal-actions {
-          display: flex;
-          justify-content: flex-end;
-          gap: 12px;
-          margin-top: 8px;
-        }
-
-        .secondary {
-          background: transparent;
-          color: var(--text);
-          border: 1px solid var(--border);
-        }
+        .btn-secondary:hover { background: var(--surface-3); }
       `}</style>
     </AuthenticatedShell>
   );
