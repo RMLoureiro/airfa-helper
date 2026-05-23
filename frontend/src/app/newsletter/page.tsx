@@ -1,6 +1,7 @@
 "use client";
 
 import AuthenticatedShell from '@/components/AuthenticatedShell';
+import { authFetch } from '@/lib/authFetch';
 import { useEffect, useState } from 'react';
 
 type NewsletterItem = {
@@ -37,9 +38,7 @@ export default function NewsletterPage() {
   const [form, setForm] = useState<NewsletterForm>(EMPTY_FORM);
 
   async function loadItems() {
-    const token = localStorage.getItem('airfa_token');
-    if (!token) return;
-    const res = await fetch(`${apiUrl}/api/v1/newsletter`, { headers: { Authorization: `Bearer ${token}` } });
+    const res = await authFetch(`${apiUrl}/api/v1/newsletter`);
     const data = await res.json();
     setItems(Array.isArray(data) ? data : []);
     setLoading(false);
@@ -65,13 +64,11 @@ export default function NewsletterPage() {
   }
 
   async function saveItem() {
-    const token = localStorage.getItem('airfa_token');
-    if (!token) return;
     const payload = { ...form, facebook_link: form.facebook_link || null, instagram_link: form.instagram_link || null };
     const isEditing = Boolean(editingItem);
-    await fetch(isEditing ? `${apiUrl}/api/v1/newsletter/${editingItem?.id}` : `${apiUrl}/api/v1/newsletter`, {
+    await authFetch(isEditing ? `${apiUrl}/api/v1/newsletter/${editingItem?.id}` : `${apiUrl}/api/v1/newsletter`, {
       method: isEditing ? 'PUT' : 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
     setIsModalOpen(false);
@@ -80,9 +77,7 @@ export default function NewsletterPage() {
 
   async function removeItem(id: number) {
     if (!window.confirm('Remover esta publicação?')) return;
-    const token = localStorage.getItem('airfa_token');
-    if (!token) return;
-    await fetch(`${apiUrl}/api/v1/newsletter/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    await authFetch(`${apiUrl}/api/v1/newsletter/${id}`, { method: 'DELETE' });
     await loadItems();
   }
 

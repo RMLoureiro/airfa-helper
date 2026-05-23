@@ -154,7 +154,6 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem('airfa_theme');
@@ -175,19 +174,24 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
   }, [sidebarOpen]);
 
   useEffect(() => {
-    if (!userMenuOpen) return;
-    function onOutside(e: MouseEvent) {
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
-        setUserMenuOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', onOutside);
-    return () => document.removeEventListener('mousedown', onOutside);
-  }, [userMenuOpen]);
-
-  useEffect(() => {
     const token = localStorage.getItem('airfa_token');
     if (!token) { router.push('/login'); return; }
+
+    // Check JWT expiry
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (typeof payload.exp === 'number' && payload.exp * 1000 < Date.now()) {
+        localStorage.removeItem('airfa_token');
+        localStorage.removeItem('airfa_user');
+        router.push('/login');
+        return;
+      }
+    } catch { /* malformed token — treat as expired */ 
+      localStorage.removeItem('airfa_token');
+      localStorage.removeItem('airfa_user');
+      router.push('/login');
+      return;
+    }
 
     const storedUser = localStorage.getItem('airfa_user');
     if (storedUser) {
@@ -230,7 +234,7 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
   function handleLogout() {
     localStorage.removeItem('airfa_token');
     localStorage.removeItem('airfa_user');
-    router.push('/login');
+    window.location.href = '/login';
   }
 
   function toggleTheme() {
@@ -290,24 +294,31 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
       <div className="sidebar-divider" />
 
       {/* User footer */}
-      <div className="sidebar-user-info" ref={userMenuRef}>
+      <div className="sidebar-user-info">
         <div style={{ position: 'relative' }}>
           {userMenuOpen && (
-            <div className="user-popup">
-              <Link
-                href="/perfil"
-                className="user-popup-item"
-                onClick={() => { setUserMenuOpen(false); setSidebarOpen(false); }}
-              >
-                <IconUser />
-                Sobre mim
-              </Link>
-              <div className="user-popup-sep" />
-              <button type="button" className="user-popup-item user-popup-danger" onClick={handleLogout}>
-                <IconLogout />
-                Sair
-              </button>
-            </div>
+            <>
+              <div
+                style={{ position: 'fixed', inset: 0, zIndex: 199 }}
+                onClick={() => setUserMenuOpen(false)}
+                aria-hidden="true"
+              />
+              <div className="user-popup">
+                <Link
+                  href="/perfil"
+                  className="user-popup-item"
+                  onClick={() => { setUserMenuOpen(false); setSidebarOpen(false); }}
+                >
+                  <IconUser />
+                  Sobre mim
+                </Link>
+                <div className="user-popup-sep" />
+                <button type="button" className="user-popup-item user-popup-danger" onClick={handleLogout}>
+                  <IconLogout />
+                  Sair
+                </button>
+              </div>
+            </>
           )}
           <button
             type="button"

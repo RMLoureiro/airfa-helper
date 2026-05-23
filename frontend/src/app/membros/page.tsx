@@ -1,6 +1,7 @@
 "use client";
 
 import AuthenticatedShell from '@/components/AuthenticatedShell';
+import { authFetch } from '@/lib/authFetch';
 import { useEffect, useState } from 'react';
 
 type MemberItem = {
@@ -64,9 +65,7 @@ export default function MembrosPage() {
   const [search, setSearch] = useState('');
 
   async function loadMembers() {
-    const token = localStorage.getItem('airfa_token');
-    if (!token) return;
-    const res = await fetch(`${apiUrl}/api/v1/members/`, { headers: { Authorization: `Bearer ${token}` } });
+    const res = await authFetch(`${apiUrl}/api/v1/members/`);
     const data = await res.json();
     setMembers(Array.isArray(data) ? data : []);
     setLoading(false);
@@ -84,8 +83,6 @@ export default function MembrosPage() {
   }, []);
 
   async function createMember() {
-    const token = localStorage.getItem('airfa_token');
-    if (!token) return;
     const payload = {
       username: createForm.username,
       name: createForm.name,
@@ -97,9 +94,9 @@ export default function MembrosPage() {
       system_role: createForm.system_role,
       musical_role: createForm.musical_role || null,
     };
-    await fetch(`${apiUrl}/api/v1/members/`, {
+    await authFetch(`${apiUrl}/api/v1/members/`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
     setIsCreateOpen(false);
@@ -109,8 +106,6 @@ export default function MembrosPage() {
 
   async function saveMember() {
     if (!editingMember) return;
-    const token = localStorage.getItem('airfa_token');
-    if (!token) return;
     const payload: Record<string, unknown> = {
       name: editForm.name,
       phone: editForm.phone || null,
@@ -122,9 +117,9 @@ export default function MembrosPage() {
     };
     if (editForm.username) payload.username = editForm.username;
     if (editForm.password) payload.password = editForm.password;
-    await fetch(`${apiUrl}/api/v1/members/${editingMember.id}`, {
+    await authFetch(`${apiUrl}/api/v1/members/${editingMember.id}`, {
       method: 'PUT',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
     setEditingMember(null);
@@ -133,9 +128,7 @@ export default function MembrosPage() {
 
   async function deleteMember(id: number) {
     if (!window.confirm('Remover este membro?')) return;
-    const token = localStorage.getItem('airfa_token');
-    if (!token) return;
-    await fetch(`${apiUrl}/api/v1/members/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    await authFetch(`${apiUrl}/api/v1/members/${id}`, { method: 'DELETE' });
     await loadMembers();
   }
 

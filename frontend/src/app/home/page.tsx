@@ -1,6 +1,7 @@
 "use client";
 
 import AuthenticatedShell from '@/components/AuthenticatedShell';
+import { authFetch } from '@/lib/authFetch';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
@@ -276,9 +277,7 @@ export default function HomePage() {
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('airfa_token');
-    if (!token) { router.push('/login'); return; }
-    fetch(`${apiUrl}/api/v1/home`, { headers: { Authorization: `Bearer ${token}` } })
+    authFetch(`${apiUrl}/api/v1/home`)
       .then(async r => { if (!r.ok) throw new Error(); return r.json(); })
       .then(d => { setData(d); setLoading(false); })
       .catch(() => router.push('/login'));

@@ -1,6 +1,7 @@
 "use client";
 
 import AuthenticatedShell from '@/components/AuthenticatedShell';
+import { authFetch } from '@/lib/authFetch';
 import { useEffect, useRef, useState } from 'react';
 
 type RepertoireItem = {
@@ -43,9 +44,7 @@ export default function RepertorioPage() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
 
   async function loadItems() {
-    const token = localStorage.getItem('airfa_token');
-    if (!token) return;
-    const res = await fetch(`${apiUrl}/api/v1/repertoire`, { headers: { Authorization: `Bearer ${token}` } });
+    const res = await authFetch(`${apiUrl}/api/v1/repertoire`);
     const data = await res.json();
     setItems(Array.isArray(data) ? data : []);
     setLoading(false);
@@ -72,20 +71,18 @@ export default function RepertorioPage() {
   }
 
   async function saveItem() {
-    const token = localStorage.getItem('airfa_token');
-    if (!token) return;
     const payload = { ...form, composer: form.composer || null, arranger: form.arranger || null, notes: form.notes || null, youtube_link: form.youtube_link || null };
     const isEditing = Boolean(editingItem);
-    const savedRes = await fetch(isEditing ? `${apiUrl}/api/v1/repertoire/${editingItem?.id}` : `${apiUrl}/api/v1/repertoire`, {
+    const savedRes = await authFetch(isEditing ? `${apiUrl}/api/v1/repertoire/${editingItem?.id}` : `${apiUrl}/api/v1/repertoire`, {
       method: isEditing ? 'PUT' : 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
     const saved = await savedRes.json();
     if (pdfFile && saved.id) {
       const fd = new FormData();
       fd.append('file', pdfFile);
-      await fetch(`${apiUrl}/api/v1/repertoire/${saved.id}/pdf`, { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: fd });
+      await authFetch(`${apiUrl}/api/v1/repertoire/${saved.id}/pdf`, { method: 'POST', body: fd });
     }
     setIsModalOpen(false);
     await loadItems();
@@ -93,16 +90,12 @@ export default function RepertorioPage() {
 
   async function removeItem(id: number) {
     if (!window.confirm('Remover esta obra?')) return;
-    const token = localStorage.getItem('airfa_token');
-    if (!token) return;
-    await fetch(`${apiUrl}/api/v1/repertoire/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    await authFetch(`${apiUrl}/api/v1/repertoire/${id}`, { method: 'DELETE' });
     await loadItems();
   }
 
   async function downloadPdf(item: RepertoireItem) {
-    const token = localStorage.getItem('airfa_token');
-    if (!token) return;
-    const res = await fetch(`${apiUrl}/api/v1/repertoire/${item.id}/pdf`, { headers: { Authorization: `Bearer ${token}` } });
+    const res = await authFetch(`${apiUrl}/api/v1/repertoire/${item.id}/pdf`);
     if (!res.ok) return;
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);

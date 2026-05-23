@@ -1,6 +1,7 @@
 "use client";
 
 import AuthenticatedShell from '@/components/AuthenticatedShell';
+import { authFetch } from '@/lib/authFetch';
 import { useEffect, useState } from 'react';
 
 type UserProfile = {
@@ -48,9 +49,7 @@ export default function PerfilPage() {
   const [pwSuccess, setPwSuccess] = useState(false);
 
   async function loadProfile() {
-    const token = localStorage.getItem('airfa_token');
-    if (!token) return;
-    const res = await fetch(`${apiUrl}/api/v1/members/me`, { headers: { Authorization: `Bearer ${token}` } });
+    const res = await authFetch(`${apiUrl}/api/v1/members/me`);
     const data: UserProfile = await res.json();
     setProfile(data);
     setForm({ name: data.name, phone: data.phone ?? '', birth_date: data.birth_date ? data.birth_date.slice(0, 10) : '', address: data.address ?? '' });
@@ -60,14 +59,12 @@ export default function PerfilPage() {
   useEffect(() => { loadProfile().catch(() => setLoading(false)); }, []);
 
   async function saveProfile() {
-    const token = localStorage.getItem('airfa_token');
-    if (!token) return;
     setSaving(true);
     setSaveMsg(null);
     const payload = { name: form.name, phone: form.phone || null, birth_date: form.birth_date || null, address: form.address || null };
-    const res = await fetch(`${apiUrl}/api/v1/members/me`, {
+    const res = await authFetch(`${apiUrl}/api/v1/members/me`, {
       method: 'PUT',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
     if (res.ok) {
@@ -86,11 +83,9 @@ export default function PerfilPage() {
     setPwSuccess(false);
     if (pwForm.new_password !== pwForm.confirm_password) { setPwError('As passwords não coincidem.'); return; }
     if (pwForm.new_password.length < 12) { setPwError('A nova password deve ter pelo menos 12 caracteres.'); return; }
-    const token = localStorage.getItem('airfa_token');
-    if (!token) return;
-    const res = await fetch(`${apiUrl}/api/v1/members/me/password`, {
+    const res = await authFetch(`${apiUrl}/api/v1/members/me/password`, {
       method: 'PUT',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ current_password: pwForm.current_password, new_password: pwForm.new_password }),
     });
     if (res.ok) { setPwSuccess(true); setPwForm({ current_password: '', new_password: '', confirm_password: '' }); }

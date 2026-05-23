@@ -1,6 +1,7 @@
 "use client";
 
 import AuthenticatedShell from '@/components/AuthenticatedShell';
+import { authFetch } from '@/lib/authFetch';
 import { useEffect, useRef, useState } from 'react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -287,9 +288,6 @@ export default function PresencasPage() {
   const [analyticsSort, setAnalyticsSort] = useState<'az' | 'za' | 'presences' | 'absences'>('az');
 
   useEffect(() => {
-    const token = localStorage.getItem('airfa_token');
-    if (!token) { setLoading(false); return; }
-
     const storedUser = localStorage.getItem('airfa_user');
     let admin = false;
     if (storedUser) {
@@ -300,25 +298,19 @@ export default function PresencasPage() {
       } catch { /* ignore */ }
     }
 
-    const fetchAttendance = fetch(`${apiUrl}/api/v1/presences`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }).then(r => r.json()).then(setAttendance).catch(() => setAttendance([]));
+    const fetchAttendance = authFetch(`${apiUrl}/api/v1/presences`)
+      .then(r => r.json()).then(setAttendance).catch(() => setAttendance([]));
 
     const fetchAnalytics = admin
-      ? fetch(`${apiUrl}/api/v1/presences/analytics/members`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }).then(r => r.json()).then(setAnalytics).catch(() => setAnalytics([]))
+      ? authFetch(`${apiUrl}/api/v1/presences/analytics/members`)
+          .then(r => r.json()).then(setAnalytics).catch(() => setAnalytics([]))
       : Promise.resolve();
 
     Promise.all([fetchAttendance, fetchAnalytics]).finally(() => setLoading(false));
   }, []);
 
   async function openMarkModal(item: PresenceItem) {
-    const token = localStorage.getItem('airfa_token');
-    if (!token) return;
-    const res = await fetch(`${apiUrl}/api/v1/presences/${item.id}/members`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await authFetch(`${apiUrl}/api/v1/presences/${item.id}/members`);
     const members: MemberPresenceItem[] = await res.json();
     setMemberStatuses(members);
     setSelectedEvent(item);
@@ -326,23 +318,19 @@ export default function PresencasPage() {
   }
 
   async function saveMarks() {
-    const token = localStorage.getItem('airfa_token');
-    if (!token || !selectedEvent) return;
+    if (!selectedEvent) return;
     setSaving(true);
-    await fetch(`${apiUrl}/api/v1/presences/${selectedEvent.id}/bulk-mark`, {
+    await authFetch(`${apiUrl}/api/v1/presences/${selectedEvent.id}/bulk-mark`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         items: memberStatuses.filter(i => i.status).map(i => ({ user_id: i.user_id, status: i.status })),
       }),
     });
     setSaving(false);
     setIsModalOpen(false);
-    const t2 = localStorage.getItem('airfa_token');
-    if (t2) {
-      fetch(`${apiUrl}/api/v1/presences`, { headers: { Authorization: `Bearer ${t2}` } }).then(r => r.json()).then(setAttendance).catch(() => {});
-      if (isAdmin) fetch(`${apiUrl}/api/v1/presences/analytics/members`, { headers: { Authorization: `Bearer ${t2}` } }).then(r => r.json()).then(setAnalytics).catch(() => {});
-    }
+    authFetch(`${apiUrl}/api/v1/presences`).then(r => r.json()).then(setAttendance).catch(() => {});
+    if (isAdmin) authFetch(`${apiUrl}/api/v1/presences/analytics/members`).then(r => r.json()).then(setAnalytics).catch(() => {});
   }
 
   // Derived

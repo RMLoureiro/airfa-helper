@@ -1,6 +1,7 @@
 "use client";
 
 import AuthenticatedShell from '@/components/AuthenticatedShell';
+import { authFetch } from '@/lib/authFetch';
 import { useEffect, useState } from 'react';
 
 type NotificationItem = {
@@ -30,25 +31,19 @@ export default function NotificacoesPage() {
   const [loading, setLoading] = useState(true);
 
   async function loadNotifications() {
-    const token = localStorage.getItem('airfa_token');
-    if (!token) return;
-    const res = await fetch(`${apiUrl}/api/v1/notifications`, { headers: { Authorization: `Bearer ${token}` } });
+    const res = await authFetch(`${apiUrl}/api/v1/notifications`);
     const data = await res.json();
     setNotifications(Array.isArray(data) ? data : []);
     setLoading(false);
   }
 
   async function markRead(id: number) {
-    const token = localStorage.getItem('airfa_token');
-    if (!token) return;
-    await fetch(`${apiUrl}/api/v1/notifications/${id}/read`, { method: 'PUT', headers: { Authorization: `Bearer ${token}` } });
+    await authFetch(`${apiUrl}/api/v1/notifications/${id}/read`, { method: 'PUT' });
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
   }
 
   async function markAllRead() {
-    const token = localStorage.getItem('airfa_token');
-    if (!token) return;
-    await fetch(`${apiUrl}/api/v1/notifications/read-all`, { method: 'PUT', headers: { Authorization: `Bearer ${token}` } });
+    await authFetch(`${apiUrl}/api/v1/notifications/read-all`, { method: 'PUT' });
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
   }
 

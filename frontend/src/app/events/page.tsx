@@ -1,6 +1,7 @@
 "use client";
 
 import AuthenticatedShell from '@/components/AuthenticatedShell';
+import { authFetch } from '@/lib/authFetch';
 import { useEffect, useState } from 'react';
 
 type EventItem = {
@@ -55,11 +56,9 @@ export default function EventsPage() {
   const [filterType, setFilterType] = useState<string | null>(null);
 
   async function loadEvents() {
-    const token = localStorage.getItem('airfa_token');
-    if (!token) return;
-    const response = await fetch(`${apiUrl}/api/v1/events`, { headers: { Authorization: `Bearer ${token}` } });
+    const response = await authFetch(`${apiUrl}/api/v1/events`);
     const data = await response.json();
-    setEvents(data);
+    setEvents(Array.isArray(data) ? data : []);
   }
 
   useEffect(() => {
@@ -96,8 +95,6 @@ export default function EventsPage() {
   }
 
   async function saveEvent() {
-    const token = localStorage.getItem('airfa_token');
-    if (!token) return;
     const payload = {
       ...form,
       start_time: new Date(form.start_time).toISOString(),
@@ -109,9 +106,9 @@ export default function EventsPage() {
     };
     const isEditing = Boolean(editingEvent);
     const url = isEditing ? `${apiUrl}/api/v1/events/${editingEvent?.id}` : `${apiUrl}/api/v1/events`;
-    await fetch(url, {
+    await authFetch(url, {
       method: isEditing ? 'PUT' : 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
     setIsModalOpen(false);
@@ -120,12 +117,7 @@ export default function EventsPage() {
 
   async function removeEvent(eventId: number) {
     if (!window.confirm('Tem a certeza que pretende remover este evento?')) return;
-    const token = localStorage.getItem('airfa_token');
-    if (!token) return;
-    await fetch(`${apiUrl}/api/v1/events/${eventId}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    await authFetch(`${apiUrl}/api/v1/events/${eventId}`, { method: 'DELETE' });
     await loadEvents();
   }
 
