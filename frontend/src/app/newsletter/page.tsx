@@ -1,6 +1,7 @@
 "use client";
 
 import AuthenticatedShell from '@/components/AuthenticatedShell';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import { authFetch } from '@/lib/authFetch';
 import { useEffect, useState } from 'react';
 
@@ -36,6 +37,7 @@ export default function NewsletterPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<NewsletterItem | null>(null);
   const [form, setForm] = useState<NewsletterForm>(EMPTY_FORM);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   async function loadItems() {
     const res = await authFetch(`${apiUrl}/api/v1/newsletter`);
@@ -76,7 +78,6 @@ export default function NewsletterPage() {
   }
 
   async function removeItem(id: number) {
-    if (!window.confirm('Remover esta publicação?')) return;
     await authFetch(`${apiUrl}/api/v1/newsletter/${id}`, { method: 'DELETE' });
     await loadItems();
   }
@@ -103,7 +104,7 @@ export default function NewsletterPage() {
                   {isAdmin && (
                     <div className="article-actions">
                       <button type="button" className="action-btn" onClick={() => openEdit(item)}>Editar</button>
-                      {isSuperAdmin && <button type="button" className="action-btn danger" onClick={() => removeItem(item.id)}>Remover</button>}
+                      {isSuperAdmin && <button type="button" className="action-btn danger" onClick={() => setConfirmDeleteId(item.id)}>Remover</button>}
                     </div>
                   )}
                 </header>
@@ -151,6 +152,15 @@ export default function NewsletterPage() {
               </div>
             </div>
           </div>
+        )}
+
+        {confirmDeleteId !== null && (
+          <ConfirmDialog
+            message="Tens a certeza que pretendes remover esta publicação?"
+            confirmLabel="Remover"
+            onConfirm={() => { removeItem(confirmDeleteId); setConfirmDeleteId(null); }}
+            onCancel={() => setConfirmDeleteId(null)}
+          />
         )}
       </div>
 

@@ -117,12 +117,12 @@ function DonutChart({ present, tardy, justified, absent, label }: {
             onMouseLeave={() => setHovered(null)}
           />
         ))}
-        <text x="55" y="51" textAnchor="middle" dominantBaseline="middle"
+        <text x="55" y="48" textAnchor="middle" dominantBaseline="middle"
           fill="var(--text)" fontSize="17" fontWeight="700"
           style={{ fontFamily: 'var(--font-display, serif)', pointerEvents: 'none' }}>
           {pct}%
         </text>
-        <text x="55" y="65" textAnchor="middle"
+        <text x="55" y="67" textAnchor="middle" dominantBaseline="middle"
           fill="var(--muted)" fontSize="10"
           style={{ fontFamily: 'var(--font-mono, monospace)', pointerEvents: 'none' }}>
           {total > 0 ? `${present + tardy}/${total}` : '—'}
@@ -385,19 +385,21 @@ export default function PresencasPage() {
         <div className="page">
           {/* ── Stats strip ── */}
           <div className="stats-strip">
-            <div className="stat-card">
-              <span className="stat-value" style={{ color: 'var(--success)' }}>{totalPresent}</span>
-              <span className="stat-label">Presenças</span>
-              {isAdmin && totalTardy > 0 && <span className="stat-sub">⟳ {totalTardy} atrasados</span>}
-            </div>
-            <div className="stat-card">
-              <span className="stat-value" style={{ color: 'var(--danger)' }}>{totalAbsent}</span>
-              <span className="stat-label">Faltas</span>
-              {isAdmin && totalJustified > 0 && <span className="stat-sub">~ {totalJustified} justificadas</span>}
-            </div>
-            <div className="stat-card">
-              <span className="stat-value" style={{ color: 'var(--accent)' }}>{attendance.length}</span>
-              <span className="stat-label">Total de eventos</span>
+            <div className="stats-numbers">
+              <div className="stat-card">
+                <span className="stat-value" style={{ color: 'var(--success)' }}>{totalPresent}</span>
+                <span className="stat-label">Presenças</span>
+                {isAdmin && totalTardy > 0 && <span className="stat-sub">⟳ {totalTardy} atrasados</span>}
+              </div>
+              <div className="stat-card">
+                <span className="stat-value" style={{ color: 'var(--danger)' }}>{totalAbsent}</span>
+                <span className="stat-label">Faltas</span>
+                {isAdmin && totalJustified > 0 && <span className="stat-sub">~ {totalJustified} justificadas</span>}
+              </div>
+              <div className="stat-card">
+                <span className="stat-value" style={{ color: 'var(--accent)' }}>{attendance.length}</span>
+                <span className="stat-label">Total de eventos</span>
+              </div>
             </div>
             <div className="stat-card chart-card">
               <DonutChart present={isAdmin ? rP : rP + rT} tardy={isAdmin ? rT : 0} justified={isAdmin ? rJ : 0} absent={isAdmin ? rA : rA + rJ} label="Ensaios" />
@@ -606,8 +608,14 @@ export default function PresencasPage() {
 
         /* Stats strip */
         .stats-strip {
-          display: grid;
-          grid-template-columns: repeat(3, auto) 1fr;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .stats-numbers {
+          display: flex;
+          flex-direction: row;
           gap: 12px;
           align-items: stretch;
         }
@@ -925,8 +933,7 @@ export default function PresencasPage() {
         .btn-secondary:hover { background: var(--surface-3); }
 
         @media (max-width: 900px) {
-          .stats-strip { grid-template-columns: 1fr 1fr; }
-          .chart-card { grid-column: span 2; }
+          .stats-numbers { flex-direction: column; }
           .main-grid { grid-template-columns: 1fr; }
           .analytics-row { grid-template-columns: 1fr 1fr; }
           .bar-track { grid-column: span 2; }

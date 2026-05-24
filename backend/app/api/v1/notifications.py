@@ -9,6 +9,19 @@ from app.schemas.notification import NotificationRead
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
 
+@router.get("/unread-count")
+def unread_count(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    count = (
+        db.query(Notification)
+        .filter(Notification.user_id == current_user.id, Notification.read == False)
+        .count()
+    )
+    return {"count": count}
+
+
 @router.get("", response_model=list[NotificationRead])
 def list_notifications(
     db: Session = Depends(get_db),
@@ -17,7 +30,7 @@ def list_notifications(
     return db.query(Notification).filter(Notification.user_id == current_user.id).order_by(Notification.created_at.desc()).all()
 
 
-@router.post("/{notification_id}/read")
+@router.put("/{notification_id}/read")
 def mark_notification_read(
     notification_id: int,
     db: Session = Depends(get_db),
@@ -35,3 +48,16 @@ def mark_notification_read(
     db.commit()
     db.refresh(notification)
     return {"id": notification.id, "read": notification.read}
+
+
+@router.put("/read-all")
+def mark_all_notifications_read(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    db.query(Notification).filter(
+        Notification.user_id == current_user.id,
+        Notification.read == False,
+    ).update({"read": True})
+    db.commit()
+    return {"ok": True}

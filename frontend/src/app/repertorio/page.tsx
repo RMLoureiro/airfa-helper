@@ -1,6 +1,7 @@
 "use client";
 
 import AuthenticatedShell from '@/components/AuthenticatedShell';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import { authFetch } from '@/lib/authFetch';
 import { useEffect, useRef, useState } from 'react';
 
@@ -42,6 +43,7 @@ export default function RepertorioPage() {
   const [form, setForm] = useState<RepertoireForm>(EMPTY_FORM);
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   async function loadItems() {
     const res = await authFetch(`${apiUrl}/api/v1/repertoire`);
@@ -89,7 +91,6 @@ export default function RepertorioPage() {
   }
 
   async function removeItem(id: number) {
-    if (!window.confirm('Remover esta obra?')) return;
     await authFetch(`${apiUrl}/api/v1/repertoire/${id}`, { method: 'DELETE' });
     await loadItems();
   }
@@ -135,7 +136,7 @@ export default function RepertorioPage() {
                   </div>
                   {(item.composer || item.arranger) && (
                     <div className="row-meta">
-                      {item.composer && <span>🎼 {item.composer}</span>}
+                      {item.composer && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>{item.composer}</span>}
                       {item.arranger && <span>· arr. {item.arranger}</span>}
                     </div>
                   )}
@@ -151,7 +152,7 @@ export default function RepertorioPage() {
                   {isAdmin && (
                     <>
                       <button type="button" className="action-btn" onClick={() => openEdit(item)}>Editar</button>
-                      {isSuperAdmin && <button type="button" className="action-btn danger" onClick={() => removeItem(item.id)}>Remover</button>}
+                      {isSuperAdmin && <button type="button" className="action-btn danger" onClick={() => setConfirmDeleteId(item.id)}>Remover</button>}
                     </>
                   )}
                 </div>
@@ -208,6 +209,15 @@ export default function RepertorioPage() {
               </div>
             </div>
           </div>
+        )}
+
+        {confirmDeleteId !== null && (
+          <ConfirmDialog
+            message="Tens a certeza que pretendes remover esta obra?"
+            confirmLabel="Remover"
+            onConfirm={() => { removeItem(confirmDeleteId); setConfirmDeleteId(null); }}
+            onCancel={() => setConfirmDeleteId(null)}
+          />
         )}
       </div>
 

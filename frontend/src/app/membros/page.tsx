@@ -1,6 +1,7 @@
 "use client";
 
 import AuthenticatedShell from '@/components/AuthenticatedShell';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import { authFetch } from '@/lib/authFetch';
 import { useEffect, useState } from 'react';
 
@@ -63,6 +64,7 @@ export default function MembrosPage() {
   const [editForm, setEditForm] = useState<EditForm>(EMPTY_FORM);
   const [filterNaipe, setFilterNaipe] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   async function loadMembers() {
     const res = await authFetch(`${apiUrl}/api/v1/members/`);
@@ -127,7 +129,6 @@ export default function MembrosPage() {
   }
 
   async function deleteMember(id: number) {
-    if (!window.confirm('Remover este membro?')) return;
     await authFetch(`${apiUrl}/api/v1/members/${id}`, { method: 'DELETE' });
     await loadMembers();
   }
@@ -201,7 +202,7 @@ export default function MembrosPage() {
                   </div>
                   <div className="member-actions">
                     <button type="button" className="action-btn" onClick={() => openEdit(m)}>Editar</button>
-                    {isSuperAdmin && <button type="button" className="action-btn danger" onClick={() => deleteMember(m.id)}>Remover</button>}
+                    {isSuperAdmin && <button type="button" className="action-btn danger" onClick={() => setConfirmDeleteId(m.id)}>Remover</button>}
                   </div>
                 </div>
               );
@@ -241,6 +242,14 @@ export default function MembrosPage() {
               </div>
             </div>
           </div>
+        )}
+        {confirmDeleteId !== null && (
+          <ConfirmDialog
+            message="Tens a certeza que pretendes remover este membro?"
+            confirmLabel="Remover"
+            onConfirm={() => { deleteMember(confirmDeleteId); setConfirmDeleteId(null); }}
+            onCancel={() => setConfirmDeleteId(null)}
+          />
         )}
       </div>
 

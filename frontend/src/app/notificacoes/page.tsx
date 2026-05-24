@@ -15,6 +15,24 @@ type NotificationItem = {
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
 
+const TYPE_BADGE: Record<string, string> = {
+  EVENT: 'badge-event',
+  NEWSLETTER: 'badge-newsletter',
+  BIRTHDAY: 'badge-birthday',
+  REPORT: 'badge-report',
+};
+
+const TYPE_LABEL: Record<string, string> = {
+  EVENT: 'Evento',
+  NEWSLETTER: 'Newsletter',
+  BIRTHDAY: 'Aniversário',
+  REPORT: 'Relatório',
+};
+
+function formatDay(iso: string): number { return new Date(iso).getDate(); }
+function formatMonth(iso: string): string {
+  return new Date(iso).toLocaleString('pt-PT', { month: 'short' }).toUpperCase();
+}
 function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
@@ -57,37 +75,44 @@ export default function NotificacoesPage() {
         <div className="toolbar">
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span className="section-label-mono">Todas as notificações</span>
-            {unread > 0 && <span className="unread-badge">{unread} por ler</span>}
+            {unread > 0 && <span className="badge badge-musical">{unread} por ler</span>}
           </div>
           {unread > 0 && (
-            <button type="button" className="mark-all-btn" onClick={markAllRead}>Marcar todas como lidas</button>
+            <button type="button" className="action-btn" onClick={markAllRead}>Marcar todas como lidas</button>
           )}
         </div>
 
         {loading ? (
-          <div className="loading">A carregar…</div>
+          <div className="empty">A carregar…</div>
         ) : notifications.length === 0 ? (
-          <div className="empty">
-            <div style={{ fontSize: 40, marginBottom: 12 }}>🔔</div>
-            <p>Sem notificações.</p>
-          </div>
+          <div className="empty">Sem notificações.</div>
         ) : (
-          <div className="list">
+          <div className="notif-list">
             {notifications.map(n => (
-              <div
+              <article
                 key={n.id}
-                className={`notif-item${n.is_read ? '' : ' unread'}`}
+                className={`notif-card${n.is_read ? '' : ' unread'}`}
                 onClick={() => !n.is_read && markRead(n.id)}
               >
-                <div className="notif-indicator" />
-                <div className="notif-body">
-                  <div className="notif-top">
-                    <span className="notif-title">{n.title}</span>
-                    <span className="notif-time">{relativeTime(n.created_at)}</span>
-                  </div>
-                  <p className="notif-msg">{n.message}</p>
+                <div className="date-block">
+                  <span className="date-day">{formatDay(n.created_at)}</span>
+                  <span className="date-mon">{formatMonth(n.created_at)}</span>
                 </div>
-              </div>
+                <div className="notif-body">
+                  <div className="notif-header">
+                    <span className="notif-title">{n.message}</span>
+                    {n.notification_type && (
+                      <span className={`badge ${TYPE_BADGE[n.notification_type] ?? ''}`}>
+                        {TYPE_LABEL[n.notification_type] ?? n.notification_type}
+                      </span>
+                    )}
+                  </div>
+                  <div className="notif-meta">
+                    <span>{relativeTime(n.created_at)}</span>
+                    {!n.is_read && <span className="unread-dot">● não lida</span>}
+                  </div>
+                </div>
+              </article>
             ))}
           </div>
         )}
@@ -113,104 +138,114 @@ export default function NotificacoesPage() {
           color: var(--muted);
         }
 
-        .unread-badge {
-          font-size: 11px;
-          padding: 2px 8px;
-          border-radius: 10px;
-          background: var(--accent-dim);
-          color: var(--accent-2);
-          border: 1px solid var(--accent);
-          font-family: var(--font-mono, monospace);
-          font-weight: 600;
+        .empty {
+          text-align: center;
+          padding: 48px;
+          color: var(--muted);
+          font-style: italic;
+          font-size: 14px;
         }
 
-        .mark-all-btn {
-          padding: 6px 12px;
+        .action-btn {
+          padding: 5px 12px;
           border-radius: 5px;
           border: 1px solid var(--border);
           background: transparent;
-          color: var(--muted);
+          color: var(--text-2);
           font-size: 12px;
+          font-weight: 500;
           cursor: pointer;
           transition: all 0.12s;
+          white-space: nowrap;
         }
-        .mark-all-btn:hover { background: var(--surface-2); color: var(--text-2); }
+        .action-btn:hover { background: var(--surface-3); border-color: var(--border-strong); color: var(--text); }
 
-        .loading, .empty {
-          color: var(--muted);
-          font-style: italic;
-          text-align: center;
-          padding: 48px;
-          font-size: 14px;
+        .notif-list { display: flex; flex-direction: column; gap: 1px; }
+
+        .notif-card {
+          display: flex;
+          align-items: stretch;
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          overflow: hidden;
+          transition: border-color 0.12s;
+          cursor: default;
+        }
+        .notif-card:hover { border-color: var(--border-strong); }
+        .notif-card.unread {
+          border-left: 3px solid var(--accent);
+          cursor: pointer;
+        }
+        .notif-card.unread:hover { border-color: var(--accent); }
+
+        .date-block {
+          flex-shrink: 0;
+          width: 64px;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
-        }
-
-        .list { display: flex; flex-direction: column; gap: 2px; }
-
-        .notif-item {
-          display: flex;
-          align-items: flex-start;
-          gap: 14px;
-          padding: 14px 16px;
-          background: var(--surface);
-          border: 1px solid var(--border);
-          border-radius: 8px;
-          cursor: default;
-          transition: border-color 0.12s;
-        }
-        .notif-item.unread {
           background: var(--surface-2);
-          border-left: 3px solid var(--accent);
-          cursor: pointer;
+          border-right: 1px solid var(--border);
+          padding: 16px 8px;
+          gap: 2px;
         }
-        .notif-item.unread:hover { border-color: var(--accent); background: var(--surface-3); }
 
-        .notif-indicator {
-          margin-top: 6px;
-          width: 7px;
-          height: 7px;
-          border-radius: 50%;
-          flex-shrink: 0;
-          background: transparent;
-          transition: background 0.15s;
+        .date-day {
+          font-family: var(--font-display, serif);
+          font-size: 26px;
+          font-weight: 700;
+          color: var(--accent);
+          line-height: 1;
         }
-        .notif-item.unread .notif-indicator { background: var(--accent); }
 
-        .notif-body { flex: 1; min-width: 0; }
+        .date-mon {
+          font-family: var(--font-mono, monospace);
+          font-size: 10px;
+          color: var(--muted);
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
 
-        .notif-top {
+        .notif-body {
+          flex: 1;
+          padding: 14px 18px;
           display: flex;
-          align-items: flex-start;
-          justify-content: space-between;
-          gap: 12px;
-          margin-bottom: 4px;
+          flex-direction: column;
+          gap: 6px;
+          min-width: 0;
+        }
+
+        .notif-header {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-wrap: wrap;
         }
 
         .notif-title {
           font-size: 14px;
-          font-weight: 600;
+          font-weight: 500;
           color: var(--text);
-          line-height: 1.3;
+          flex: 1;
+          min-width: 0;
+          line-height: 1.4;
         }
 
-        .notif-time {
+        .notif-meta {
           font-family: var(--font-mono, monospace);
           font-size: 11px;
           color: var(--muted);
-          flex-shrink: 0;
-          margin-top: 2px;
+          display: flex;
+          gap: 10px;
         }
 
-        .notif-msg {
-          font-size: 13px;
-          color: var(--text-2);
-          margin: 0;
-          line-height: 1.5;
+        .unread-dot {
+          color: var(--accent-2);
         }
       `}</style>
     </AuthenticatedShell>
   );
 }
+

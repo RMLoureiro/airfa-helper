@@ -43,7 +43,6 @@ export default function LoginPage() {
             {[0, 1, 2, 3, 4].map(i => <div key={i} className="staff-line" />)}
           </div>
           <div className="left-content">
-            <div className="left-est">est. 1950</div>
             <p className="left-title">Banda Filarmónica<br />de Airfa</p>
           </div>
         </div>
@@ -52,7 +51,6 @@ export default function LoginPage() {
         <div className="login-right">
           <div className="brand-mark">A</div>
           <h1 className="form-title">Iniciar sessão</h1>
-          <p className="form-subtitle">Portal da Banda Filarmónica de Airfa</p>
 
           <form className="form" onSubmit={handleSubmit}>
             <label className="field">

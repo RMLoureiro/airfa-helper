@@ -404,30 +404,27 @@ def _seed_notifications(db: Session, users: tuple[User, User, User, User], event
     db.query(Notification).delete(synchronize_session=False)
 
     notifications = [
-        Notification(
-            user_id=super_admin.id,
-            type=NotificationType.EVENT,
-            content=f"Evento agendado: {events[0].title}",
-            read=False,
-        ),
-        Notification(
-            user_id=admin.id,
-            type=NotificationType.NEWSLETTER,
-            content=f"Nova publicação: {newsletters[0].title}",
-            read=False,
-        ),
-        Notification(
-            user_id=regular.id,
-            type=NotificationType.BIRTHDAY,
-            content="Hoje faz anos um membro da banda.",
-            read=False,
-        ),
-        Notification(
-            user_id=regular2.id,
-            type=NotificationType.BIRTHDAY,
-            content="Hoje faz anos um membro da banda.",
-            read=False,
-        ),
+        # super_admin
+        Notification(user_id=super_admin.id, type=NotificationType.EVENT,      content=f"Evento agendado: {events[0].title}",               read=False),
+        Notification(user_id=super_admin.id, type=NotificationType.EVENT,      content=f"Lembrete: {events[1].title} é amanhã.",             read=False),
+        Notification(user_id=super_admin.id, type=NotificationType.NEWSLETTER, content=f"Nova publicação: {newsletters[0].title}",           read=False),
+        Notification(user_id=super_admin.id, type=NotificationType.BIRTHDAY,   content="Hoje faz anos um membro da banda.",                  read=True),
+        Notification(user_id=super_admin.id, type=NotificationType.REPORT,     content="Um novo relatório foi submetido.",                   read=True),
+        # admin
+        Notification(user_id=admin.id, type=NotificationType.NEWSLETTER, content=f"Nova publicação: {newsletters[0].title}",                read=False),
+        Notification(user_id=admin.id, type=NotificationType.EVENT,      content=f"Evento agendado: {events[2].title}",                     read=False),
+        Notification(user_id=admin.id, type=NotificationType.BIRTHDAY,   content="Hoje faz anos um membro da banda.",                       read=False),
+        Notification(user_id=admin.id, type=NotificationType.REPORT,     content="Um novo relatório foi submetido.",                        read=True),
+        # regular
+        Notification(user_id=regular.id, type=NotificationType.BIRTHDAY, content="Hoje faz anos um membro da banda.",                       read=False),
+        Notification(user_id=regular.id, type=NotificationType.EVENT,    content=f"Novo evento adicionado: {events[0].title}",              read=False),
+        Notification(user_id=regular.id, type=NotificationType.EVENT,    content=f"Lembrete: {events[1].title} é amanhã.",                  read=True),
+        Notification(user_id=regular.id, type=NotificationType.BIRTHDAY, content="Parabéns! Hoje é teu aniversário.",                       read=True),
+        # regular2
+        Notification(user_id=regular2.id, type=NotificationType.BIRTHDAY, content="Hoje faz anos um membro da banda.",                      read=False),
+        Notification(user_id=regular2.id, type=NotificationType.EVENT,   content=f"Novo evento adicionado: {events[2].title}",              read=False),
+        Notification(user_id=regular2.id, type=NotificationType.NEWSLETTER, content=f"Nova publicação: {newsletters[0].title}",             read=False),
+        Notification(user_id=regular2.id, type=NotificationType.EVENT,   content=f"Lembrete: {events[0].title} é amanhã.",                  read=True),
     ]
     db.add_all(notifications)
 

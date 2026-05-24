@@ -129,8 +129,8 @@ function EventModal({ event, onClose }: { event: EventItem; onClose: () => void 
         </div>
 
         <div style={{ display: 'flex', gap: 20, fontSize: 13, color: 'var(--muted)', marginBottom: 16, flexWrap: 'wrap' }}>
-          <span>⏱ {formatTime(event.start_time)}</span>
-          {event.location && <span>📍 {event.location}</span>}
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>{formatTime(event.start_time)}</span>
+          {event.location && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M20 10c0 6-8 13-8 13S4 16 4 10a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>{event.location}</span>}
         </div>
 
         {event.description && (
@@ -260,7 +260,7 @@ function MiniCalendar({ events, onEventClick }: { events: EventItem[]; onEventCl
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span className={`badge ${eventBadgeClass(ev.type)}`}>{eventTypeLabel(ev.type)}</span>
               </div>
-              <span style={{ fontSize: 11, color: 'var(--muted)' }}>⏱ {formatTime(ev.start_time)}</span>
+              <span style={{ fontSize: 11, color: 'var(--muted)', display: 'inline-flex', alignItems: 'center', gap: 3 }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>{formatTime(ev.start_time)}</span>
             </div>
           ))}
         </div>
@@ -339,7 +339,19 @@ export default function HomePage() {
                 <div className="birthdays">
                   {birthdays.map(b => (
                     <div key={b.id} className="birthday-row">
-                      <div className="bday-icon">🎂</div>
+                      <div className="bday-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8" />
+                          <path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1" />
+                          <path d="M2 21h20" />
+                          <path d="M7 8v3" />
+                          <path d="M12 8v3" />
+                          <path d="M17 8v3" />
+                          <path d="M7 4a1 1 0 0 1 1-1 1 1 0 0 1 1 1v1H7V4z" />
+                          <path d="M12 4a1 1 0 0 1 1-1 1 1 0 0 1 1 1v1h-2V4z" />
+                          <path d="M17 4a1 1 0 0 1 1-1 1 1 0 0 1 1 1v1h-2V4z" />
+                        </svg>
+                      </div>
                       <div className="bday-info">
                         <span className="bday-name">{b.name}</span>
                         <span className="bday-when">{formatDays(b.days_until)}</span>
@@ -377,8 +389,8 @@ export default function HomePage() {
                         <span className={`badge ${eventBadgeClass(ev.type)}`}>{eventTypeLabel(ev.type)}</span>
                       </div>
                       <div className="event-meta">
-                        <span>⏱ {formatTime(ev.start_time)}</span>
-                        {ev.location && <span>· {ev.location}</span>}
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>{formatTime(ev.start_time)}</span>
+                        {ev.location && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>·<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M20 10c0 6-8 13-8 13S4 16 4 10a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>{ev.location}</span>}
                       </div>
                     </div>
                   </article>
@@ -505,7 +517,7 @@ export default function HomePage() {
           border-radius: 8px;
         }
 
-        .bday-icon { font-size: 18px; flex-shrink: 0; }
+        .bday-icon { width: 32px; height: 32px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: var(--accent-dim); border-radius: 6px; color: var(--accent); }
 
         .bday-info {
           display: flex;

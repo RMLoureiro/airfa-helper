@@ -1,6 +1,7 @@
 "use client";
 
 import AuthenticatedShell from '@/components/AuthenticatedShell';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import { authFetch } from '@/lib/authFetch';
 import { useEffect, useState } from 'react';
 
@@ -54,6 +55,7 @@ export default function EventsPage() {
   const [editingEvent, setEditingEvent] = useState<EventItem | null>(null);
   const [form, setForm] = useState<EventForm>(EMPTY_FORM);
   const [filterType, setFilterType] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   async function loadEvents() {
     const response = await authFetch(`${apiUrl}/api/v1/events`);
@@ -116,7 +118,6 @@ export default function EventsPage() {
   }
 
   async function removeEvent(eventId: number) {
-    if (!window.confirm('Tem a certeza que pretende remover este evento?')) return;
     await authFetch(`${apiUrl}/api/v1/events/${eventId}`, { method: 'DELETE' });
     await loadEvents();
   }
@@ -167,8 +168,8 @@ export default function EventsPage() {
                     <span className={`badge ${EVENT_BADGE[event.type] ?? 'badge-other'}`}>{EVENT_LABELS[event.type] ?? event.type}</span>
                   </div>
                   <div className="event-meta">
-                    <span>⏱ {formatTime(event.start_time)}</span>
-                    {event.location && <span>· 📍 {event.location}</span>}
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>{formatTime(event.start_time)}</span>
+                    {event.location && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>·<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M20 10c0 6-8 13-8 13S4 16 4 10a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>{event.location}</span>}
                   </div>
                   {event.description && <p className="event-desc">{event.description}</p>}
                   {event.type === 'CONCERT' && (event.facebook_link || event.instagram_link) && (
@@ -190,7 +191,7 @@ export default function EventsPage() {
                       Editar
                     </button>
                     {isSuperAdmin && (
-                      <button type="button" className="action-btn danger" onClick={() => removeEvent(event.id)}>
+                      <button type="button" className="action-btn danger" onClick={() => setConfirmDeleteId(event.id)}>
                         Remover
                       </button>
                     )}
@@ -263,6 +264,15 @@ export default function EventsPage() {
               </div>
             </div>
           </div>
+        )}
+
+        {confirmDeleteId !== null && (
+          <ConfirmDialog
+            message="Tens a certeza que pretendes remover este evento?"
+            confirmLabel="Remover"
+            onConfirm={() => { removeEvent(confirmDeleteId); setConfirmDeleteId(null); }}
+            onCancel={() => setConfirmDeleteId(null)}
+          />
         )}
       </div>
 

@@ -3,6 +3,9 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { authFetch } from '@/lib/authFetch';
+
+const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
 
 // ─── Nav icons ────────────────────────────────────────────────────────────────
 function IconHome() {
@@ -126,7 +129,7 @@ const navigation = [
   { href: '/instrumentos',label: 'Instrumentos',   icon: <IconMusic />,         adminOnly: false },
   { href: '/repertorio',  label: 'Repertório',     icon: <IconList />,          adminOnly: false },
   { href: '/notificacoes',label: 'Notificações',   icon: <IconBell />,          adminOnly: false },
-  { href: '/newsletter',  label: 'Newsletter',     icon: <IconNewspaper />,     adminOnly: false },
+  { href: '/newsletter',  label: 'Newsletter',     icon: <IconNewspaper />,     adminOnly: true  },
   { href: '/membros',     label: 'Membros',        icon: <IconUsers />,         adminOnly: true  },
 ];
 
@@ -154,6 +157,7 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     const saved = localStorage.getItem('airfa_theme');
@@ -204,6 +208,14 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
     }
     setReady(true);
   }, [router]);
+
+  useEffect(() => {
+    if (!ready) return;
+    authFetch(`${apiUrl}/api/v1/notifications/unread-count`)
+      .then(r => r.json())
+      .then(d => setUnreadCount(d.count ?? 0))
+      .catch(() => {});
+  }, [ready, pathname]);
 
   const themeToggle = (
     <button
@@ -261,7 +273,6 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
           <span className="brand-name">Airfa</span>
           <span className="brand-sub">Banda Filarmónica</span>
         </div>
-        <span style={{ marginLeft: 'auto' }}>{themeToggle}</span>
       </div>
 
       {/* Divider */}
@@ -282,6 +293,9 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
               >
                 <span className="nav-icon">{item.icon}</span>
                 <span className="nav-label">{item.label}</span>
+                {item.href === '/notificacoes' && unreadCount > 0 && (
+                  <span className="nav-unread-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
+                )}
               </Link>
             );
           })}
@@ -312,6 +326,15 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
                   <IconUser />
                   Sobre mim
                 </Link>
+                <div className="user-popup-sep" />
+                <button
+                  type="button"
+                  className="user-popup-item"
+                  onClick={toggleTheme}
+                >
+                  {darkMode ? <IconMoon /> : <IconSun />}
+                  {darkMode ? 'Modo escuro' : 'Modo claro'}
+                </button>
                 <div className="user-popup-sep" />
                 <button type="button" className="user-popup-item user-popup-danger" onClick={handleLogout}>
                   <IconLogout />
@@ -398,7 +421,6 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
             <IconMenu />
           </button>
           <span className="mobile-brand">Airfa</span>
-          {themeToggle}
         </div>
 
         <main className="main-content" id="main-content">
@@ -555,6 +577,25 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
         }
 
         .nav-label { flex: 1; }
+
+        :global(.nav-unread-badge) {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 18px;
+          height: 18px;
+          padding: 0 5px;
+          border-radius: 9px;
+          background: var(--accent);
+          border: none;
+          color: #0B0A08;
+          font-family: var(--font-mono, monospace);
+          font-size: 10px;
+          font-weight: 800;
+          line-height: 1;
+          letter-spacing: 0;
+          box-shadow: 0 0 6px rgba(200,133,43,0.5);
+        }
 
         :global(.sidebar-user-info) {
           display: flex;
