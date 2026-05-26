@@ -273,7 +273,7 @@ export default function PerfilPage() {
         .save-msg.ok { background: var(--success-dim); color: var(--success); border: 1px solid rgba(78,152,104,0.3); }
         .save-msg.err { background: var(--danger-dim); color: var(--danger); border: 1px solid rgba(194,78,66,0.3); }
 
-        .btn-primary { padding: 8px 16px; border-radius: 6px; border: none; background: var(--accent); color: #0B0A08; font-size: 13px; font-weight: 700; cursor: pointer; transition: background 0.15s; }
+        .btn-primary { padding: 8px 16px; border-radius: 6px; border: none; background: var(--accent); color: var(--accent-fg); font-size: 13px; font-weight: 700; cursor: pointer; transition: background 0.15s; }
         .btn-primary:hover:not(:disabled) { background: var(--accent-2); }
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-secondary { padding: 8px 16px; border-radius: 6px; border: 1px solid var(--border-strong); background: transparent; color: var(--text-2); font-size: 13px; cursor: pointer; }

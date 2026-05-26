@@ -81,7 +81,7 @@ function DonutChart({ present, tardy, justified, absent, label }: {
 
   const segDefs: { key: SegKey; n: number; color: string; dim: string; tip: string }[] = [
     { key: 'present',   n: present,   color: 'var(--success)',   dim: 'rgba(78,152,104,0.5)',  tip: `✓ ${present} presente${present !== 1 ? 's' : ''}` },
-    { key: 'tardy',     n: tardy,     color: 'var(--accent)',    dim: 'rgba(200,133,43,0.5)',  tip: `⟳ ${tardy} atrasado${tardy !== 1 ? 's' : ''}` },
+    { key: 'tardy',     n: tardy,     color: 'var(--accent)',    dim: 'rgba(91,143,184,0.5)',  tip: `⟳ ${tardy} atrasado${tardy !== 1 ? 's' : ''}` },
     { key: 'justified', n: justified, color: 'var(--rehearsal-color)', dim: 'rgba(74,126,196,0.5)', tip: `~ ${justified} justificado${justified !== 1 ? 's' : ''}` },
     { key: 'absent',    n: absent,    color: 'var(--danger)',    dim: 'rgba(194,78,66,0.5)',   tip: `✗ ${absent} falta${absent !== 1 ? 's' : ''}` },
   ];
@@ -910,7 +910,7 @@ export default function PresencasPage() {
           border-radius: 6px;
           border: none;
           background: var(--accent);
-          color: #0B0A08;
+          color: var(--accent-fg);
           font-size: 13px;
           font-weight: 700;
           cursor: pointer;

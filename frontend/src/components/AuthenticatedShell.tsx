@@ -211,10 +211,14 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
 
   useEffect(() => {
     if (!ready) return;
-    authFetch(`${apiUrl}/api/v1/notifications/unread-count`)
-      .then(r => r.json())
-      .then(d => setUnreadCount(d.count ?? 0))
-      .catch(() => {});
+    const fetchCount = () =>
+      authFetch(`${apiUrl}/api/v1/notifications/unread-count`)
+        .then(r => r.json())
+        .then(d => setUnreadCount(d.count ?? 0))
+        .catch(() => {});
+    fetchCount();
+    window.addEventListener('notif-read', fetchCount);
+    return () => window.removeEventListener('notif-read', fetchCount);
   }, [ready, pathname]);
 
   const themeToggle = (
@@ -233,7 +237,7 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
         padding: 0,
         borderRadius: 7,
         background: 'var(--accent-dim)',
-        border: '1px solid rgba(200,133,43,0.25)',
+        border: '1px solid rgba(91,143,184,0.22)',
         color: 'var(--accent-2)',
         cursor: 'pointer',
         outline: 'none',
@@ -477,15 +481,15 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
           padding: 0;
           border-radius: 7px;
           background: var(--accent-dim);
-          border: 1px solid rgba(200,133,43,0.25);
+          border: 1px solid rgba(91,143,184,0.22);
           color: var(--accent-2);
           cursor: pointer;
           outline: none;
           transition: background 0.12s, border-color 0.12s;
         }
         .theme-toggle:hover {
-          background: rgba(200,133,43,0.22);
-          border-color: rgba(200,133,43,0.5);
+          background: rgba(91,143,184,0.18);
+          border-color: rgba(91,143,184,0.45);
         }
         .theme-toggle:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
 
@@ -493,7 +497,7 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
           width: 36px;
           height: 36px;
           background: var(--accent);
-          color: #0B0A08;
+          color: var(--accent-fg);
           border-radius: 8px;
           display: flex;
           align-items: center;
@@ -588,13 +592,13 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
           border-radius: 9px;
           background: var(--accent);
           border: none;
-          color: #0B0A08;
+          color: var(--accent-fg);
           font-family: var(--font-mono, monospace);
           font-size: 10px;
           font-weight: 800;
           line-height: 1;
           letter-spacing: 0;
-          box-shadow: 0 0 6px rgba(200,133,43,0.5);
+          box-shadow: 0 0 6px rgba(91,143,184,0.4);
         }
 
         :global(.sidebar-user-info) {
@@ -611,7 +615,7 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
           flex-shrink: 0;
           border-radius: 10px;
           background: var(--accent-dim);
-          border: 1px solid rgba(200,133,43,0.25);
+          border: 1px solid rgba(91,143,184,0.22);
           color: var(--accent-2);
           display: flex;
           align-items: center;
@@ -621,8 +625,8 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
           transition: background 0.12s, border-color 0.12s;
         }
         :global(.user-avatar:hover), :global(.user-avatar.user-avatar-open) {
-          background: rgba(200,133,43,0.22);
-          border-color: rgba(200,133,43,0.5);
+          background: rgba(91,143,184,0.18);
+          border-color: rgba(91,143,184,0.45);
         }
 
         /* User popup */

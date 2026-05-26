@@ -170,7 +170,7 @@ export default function LoginPage() {
           height: 40px;
           border-radius: 8px;
           background: var(--accent);
-          color: #0B0A08;
+          color: var(--accent-fg);
           font-family: var(--font-display, serif);
           font-size: 20px;
           font-weight: 700;
@@ -226,7 +226,7 @@ export default function LoginPage() {
           border: none;
           border-radius: 7px;
           background: var(--accent);
-          color: #0B0A08;
+          color: var(--accent-fg);
           font-size: 14px;
           font-weight: 700;
           cursor: pointer;
@@ -243,7 +243,7 @@ export default function LoginPage() {
           width: 18px;
           height: 18px;
           border: 2px solid rgba(0,0,0,0.2);
-          border-top-color: #0B0A08;
+          border-top-color: var(--accent-fg);
           border-radius: 50%;
           animation: spin 0.7s linear infinite;
         }

@@ -374,7 +374,7 @@ export default function InstrumentosPage() {
 
         .badge { padding: 3px 8px; border-radius: 5px; font-size: 11px; font-weight: 600; }
         .badge-ok { background: rgba(120,200,120,0.15); color: var(--success); border: 1px solid rgba(120,200,120,0.3); }
-        .badge-needs_maintenance { background: rgba(200,133,43,0.15); color: var(--accent-2); border: 1px solid rgba(200,133,43,0.3); }
+        .badge-needs_maintenance { background: rgba(200,133,43,0.15); color: var(--concert-color); border: 1px solid rgba(200,133,43,0.3); }
         .badge-needs_fixing { background: rgba(220,80,80,0.15); color: var(--danger); border: 1px solid rgba(220,80,80,0.3); }
         .badge-out_of_service { background: rgba(120,120,120,0.15); color: var(--muted); border: 1px solid var(--border); }
 
@@ -405,11 +405,11 @@ export default function InstrumentosPage() {
         .report-meta { font-size: 11px; color: var(--muted); }
         .badge-severity { padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 600; }
         .sev-small { background: rgba(120,200,120,0.15); color: var(--success); }
-        .sev-average { background: rgba(200,133,43,0.15); color: var(--accent-2); }
+        .sev-average { background: rgba(200,133,43,0.15); color: var(--concert-color); }
         .sev-big { background: rgba(220,80,80,0.15); color: var(--danger); }
         .badge-resolved { font-size: 11px; color: var(--success); font-weight: 600; }
 
-        .btn-primary { padding: 8px 16px; border-radius: 6px; border: none; background: var(--accent); color: #0B0A08; font-size: 13px; font-weight: 700; cursor: pointer; transition: background 0.15s; }
+        .btn-primary { padding: 8px 16px; border-radius: 6px; border: none; background: var(--accent); color: var(--accent-fg); font-size: 13px; font-weight: 700; cursor: pointer; transition: background 0.15s; }
         .btn-primary:hover:not(:disabled) { background: var(--accent-2); }
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-secondary { padding: 8px 16px; border-radius: 6px; border: 1px solid var(--border-strong); background: transparent; color: var(--text-2); font-size: 13px; cursor: pointer; }

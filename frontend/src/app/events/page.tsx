@@ -15,6 +15,10 @@ type EventItem = {
   type: string;
   facebook_link?: string | null;
   instagram_link?: string | null;
+  recurrence?: string | null;
+  recurrence_end_date?: string | null;
+  recurrence_series_id?: number | null;
+  is_cancelled?: boolean;
 };
 
 type EventForm = {
@@ -26,16 +30,16 @@ type EventForm = {
   type: 'REHEARSAL' | 'SPECIAL_REHEARSAL' | 'CONCERT' | 'OTHER';
   facebook_link: string;
   instagram_link: string;
+  recurrence: '' | 'WEEKLY';
+  recurrence_end_date: string;
 };
+
+type EditScope = 'single' | 'this_and_future';
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
 
 const EVENT_LABELS: Record<string, string> = { REHEARSAL: 'Ensaio', SPECIAL_REHEARSAL: 'Ensaio especial', CONCERT: 'Concerto', OTHER: 'Outro' };
 const EVENT_BADGE: Record<string, string> = { REHEARSAL: 'badge-rehearsal', SPECIAL_REHEARSAL: 'badge-special', CONCERT: 'badge-concert', OTHER: 'badge-other' };
-
-function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleString('pt-PT', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-}
 
 function formatDay(iso: string): number { return new Date(iso).getDate(); }
 function formatMonth(iso: string): string {
@@ -45,7 +49,13 @@ function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
 }
 
-const EMPTY_FORM: EventForm = { title: '', description: '', start_time: '', end_time: '', location: '', type: 'REHEARSAL', facebook_link: '', instagram_link: '' };
+const EMPTY_FORM: EventForm = {
+  title: '', description: '', start_time: '', end_time: '',
+  location: '', type: 'REHEARSAL', facebook_link: '', instagram_link: '',
+  recurrence: '', recurrence_end_date: '',
+};
+
+const REHEARSAL_TYPES = new Set(['REHEARSAL', 'SPECIAL_REHEARSAL']);
 
 export default function EventsPage() {
   const [events, setEvents] = useState<EventItem[]>([]);
@@ -53,9 +63,16 @@ export default function EventsPage() {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<EventItem | null>(null);
+  const [editScope, setEditScope] = useState<EditScope>('single');
   const [form, setForm] = useState<EventForm>(EMPTY_FORM);
   const [filterType, setFilterType] = useState<string | null>(null);
+
+  // Delete flow (non-recurring)
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+
+  // Scope dialog for recurring events
+  const [scopeDialogFor, setScopeDialogFor] = useState<'edit' | 'delete' | null>(null);
+  const [pendingScopeEvent, setPendingScopeEvent] = useState<EventItem | null>(null);
 
   async function loadEvents() {
     const response = await authFetch(`${apiUrl}/api/v1/events`);
@@ -77,12 +94,14 @@ export default function EventsPage() {
 
   function openCreateModal() {
     setEditingEvent(null);
+    setEditScope('single');
     setForm(EMPTY_FORM);
     setIsModalOpen(true);
   }
 
-  function openEditModal(event: EventItem) {
+  function startEdit(event: EventItem, scope: EditScope) {
     setEditingEvent(event);
+    setEditScope(scope);
     setForm({
       title: event.title,
       description: event.description ?? '',
@@ -92,22 +111,65 @@ export default function EventsPage() {
       type: event.type as EventForm['type'],
       facebook_link: event.facebook_link ?? '',
       instagram_link: event.instagram_link ?? '',
+      recurrence: (event.recurrence as '' | 'WEEKLY') ?? '',
+      recurrence_end_date: event.recurrence_end_date ?? '',
     });
     setIsModalOpen(true);
   }
 
+  function handleEditClick(event: EventItem) {
+    if (event.recurrence_series_id) {
+      setPendingScopeEvent(event);
+      setScopeDialogFor('edit');
+    } else {
+      startEdit(event, 'single');
+    }
+  }
+
+  function handleDeleteClick(event: EventItem) {
+    if (event.recurrence_series_id) {
+      setPendingScopeEvent(event);
+      setScopeDialogFor('delete');
+    } else {
+      setConfirmDeleteId(event.id);
+    }
+  }
+
+  function onScopeChosen(scope: EditScope) {
+    const ev = pendingScopeEvent!;
+    setScopeDialogFor(null);
+    setPendingScopeEvent(null);
+    if (scopeDialogFor === 'edit') {
+      startEdit(ev, scope);
+    } else {
+      removeEvent(ev.id, scope);
+    }
+  }
+
   async function saveEvent() {
-    const payload = {
-      ...form,
+    const payload: Record<string, unknown> = {
+      title: form.title,
+      description: form.description || null,
       start_time: new Date(form.start_time).toISOString(),
       end_time: new Date(form.end_time).toISOString(),
-      description: form.description || null,
       location: form.location || null,
+      type: form.type,
       facebook_link: form.facebook_link || null,
       instagram_link: form.instagram_link || null,
     };
+
     const isEditing = Boolean(editingEvent);
-    const url = isEditing ? `${apiUrl}/api/v1/events/${editingEvent?.id}` : `${apiUrl}/api/v1/events`;
+
+    if (!isEditing && form.recurrence === 'WEEKLY' && form.recurrence_end_date) {
+      payload.recurrence = 'WEEKLY';
+      payload.recurrence_end_date = form.recurrence_end_date;
+    }
+
+    const scopeParam = isEditing && editingEvent?.recurrence_series_id ? `?scope=${editScope}` : '';
+    const url = isEditing
+      ? `${apiUrl}/api/v1/events/${editingEvent!.id}${scopeParam}`
+      : `${apiUrl}/api/v1/events`;
+
     await authFetch(url, {
       method: isEditing ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -117,12 +179,15 @@ export default function EventsPage() {
     await loadEvents();
   }
 
-  async function removeEvent(eventId: number) {
-    await authFetch(`${apiUrl}/api/v1/events/${eventId}`, { method: 'DELETE' });
+  async function removeEvent(eventId: number, scope: EditScope = 'single') {
+    await authFetch(`${apiUrl}/api/v1/events/${eventId}?scope=${scope}`, { method: 'DELETE' });
     await loadEvents();
   }
 
-  const displayed = filterType ? events.filter(e => e.type === filterType || (filterType === 'REHEARSAL' && e.type === 'SPECIAL_REHEARSAL')) : events;
+  const isRehearsal = REHEARSAL_TYPES.has(form.type);
+  const displayed = filterType
+    ? events.filter(e => e.type === filterType || (filterType === 'REHEARSAL' && e.type === 'SPECIAL_REHEARSAL'))
+    : events;
 
   return (
     <AuthenticatedShell title="Eventos" subtitle="Ensaios, concertos e outros compromissos.">
@@ -154,7 +219,7 @@ export default function EventsPage() {
         ) : (
           <div className="event-list">
             {displayed.map(event => (
-              <article key={event.id} className="event-card">
+              <article key={event.id} className={`event-card${event.is_cancelled ? ' cancelled' : ''}`}>
                 {/* Left: date block */}
                 <div className="date-block">
                   <span className="date-day">{formatDay(event.start_time)}</span>
@@ -166,6 +231,12 @@ export default function EventsPage() {
                   <div className="event-header">
                     <h2 className="event-title">{event.title}</h2>
                     <span className={`badge ${EVENT_BADGE[event.type] ?? 'badge-other'}`}>{EVENT_LABELS[event.type] ?? event.type}</span>
+                    {event.recurrence === 'WEEKLY' && !event.is_cancelled && (
+                      <span className="badge badge-recurring">↻ Semanal</span>
+                    )}
+                    {event.is_cancelled && (
+                      <span className="badge badge-cancelled">Cancelado</span>
+                    )}
                   </div>
                   <div className="event-meta">
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>{formatTime(event.start_time)}</span>
@@ -185,14 +256,14 @@ export default function EventsPage() {
                 </div>
 
                 {/* Right: actions */}
-                {isAdmin && (
+                {isAdmin && !event.is_cancelled && (
                   <div className="event-actions">
-                    <button type="button" className="action-btn" onClick={() => openEditModal(event)}>
+                    <button type="button" className="action-btn" onClick={() => handleEditClick(event)}>
                       Editar
                     </button>
                     {isSuperAdmin && (
-                      <button type="button" className="action-btn danger" onClick={() => setConfirmDeleteId(event.id)}>
-                        Remover
+                      <button type="button" className="action-btn danger" onClick={() => handleDeleteClick(event)}>
+                        Cancelar
                       </button>
                     )}
                   </div>
@@ -202,7 +273,36 @@ export default function EventsPage() {
           </div>
         )}
 
-        {/* Modal */}
+        {/* Scope dialog for recurring events */}
+        {scopeDialogFor !== null && pendingScopeEvent && (
+          <div className="modal-backdrop" onClick={() => { setScopeDialogFor(null); setPendingScopeEvent(null); }}>
+            <div className="modal scope-modal" onClick={e => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2 className="modal-title">
+                  {scopeDialogFor === 'edit' ? 'Editar ensaio recorrente' : 'Cancelar ensaio recorrente'}
+                </h2>
+                <button type="button" className="modal-close" onClick={() => { setScopeDialogFor(null); setPendingScopeEvent(null); }}>✕</button>
+              </div>
+              <p className="scope-text">
+                Este ensaio faz parte de uma série semanal. O que pretendes {scopeDialogFor === 'edit' ? 'editar' : 'cancelar'}?
+              </p>
+              <div className="scope-options">
+                <button type="button" className="scope-btn" onClick={() => onScopeChosen('single')}>
+                  <span className="scope-btn-label">Apenas este ensaio</span>
+                  <span className="scope-btn-sub">
+                    Só afeta {new Date(pendingScopeEvent.start_time).toLocaleDateString('pt-PT', { day: '2-digit', month: 'long' })}
+                  </span>
+                </button>
+                <button type="button" className="scope-btn" onClick={() => onScopeChosen('this_and_future')}>
+                  <span className="scope-btn-label">Este e todos os futuros</span>
+                  <span className="scope-btn-sub">Afeta este e todos os ensaios seguintes da série</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Create / Edit modal */}
         {isModalOpen && (
           <div className="modal-backdrop" onClick={() => setIsModalOpen(false)}>
             <div className="modal" onClick={e => e.stopPropagation()}>
@@ -239,13 +339,35 @@ export default function EventsPage() {
 
                 <label className="form-field">
                   Tipo
-                  <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value as EventForm['type'] })}>
+                  <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value as EventForm['type'], recurrence: '', recurrence_end_date: '' })}>
                     <option value="REHEARSAL">Ensaio</option>
                     <option value="SPECIAL_REHEARSAL">Ensaio especial</option>
                     <option value="CONCERT">Concerto</option>
                     <option value="OTHER">Outro</option>
                   </select>
                 </label>
+
+                {/* Recurrence — only when creating a rehearsal */}
+                {!editingEvent && isRehearsal && (
+                  <label className="form-field span-2 toggle-field">
+                    <span className="toggle-row">
+                      <input
+                        type="checkbox"
+                        checked={form.recurrence === 'WEEKLY'}
+                        onChange={e => setForm({ ...form, recurrence: e.target.checked ? 'WEEKLY' : '', recurrence_end_date: '' })}
+                        style={{ width: 'auto', marginRight: 8 }}
+                      />
+                      Repetir semanalmente
+                    </span>
+                  </label>
+                )}
+
+                {!editingEvent && form.recurrence === 'WEEKLY' && (
+                  <label className="form-field span-2">
+                    Repetir até (inclusive)
+                    <input type="date" value={form.recurrence_end_date} onChange={e => setForm({ ...form, recurrence_end_date: e.target.value })} />
+                  </label>
+                )}
 
                 <label className="form-field">
                   Link Facebook
@@ -268,9 +390,9 @@ export default function EventsPage() {
 
         {confirmDeleteId !== null && (
           <ConfirmDialog
-            message="Tens a certeza que pretendes remover este evento?"
-            confirmLabel="Remover"
-            onConfirm={() => { removeEvent(confirmDeleteId); setConfirmDeleteId(null); }}
+            message="Tens a certeza que pretendes cancelar este evento?"
+            confirmLabel="Cancelar evento"
+            onConfirm={() => { removeEvent(confirmDeleteId, 'single'); setConfirmDeleteId(null); }}
             onCancel={() => setConfirmDeleteId(null)}
           />
         )}
@@ -308,7 +430,7 @@ export default function EventsPage() {
           border-radius: 6px;
           border: none;
           background: var(--accent);
-          color: #0B0A08;
+          color: var(--accent-fg);
           font-size: 13px;
           font-weight: 700;
           cursor: pointer;
@@ -353,6 +475,9 @@ export default function EventsPage() {
         }
         .event-card:hover { border-color: var(--border-strong); }
         .event-list .event-card + .event-card { border-top-left-radius: 8px; border-top-right-radius: 8px; }
+
+        .event-card.cancelled { opacity: 0.55; }
+        .event-card.cancelled .event-title { text-decoration: line-through; }
 
         .date-block {
           flex-shrink: 0;
@@ -459,6 +584,63 @@ export default function EventsPage() {
         .action-btn:hover { background: var(--surface-3); border-color: var(--border-strong); color: var(--text); }
         .action-btn.danger { color: var(--danger); border-color: rgba(194,78,66,0.3); }
         .action-btn.danger:hover { background: var(--danger-dim); border-color: var(--danger); }
+
+        /* Extra badges */
+        .badge-recurring {
+          background: rgba(91,143,184,0.12);
+          border: 1px solid rgba(91,143,184,0.35);
+          color: var(--accent);
+          font-size: 10px;
+          font-weight: 600;
+          padding: 2px 7px;
+          border-radius: 4px;
+        }
+        .badge-cancelled {
+          background: rgba(194,78,66,0.12);
+          border: 1px solid rgba(194,78,66,0.3);
+          color: var(--danger);
+          font-size: 10px;
+          font-weight: 600;
+          padding: 2px 7px;
+          border-radius: 4px;
+        }
+
+        /* Scope dialog */
+        .scope-modal { max-width: 420px; }
+        .scope-text {
+          font-size: 14px;
+          color: var(--text-2);
+          margin: 0 0 20px;
+          line-height: 1.5;
+        }
+        .scope-options { display: flex; flex-direction: column; gap: 10px; }
+        .scope-btn {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 4px;
+          padding: 14px 16px;
+          border-radius: 8px;
+          border: 1px solid var(--border);
+          background: var(--surface-2);
+          cursor: pointer;
+          transition: all 0.12s;
+          text-align: left;
+        }
+        .scope-btn:hover { border-color: var(--accent); background: var(--accent-dim); }
+        .scope-btn-label { font-size: 14px; font-weight: 600; color: var(--text); }
+        .scope-btn-sub { font-size: 12px; color: var(--muted); }
+
+        /* Recurrence toggle */
+        .toggle-field { cursor: default; }
+        .toggle-row {
+          display: flex;
+          align-items: center;
+          font-size: 13px;
+          font-weight: 500;
+          color: var(--text-2);
+          cursor: pointer;
+        }
 
         /* Modal */
         .modal-header {

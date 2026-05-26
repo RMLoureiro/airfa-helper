@@ -10,7 +10,7 @@ from app.deps.auth import get_current_user, get_db, require_roles
 from app.models.enums import SystemRole
 from app.models.repertoire import Repertoire
 from app.models.user import User
-from app.schemas.repertoire import RepertoireCreate, RepertoireFileRead, RepertoireRead
+from app.schemas.repertoire import RepertoireCreate, RepertoireFileRead, RepertoireRead, RepertoireUpdate
 
 router = APIRouter(prefix="/repertoire", tags=["repertoire"])
 
@@ -104,7 +104,48 @@ def create_repertoire(
     return repertoire
 
 
-@router.post("/{repertoire_id}/files")
+@router.put("/{repertoire_id}", response_model=RepertoireRead)
+def update_repertoire(
+    repertoire_id: int,
+    payload: RepertoireUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(SystemRole.ADMIN, SystemRole.SUPER_ADMIN)),
+):
+    repertoire = db.query(Repertoire).filter(Repertoire.id == repertoire_id).first()
+    if not repertoire:
+        raise HTTPException(status_code=404, detail="Repertório não encontrado")
+    for field, value in payload.model_dump(exclude_unset=True).items():
+        setattr(repertoire, field, value)
+    db.commit()
+    db.refresh(repertoire)
+    return RepertoireRead(
+        id=repertoire.id,
+        title=repertoire.title,
+        youtube_link=repertoire.youtube_link,
+        folder_path=repertoire.folder_path,
+        state=repertoire.state,
+        files=_build_files(repertoire.folder_path, repertoire.id),
+    )
+
+
+@router.delete("/{repertoire_id}", status_code=204)
+def delete_repertoire(
+    repertoire_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(SystemRole.SUPER_ADMIN)),
+):
+    repertoire = db.query(Repertoire).filter(Repertoire.id == repertoire_id).first()
+    if not repertoire:
+        raise HTTPException(status_code=404, detail="Repertório não encontrado")
+    folder = _resolve_folder(repertoire.folder_path)
+    if folder and folder.exists():
+        import shutil
+        shutil.rmtree(folder, ignore_errors=True)
+    db.delete(repertoire)
+    db.commit()
+
+
+
 async def upload_repertoire_files(
     repertoire_id: int,
     files: list[UploadFile] = File(...),

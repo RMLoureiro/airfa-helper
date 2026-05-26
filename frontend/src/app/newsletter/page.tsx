@@ -8,22 +8,22 @@ import { useEffect, useState } from 'react';
 type NewsletterItem = {
   id: number;
   title: string;
-  body: string;
-  published_at: string;
+  content: string;
+  created_at: string;
   facebook_link?: string | null;
   instagram_link?: string | null;
 };
 
 type NewsletterForm = {
   title: string;
-  body: string;
+  content: string;
   facebook_link: string;
   instagram_link: string;
 };
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
 
-const EMPTY_FORM: NewsletterForm = { title: '', body: '', facebook_link: '', instagram_link: '' };
+const EMPTY_FORM: NewsletterForm = { title: '', content: '', facebook_link: '', instagram_link: '' };
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' });
@@ -61,7 +61,7 @@ export default function NewsletterPage() {
   function openCreate() { setEditingItem(null); setForm(EMPTY_FORM); setIsModalOpen(true); }
   function openEdit(item: NewsletterItem) {
     setEditingItem(item);
-    setForm({ title: item.title, body: item.body, facebook_link: item.facebook_link ?? '', instagram_link: item.instagram_link ?? '' });
+    setForm({ title: item.title, content: item.content, facebook_link: item.facebook_link ?? '', instagram_link: item.instagram_link ?? '' });
     setIsModalOpen(true);
   }
 
@@ -100,7 +100,7 @@ export default function NewsletterPage() {
             {items.map(item => (
               <article key={item.id} className="article">
                 <header className="article-header">
-                  <time className="article-date">{formatDate(item.published_at)}</time>
+                  <time className="article-date">{formatDate(item.created_at)}</time>
                   {isAdmin && (
                     <div className="article-actions">
                       <button type="button" className="action-btn" onClick={() => openEdit(item)}>Editar</button>
@@ -109,7 +109,7 @@ export default function NewsletterPage() {
                   )}
                 </header>
                 <h2 className="article-title">{item.title}</h2>
-                <p className="article-body">{item.body}</p>
+                <p className="article-body">{item.content}</p>
                 {(item.facebook_link || item.instagram_link) && (
                   <div className="social-row">
                     {item.facebook_link && <a href={item.facebook_link} target="_blank" rel="noopener noreferrer" className="social-link fb">Facebook</a>}
@@ -135,7 +135,7 @@ export default function NewsletterPage() {
                 </label>
                 <label className="field">
                   Texto
-                  <textarea rows={5} value={form.body} onChange={e => setForm({ ...form, body: e.target.value })} placeholder="Conteúdo da publicação" />
+                  <textarea rows={5} value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} placeholder="Conteúdo da publicação" />
                 </label>
                 <label className="field">
                   Link Facebook
@@ -276,7 +276,7 @@ export default function NewsletterPage() {
 
         .btn-primary {
           padding: 8px 16px; border-radius: 6px; border: none;
-          background: var(--accent); color: #0B0A08; font-size: 13px; font-weight: 700;
+          background: var(--accent); color: var(--accent-fg); font-size: 13px; font-weight: 700;
           cursor: pointer; transition: background 0.15s;
         }
         .btn-primary:hover { background: var(--accent-2); }

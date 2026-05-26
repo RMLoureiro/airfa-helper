@@ -58,11 +58,13 @@ export default function NotificacoesPage() {
   async function markRead(id: number) {
     await authFetch(`${apiUrl}/api/v1/notifications/${id}/read`, { method: 'PUT' });
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+    window.dispatchEvent(new CustomEvent('notif-read'));
   }
 
   async function markAllRead() {
     await authFetch(`${apiUrl}/api/v1/notifications/read-all`, { method: 'PUT' });
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    window.dispatchEvent(new CustomEvent('notif-read'));
   }
 
   useEffect(() => { loadNotifications().catch(() => setLoading(false)); }, []);

@@ -17,6 +17,12 @@ class RepertoireBase(BaseModel):
 class RepertoireCreate(RepertoireBase):
     pass
 
+class RepertoireUpdate(BaseModel):
+    title: Optional[str] = None
+    youtube_link: Optional[str] = None
+    folder_path: Optional[str] = None
+    state: Optional[RepertoireState] = None
+
 class RepertoireRead(RepertoireBase, ReadSchema):
     id: int
     files: list[RepertoireFileRead] = []
