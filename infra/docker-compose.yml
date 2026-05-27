@@ -1,9 +1,13 @@
 version: '3.9'
 
+# ── Local development ─────────────────────────────────────────────────────────
+# Usage: cd infra && docker compose up --build
+# The backend and frontend source directories are volume-mounted for hot reload.
+
 services:
   db:
     image: postgres:16
-    restart: always
+    restart: unless-stopped
     environment:
       POSTGRES_USER: airfa
       POSTGRES_PASSWORD: airfa
@@ -12,30 +16,45 @@ services:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airfa"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   backend:
     build: ../backend
+    # Override CMD to add --reload; entrypoint.sh still runs migrations/seed
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
-      - ../backend:/app
+      - ../backend:/app          # hot-reload source
+      - uploads:/app/uploads     # persist uploaded files
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://airfa:airfa@db:5432/airfa
+      DATABASE_URL: postgresql://airfa:airfa@db:5432/airfa
+      SECRET_KEY: devsecret-change-in-production
+      CORS_ORIGINS: "http://localhost:3000,http://localhost:3001"
+      RUN_SEED: "true"           # seed demo data on every (re)start
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   frontend:
-    build: ../frontend
-    command: npm run dev
+    build:
+      context: ../frontend
+      target: dev               # uses the dev stage (bun install only, no build)
     volumes:
-      - ../frontend:/app
+      - ../frontend:/app        # hot-reload source
+      - /app/node_modules       # preserve container's node_modules from bun install
+      - /app/.next              # preserve Next.js build cache
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      NEXT_PUBLIC_API_URL: http://localhost:8000
     depends_on:
       - backend
 
 volumes:
   db_data:
+  uploads:

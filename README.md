@@ -1,168 +1,236 @@
 # Airfa Helper
 
-Airfa Helper é uma aplicação para gestão de banda filarmónica com backend em FastAPI, base de dados PostgreSQL e frontend em Next.js + TypeScript.
+Management application for a philharmonic band. Built with **FastAPI** (Python), **PostgreSQL**, and **Next.js** (TypeScript).
 
-## Stack
+---
 
-- Backend: FastAPI, SQLAlchemy, Alembic, PostgreSQL
-- Frontend: Next.js 14, React 18, TypeScript
-- Autenticação: JWT com papéis `SUPER_ADMIN`, `ADMIN` e `REGULAR`
-- Ficheiros: PDFs do repertório em disco local
+## Prerequisites
 
-## Funcionalidades principais
+| Tool | Version | Notes |
+|------|---------|-------|
+| Python | 3.11+ | Required for the backend |
+| Node.js | 20+ | Required for the frontend (if running locally) |
+| Bun | 1.3+ | Used as the frontend package manager |
+| PostgreSQL | 16 | Can be run via Docker |
+| Docker & Docker Compose | Any recent version | Recommended for running the full stack |
 
-- Login e área autenticada
-- Home com eventos, newsletter e aniversários
-- Gestão de membros e perfis
-- Eventos com notificações in-app
-- Newsletter com feed recente
-- Presenças e analytics
-- Instrumentos e reports de problemas
-- Repertório com PDFs por obra
-- Notificações in-app
+---
 
-## Estrutura
+## Project Structure
 
-- `backend/` - API FastAPI, modelos, migrações e testes
-- `frontend/` - aplicação Next.js
-- `infra/` - ficheiros auxiliares de infraestrutura
+```
+airfa-helper/
+├── backend/      # FastAPI application
+├── frontend/     # Next.js application
+└── infra/        # Docker Compose configuration
+```
 
-## Requisitos
+---
 
-- Python 3.11+ para o backend
-- Node.js 18+ para o frontend
-- PostgreSQL 16 local
-- No ambiente atual, comandos do backend têm sido executados via WSL
+## Running with Docker Compose (Recommended)
 
-## Variáveis de ambiente
+### Local development
 
-Backend:
+```bash
+cd infra
+docker compose up --build
+```
 
-- `DATABASE_URL` - string de ligação PostgreSQL
-- `SECRET_KEY` - chave JWT
-- `SUPER_ADMIN_EMAIL` - email do primeiro super-admin
-- `SUPER_ADMIN_PASSWORD` - password do seed
-- `SUPER_ADMIN_NAME` - nome do seed
-- `REPERTOIRE_FILES_DIR` - pasta local dos PDFs do repertório
+This starts PostgreSQL (port `5432`), the backend API (port `8000`), and the frontend (port `3000`) with hot reload on both. On first start the database is migrated and seeded automatically.
 
-Frontend:
+### Production (VPS)
 
-- `NEXT_PUBLIC_API_URL` - URL base da API, por exemplo `http://localhost:8000`
+```bash
+# 1. Create your environment file from the template
+cp infra/.env.example infra/.env
+# Edit infra/.env — fill in all passwords, SECRET_KEY, your domain URLs.
 
-## Setup do backend
+# 2. First deploy only: enable seed to create the initial admin account
+#    Set RUN_SEED=true in infra/.env
+
+# 3. Build and start
+cd infra
+docker compose -f docker-compose.prod.yml up -d --build
+
+# 4. After the first start, set RUN_SEED=false in infra/.env and restart
+docker compose -f docker-compose.prod.yml up -d
+```
+
+> **Note:** `NEXT_PUBLIC_API_URL` is baked into the frontend image at build time (Next.js limitation). If the API URL changes, rebuild the frontend image.
+
+---
+
+## Local Development (without Docker)
+
+### 1. Start the Database
+
+Either run PostgreSQL locally or spin up only the DB container:
+
+```bash
+cd infra
+docker compose up db -d
+```
+
+Default database credentials:
+- **Host:** `localhost:5432`
+- **Database:** `airfa`
+- **User:** `airfa`
+- **Password:** `airfa` (Docker)
+
+---
+
+### 2. Backend Setup
 
 ```bash
 cd backend
-python -m venv .venv
-. .venv/bin/activate
+```
+
+**Install dependencies:**
+
+```bash
 pip install -r requirements.txt
 ```
 
-Se estiveres a trabalhar no Windows com o backend a correr em WSL, usa uma `DATABASE_URL` semelhante a:
-
-```bash
-postgresql://airfa:230422@172.17.160.1:5432/airfa
-```
-
-### Migrações
+**Apply database migrations:**
 
 ```bash
 alembic upgrade head
 ```
 
-### Seed do super-admin
+**Run the development server:**
 
 ```bash
-python -m app.seed.seed
-```
-
-### Arranque da API
-
-```bash
-uvicorn app.main:app --reload
-```
-
-## Setup do frontend
-
-```bash
-cd frontend
-npm install
-```
-
-### Arranque do frontend
-
-```bash
-npm run dev
-```
-
-## Testes
-
-Backend:
-
-```bash
-cd backend
-. .venv/bin/activate
-pytest -q tests/test_api_error_responses.py tests/test_api_happy_paths.py
-```
-
-## Notas operacionais
-
-- O scheduler de aniversários é iniciado no arranque da API.
-- Os PDFs do repertório são gravados em disco local e expostos por pasta por obra.
-- A aplicação assume o português de Portugal na interface.
-
-## Como correr localmente (WSL + Windows)
-
-> O backend corre em WSL (Ubuntu) e o frontend em qualquer terminal com Node.js.
-
-### 1. PostgreSQL
-
-Certifica-te que o PostgreSQL está a correr no Windows na porta `5432` com o utilizador `airfa` e a base de dados `airfa`.
-
-### 2. Backend (WSL)
-
-Abre uma sessão WSL e executa:
-
-```bash
-cd /mnt/c/Users/Loureiro/Desktop/Dev/airfa-helper/backend
-source .venv/bin/activate
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-A API fica disponível em **http://localhost:8000**. Documentação interactiva em **http://localhost:8000/docs**.
-
-### 3. Seed da base de dados (primeira vez)
-
-Após o backend estar em execução, num segundo tab WSL:
-
-```bash
-cd /mnt/c/Users/Loureiro/Desktop/Dev/airfa-helper/backend
-source .venv/bin/activate
-python -m app.seed.seed
-```
-
-Cria os seguintes utilizadores de teste (password: `admin123`):
-
-| Role | Username (login) | Nome |
-|------|-----------------|------|
-| SUPER_ADMIN | `superadmin` | Super Admin Airfa |
-| ADMIN | `admin` | Admin Airfa |
-| REGULAR | `membro` | Membro Regular |
-| REGULAR | `membro2` | Membro Regular 2 |
-
-### 4. Frontend (Windows — PowerShell)
-
-Correr o frontend com hot reload:
-```powershell
-cd C:\Users\Loureiro\Desktop\Dev\airfa-helper\frontend
-npm install        # só na primeira vez
-npm run dev        # hot reload activo (webpack polling)
-```
-
-A aplicação fica disponível em **http://localhost:3000**.
+The API will be available at `http://localhost:8000`.  
+Interactive API docs: `http://localhost:8000/docs`
 
 ---
 
-## Estado atual
+### 3. Run the Seed
 
-O núcleo funcional está implementado e validado com testes de API para cenários de erro e de sucesso.
+The seed populates the database with sample users, events, instruments, repertoire, and other data.
+
+From the `backend/` directory:
+
+```bash
+python -m app.seed.seed
+```
+
+#### Seed Accounts
+
+| Username | Password | Role |
+|----------|----------|------|
+| `superadmin` | `admin123` | Super Admin |
+| `admin` | `admin123` | Admin |
+| `membro` | `admin123` | Regular member |
+| `membro2` | `admin123` | Regular member |
+
+> Passwords can be overridden via environment variables before running the seed:
+> - `SEED_SUPER_ADMIN_PASSWORD`
+> - `SEED_ADMIN_PASSWORD`
+> - `SEED_REGULAR_PASSWORD`
+
+#### Role Permissions
+
+| Feature | Super Admin | Admin | Regular |
+|---------|------------|-------|---------|
+| Manage members | ✅ | ✅ | ❌ |
+| Manage events | ✅ | ✅ | ❌ |
+| Manage instruments | ✅ | ✅ | ❌ |
+| Manage repertoire | ✅ | ✅ | ❌ |
+| Mark attendances | ✅ | ✅ | ❌ |
+| View all data | ✅ | ✅ | ✅ |
+| Report instrument issues | ✅ | ✅ | ✅ |
+
+---
+
+### 4. Frontend Setup
+
+```bash
+cd frontend
+```
+
+**Install dependencies:**
+
+```bash
+bun install
+```
+
+**Run the development server:**
+
+```bash
+bun run dev
+```
+
+The frontend will be available at `http://localhost:3000`.
+
+> The frontend expects the backend to be running at `http://localhost:8000`. This is configurable via the `NEXT_PUBLIC_API_URL` environment variable.
+
+---
+
+## Environment Variables
+
+### Backend
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DATABASE_URL` | Auto-detected | Full PostgreSQL connection string |
+| `SECRET_KEY` | `supersecret` | JWT signing secret — **change in production** |
+| `CORS_ORIGINS` | `http://localhost:3000,...` | Comma-separated list of allowed origins |
+| `RUN_SEED` | `false` | Set to `true` to run the seed on startup |
+| `SUPER_ADMIN_USERNAME` | `superadmin` | Username for the super admin account (seed) |
+| `SUPER_ADMIN_NAME` | `Super Admin Airfa` | Display name for the super admin (seed) |
+| `SEED_SUPER_ADMIN_PASSWORD` | `admin123` | Super admin password set by seed |
+| `SEED_ADMIN_PASSWORD` | `admin123` | Admin password set by seed |
+| `SEED_REGULAR_PASSWORD` | `admin123` | Regular member password set by seed |
+
+### Frontend
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `NEXT_PUBLIC_API_URL` | `http://localhost:8000` | Backend API base URL |
+
+---
+
+## Running Tests
+
+### Backend
+
+From the `backend/` directory:
+
+```bash
+pytest
+```
+
+### Frontend (E2E with Playwright)
+
+From the `frontend/` directory:
+
+```bash
+bun run test:e2e
+```
+
+This builds the app and then runs all Playwright tests.
+
+---
+
+## Database Migrations
+
+Create a new migration after changing models:
+
+```bash
+cd backend
+alembic revision --autogenerate -m "describe your change"
+alembic upgrade head
+```
+
+---
+
+## Tech Stack
+
+- **Backend:** Python 3.11, FastAPI, SQLAlchemy, Alembic, PostgreSQL, APScheduler, JWT (python-jose), bcrypt
+- **Frontend:** Next.js 14, React 18, TypeScript
+- **Testing:** pytest (backend), Playwright (frontend E2E)
+- **Infrastructure:** Docker, Docker Compose (`docker-compose.yml` for dev, `docker-compose.prod.yml` for production)
