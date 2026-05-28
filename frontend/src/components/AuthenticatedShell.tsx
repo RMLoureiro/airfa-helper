@@ -4,8 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { authFetch } from '@/lib/authFetch';
-
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+import { API_URL } from '@/lib/config';
 
 // ─── Nav icons ────────────────────────────────────────────────────────────────
 function IconHome() {
@@ -212,7 +211,7 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
   useEffect(() => {
     if (!ready) return;
     const fetchCount = () =>
-      authFetch(`${apiUrl}/api/v1/notifications/unread-count`)
+      authFetch(`${API_URL}/api/v1/notifications/unread-count`)
         .then(r => r.json())
         .then(d => setUnreadCount(d.count ?? 0))
         .catch(() => {});

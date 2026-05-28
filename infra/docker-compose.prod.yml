@@ -1,5 +1,3 @@
-version: '3.9'
-
 # ── Production (VPS) ──────────────────────────────────────────────────────────
 # 1. Copy infra/.env.example to infra/.env and fill in all values.
 # 2. On first deploy set RUN_SEED=true to create the initial admin account.

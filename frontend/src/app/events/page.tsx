@@ -3,23 +3,19 @@
 import AuthenticatedShell from '@/components/AuthenticatedShell';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { authFetch } from '@/lib/authFetch';
+import { API_URL } from '@/lib/config';
+import {
+  EVENT_BADGE,
+  EVENT_LABELS,
+  MONTHS,
+  WEEKDAYS,
+  formatDay,
+  formatMonth,
+  formatTime,
+} from '@/lib/format';
+import type { EventItem } from '@/lib/types';
+import { getStoredUser, isAdmin as checkIsAdmin, isSuperAdmin as checkIsSuperAdmin } from '@/lib/user';
 import { useEffect, useRef, useState } from 'react';
-
-type EventItem = {
-  id: number;
-  title: string;
-  description?: string | null;
-  start_time: string;
-  end_time: string;
-  location?: string | null;
-  type: string;
-  facebook_link?: string | null;
-  instagram_link?: string | null;
-  recurrence?: string | null;
-  recurrence_end_date?: string | null;
-  recurrence_series_id?: number | null;
-  is_cancelled?: boolean;
-};
 
 type EventForm = {
   title: string;
@@ -36,27 +32,12 @@ type EventForm = {
 
 type EditScope = 'single' | 'this_and_future';
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
-
-const EVENT_LABELS: Record<string, string> = { REHEARSAL: 'Ensaio', SPECIAL_REHEARSAL: 'Ensaio especial', CONCERT: 'Concerto', OTHER: 'Outro' };
-const EVENT_BADGE: Record<string, string> = { REHEARSAL: 'badge-rehearsal', SPECIAL_REHEARSAL: 'badge-special', CONCERT: 'badge-concert', OTHER: 'badge-other' };
-
-function formatDay(iso: string): number { return new Date(iso).getDate(); }
-function formatMonth(iso: string): string {
-  return new Date(iso).toLocaleString('pt-PT', { month: 'short' }).toUpperCase();
-}
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
-}
-
 const EMPTY_FORM: EventForm = {
   title: '', description: '', start_time: '', end_time: '',
   location: '', type: 'REHEARSAL', facebook_link: '', instagram_link: '',
   recurrence: '', recurrence_end_date: '',
 };
 
-const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-const WEEKDAYS = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
 const REHEARSAL_TYPES = new Set(['REHEARSAL', 'SPECIAL_REHEARSAL']);
 
 function EventsCalendar({ events }: { events: EventItem[] }) {
@@ -191,21 +172,16 @@ export default function EventsPage() {
   const [pendingScopeEvent, setPendingScopeEvent] = useState<EventItem | null>(null);
 
   async function loadEvents() {
-    const response = await authFetch(`${apiUrl}/api/v1/events`);
+    const response = await authFetch(`${API_URL}/api/v1/events`);
     const data = await response.json();
     setEvents(Array.isArray(data) ? data : []);
   }
 
   useEffect(() => {
     loadEvents().catch(() => setEvents([]));
-    const storedUser = localStorage.getItem('airfa_user');
-    if (storedUser) {
-      try {
-        const parsed = JSON.parse(storedUser) as { system_role?: string };
-        setIsAdmin(parsed.system_role === 'ADMIN' || parsed.system_role === 'SUPER_ADMIN');
-        setIsSuperAdmin(parsed.system_role === 'SUPER_ADMIN');
-      } catch { /* ignore */ }
-    }
+    const user = getStoredUser();
+    setIsAdmin(checkIsAdmin(user));
+    setIsSuperAdmin(checkIsSuperAdmin(user));
   }, []);
 
   function openCreateModal() {
@@ -283,8 +259,8 @@ export default function EventsPage() {
 
     const scopeParam = isEditing && editingEvent?.recurrence_series_id ? `?scope=${editScope}` : '';
     const url = isEditing
-      ? `${apiUrl}/api/v1/events/${editingEvent!.id}${scopeParam}`
-      : `${apiUrl}/api/v1/events`;
+      ? `${API_URL}/api/v1/events/${editingEvent!.id}${scopeParam}`
+      : `${API_URL}/api/v1/events`;
 
     await authFetch(url, {
       method: isEditing ? 'PUT' : 'POST',
@@ -296,7 +272,7 @@ export default function EventsPage() {
   }
 
   async function removeEvent(eventId: number, scope: EditScope = 'single') {
-    await authFetch(`${apiUrl}/api/v1/events/${eventId}?scope=${scope}`, { method: 'DELETE' });
+    await authFetch(`${API_URL}/api/v1/events/${eventId}?scope=${scope}`, { method: 'DELETE' });
     await loadEvents();
   }
 
@@ -329,11 +305,11 @@ export default function EventsPage() {
           )}
         </div>
 
-        {/* Calendar */}
-        <EventsCalendar events={events} />
-
-        {/* Event list */}
-        {displayed.length === 0 ? (
+        {/* Main content: list left, calendar right */}
+        <div className="content-layout">
+          {/* Event list */}
+          <div className="events-col">
+          {displayed.length === 0 ? (
           <div className="empty">Sem eventos para mostrar.</div>
         ) : (
           <div className="event-list">
@@ -391,6 +367,12 @@ export default function EventsPage() {
             ))}
           </div>
         )}
+          </div>{/* end events-col */}
+
+          <div className="calendar-col">
+            <EventsCalendar events={events} />
+          </div>
+        </div>{/* end content-layout */}
 
         {/* Scope dialog for recurring events */}
         {scopeDialogFor !== null && pendingScopeEvent && (
@@ -519,6 +501,17 @@ export default function EventsPage() {
 
       <style jsx>{`
         .page { display: flex; flex-direction: column; gap: 20px; }
+
+        .content-layout {
+          display: grid;
+          grid-template-columns: 1fr 360px;
+          gap: 24px;
+          align-items: start;
+        }
+
+        .events-col { min-width: 0; }
+
+        .calendar-col { flex-shrink: 0; width: 100%; }
 
         .toolbar {
           display: flex;
@@ -812,6 +805,11 @@ export default function EventsPage() {
           gap: 8px;
           padding-top: 8px;
           border-top: 1px solid var(--border);
+        }
+
+        @media (max-width: 900px) {
+          .content-layout { grid-template-columns: 1fr; }
+          .calendar-col { order: -1; }
         }
 
         @media (max-width: 600px) {

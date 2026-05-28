@@ -3,19 +3,11 @@
 import AuthenticatedShell from '@/components/AuthenticatedShell';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { authFetch } from '@/lib/authFetch';
+import { API_URL } from '@/lib/config';
+import { MUSICAL_ROLE_LABEL, SYSTEM_BADGE, SYSTEM_ROLE_LABEL } from '@/lib/format';
+import type { MemberItem } from '@/lib/types';
+import { getStoredUser, isSuperAdmin as checkIsSuperAdmin } from '@/lib/user';
 import { useEffect, useState } from 'react';
-
-type MemberItem = {
-  id: number;
-  username: string;
-  name: string;
-  phone?: string | null;
-  birth_date?: string | null;
-  address?: string | null;
-  join_year?: number | null;
-  system_role: string;
-  musical_role?: string | null;
-};
 
 type CreateForm = {
   username: string;
@@ -41,17 +33,6 @@ type EditForm = {
   musical_role: string;
 };
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
-
-const SYSTEM_ROLE_LABEL: Record<string, string> = { MEMBER: 'Membro', ADMIN: 'Admin', SUPER_ADMIN: 'Super Admin' };
-const MUSICAL_ROLE_LABEL: Record<string, string> = {
-  MAESTRO: 'Maestro', FLUTE_PLAYER: 'Flauta', CLARINET_PLAYER: 'Clarinete',
-  SAXOPHONE_PLAYER: 'Saxofone', TROMBONE_PLAYER: 'Trombone', EUPHONIUM_PLAYER: 'Eufônio',
-  TUBA_PLAYER: 'Tuba', FRENCH_HORN_PLAYER: 'Trompa', TRUMPET_PLAYER: 'Trompete',
-  PERCUSSION_PLAYER: 'Percussão',
-};
-const SYSTEM_BADGE: Record<string, string> = { MEMBER: 'badge-musical', ADMIN: 'badge-admin', SUPER_ADMIN: 'badge-super' };
-
 const EMPTY_FORM: CreateForm = { username: '', name: '', password: '', phone: '', birth_date: '', address: '', join_year: '', system_role: 'MEMBER', musical_role: '' };
 
 export default function MembrosPage() {
@@ -67,7 +48,7 @@ export default function MembrosPage() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   async function loadMembers() {
-    const res = await authFetch(`${apiUrl}/api/v1/members/`);
+    const res = await authFetch(`${API_URL}/api/v1/members/`);
     const data = await res.json();
     setMembers(Array.isArray(data) ? data : []);
     setLoading(false);
@@ -75,13 +56,7 @@ export default function MembrosPage() {
 
   useEffect(() => {
     loadMembers().catch(() => setLoading(false));
-    const storedUser = localStorage.getItem('airfa_user');
-    if (storedUser) {
-      try {
-        const u = JSON.parse(storedUser) as { system_role?: string };
-        setIsSuperAdmin(u.system_role === 'SUPER_ADMIN');
-      } catch { /* ignore */ }
-    }
+    setIsSuperAdmin(checkIsSuperAdmin(getStoredUser()));
   }, []);
 
   async function createMember() {
@@ -96,7 +71,7 @@ export default function MembrosPage() {
       system_role: createForm.system_role,
       musical_role: createForm.musical_role || null,
     };
-    await authFetch(`${apiUrl}/api/v1/members/`, {
+    await authFetch(`${API_URL}/api/v1/members/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -119,7 +94,7 @@ export default function MembrosPage() {
     };
     if (editForm.username) payload.username = editForm.username;
     if (editForm.password) payload.password = editForm.password;
-    await authFetch(`${apiUrl}/api/v1/members/${editingMember.id}`, {
+    await authFetch(`${API_URL}/api/v1/members/${editingMember.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -129,7 +104,7 @@ export default function MembrosPage() {
   }
 
   async function deleteMember(id: number) {
-    await authFetch(`${apiUrl}/api/v1/members/${id}`, { method: 'DELETE' });
+    await authFetch(`${API_URL}/api/v1/members/${id}`, { method: 'DELETE' });
     await loadMembers();
   }
 

@@ -2,6 +2,8 @@
 
 import AuthenticatedShell from '@/components/AuthenticatedShell';
 import { authFetch } from '@/lib/authFetch';
+import { API_URL } from '@/lib/config';
+import { MUSICAL_ROLE_LABEL, SYSTEM_BADGE, SYSTEM_ROLE_LABEL } from '@/lib/format';
 import { useEffect, useState } from 'react';
 
 type UserProfile = {
@@ -25,18 +27,6 @@ type ProfileForm = {
 
 type PwForm = { current_password: string; new_password: string; confirm_password: string };
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
-
-const SYSTEM_ROLE_LABEL: Record<string, string> = { MEMBER: 'Membro', ADMIN: 'Administrador', SUPER_ADMIN: 'Super Admin' };
-const MUSICAL_ROLE_LABEL: Record<string, string> = {
-  MAESTRO: 'Maestro', FLUTE_PLAYER: 'Flauta', CLARINET_PLAYER: 'Clarinete',
-  SAXOPHONE_PLAYER: 'Saxofone', TROMBONE_PLAYER: 'Trombone', EUPHONIUM_PLAYER: 'Eufônio',
-  TUBA_PLAYER: 'Tuba', FRENCH_HORN_PLAYER: 'Trompa', TRUMPET_PLAYER: 'Trompete',
-  PERCUSSION_PLAYER: 'Percussão',
-};
-
-const SYSTEM_BADGE: Record<string, string> = { MEMBER: 'badge-musical', ADMIN: 'badge-admin', SUPER_ADMIN: 'badge-super' };
-
 export default function PerfilPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -49,7 +39,7 @@ export default function PerfilPage() {
   const [pwSuccess, setPwSuccess] = useState(false);
 
   async function loadProfile() {
-    const res = await authFetch(`${apiUrl}/api/v1/members/me`);
+    const res = await authFetch(`${API_URL}/api/v1/members/me`);
     const data: UserProfile = await res.json();
     setProfile(data);
     setForm({ name: data.name, phone: data.phone ?? '', birth_date: data.birth_date ? data.birth_date.slice(0, 10) : '', address: data.address ?? '' });
@@ -62,7 +52,7 @@ export default function PerfilPage() {
     setSaving(true);
     setSaveMsg(null);
     const payload = { name: form.name, phone: form.phone || null, birth_date: form.birth_date || null, address: form.address || null };
-    const res = await authFetch(`${apiUrl}/api/v1/members/me`, {
+    const res = await authFetch(`${API_URL}/api/v1/members/me`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -83,7 +73,7 @@ export default function PerfilPage() {
     setPwSuccess(false);
     if (pwForm.new_password !== pwForm.confirm_password) { setPwError('As passwords não coincidem.'); return; }
     if (pwForm.new_password.length < 12) { setPwError('A nova password deve ter pelo menos 12 caracteres.'); return; }
-    const res = await authFetch(`${apiUrl}/api/v1/members/me/password`, {
+    const res = await authFetch(`${API_URL}/api/v1/members/me/password`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ current_password: pwForm.current_password, new_password: pwForm.new_password }),

@@ -4,24 +4,12 @@ from sqlalchemy.orm import Session
 from app.deps.auth import get_current_user, get_db, require_roles
 from app.models.enums import NotificationType, SystemRole
 from app.models.newsletter import Newsletter
-from app.models.notification import Notification
 from app.models.user import User
 from app.schemas.newsletter import NewsletterCreate, NewsletterRead
+from app.services.notifications import broadcast_notification
 
 router = APIRouter(prefix="/newsletter", tags=["newsletter"])
 
-
-def _notify_newsletter_change(db: Session, content: str) -> None:
-    users = db.query(User).all()
-    for user in users:
-        db.add(
-            Notification(
-                user_id=user.id,
-                type=NotificationType.NEWSLETTER,
-                content=content,
-                read=False,
-            )
-        )
 
 
 def _to_read(newsletter: Newsletter, author_name: str | None) -> NewsletterRead:
@@ -61,7 +49,7 @@ def create_newsletter(
         author_id=current_user.id,
     )
     db.add(newsletter)
-    _notify_newsletter_change(db, f"Nova publicação: {payload.title}")
+    broadcast_notification(db, NotificationType.NEWSLETTER, f"Nova publicação: {payload.title}")
     db.commit()
     db.refresh(newsletter)
     return _to_read(newsletter, current_user.name)
@@ -81,7 +69,7 @@ def update_newsletter(
     newsletter.title = payload.title
     newsletter.content = payload.content
 
-    _notify_newsletter_change(db, f"Publicação atualizada: {newsletter.title}")
+    broadcast_notification(db, NotificationType.NEWSLETTER, f"Publicação atualizada: {newsletter.title}")
     db.commit()
     db.refresh(newsletter)
 
@@ -101,6 +89,6 @@ def delete_newsletter(
 
     title = newsletter.title
     db.delete(newsletter)
-    _notify_newsletter_change(db, f"Publicação removida: {title}")
+    broadcast_notification(db, NotificationType.NEWSLETTER, f"Publicação removida: {title}")
     db.commit()
     return {"ok": True}

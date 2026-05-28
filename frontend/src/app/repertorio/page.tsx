@@ -3,6 +3,8 @@
 import AuthenticatedShell from '@/components/AuthenticatedShell';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { authFetch } from '@/lib/authFetch';
+import { API_URL } from '@/lib/config';
+import { getStoredUser, isAdmin as checkIsAdmin, isSuperAdmin as checkIsSuperAdmin } from '@/lib/user';
 import { useEffect, useRef, useState } from 'react';
 
 type RepertoireFile = {
@@ -30,8 +32,6 @@ type RepertoireForm = {
   youtube_link: string;
 };
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
-
 const STATE_LABEL: Record<string, string> = { CURRENT: 'Atual', OLD: 'Arquivo', FUTURE: 'Em estudo' };
 const STATE_BADGE: Record<string, string> = { CURRENT: 'badge-current', OLD: 'badge-old', FUTURE: 'badge-future' };
 
@@ -53,7 +53,7 @@ export default function RepertorioPage() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   async function loadItems() {
-    const res = await authFetch(`${apiUrl}/api/v1/repertoire`);
+    const res = await authFetch(`${API_URL}/api/v1/repertoire`);
     const data = await res.json();
     setItems(Array.isArray(data) ? data : []);
     setLoading(false);
@@ -61,14 +61,9 @@ export default function RepertorioPage() {
 
   useEffect(() => {
     loadItems().catch(() => setLoading(false));
-    const storedUser = localStorage.getItem('airfa_user');
-    if (storedUser) {
-      try {
-        const u = JSON.parse(storedUser) as { system_role?: string };
-        setIsAdmin(u.system_role === 'ADMIN' || u.system_role === 'SUPER_ADMIN');
-        setIsSuperAdmin(u.system_role === 'SUPER_ADMIN');
-      } catch { /* ignore */ }
-    }
+    const user = getStoredUser();
+    setIsAdmin(checkIsAdmin(user));
+    setIsSuperAdmin(checkIsSuperAdmin(user));
   }, []);
 
   function openCreate() { setEditingItem(null); setForm(EMPTY_FORM); setPdfFiles([]); setExistingFiles([]); setIsModalOpen(true); }
@@ -82,20 +77,20 @@ export default function RepertorioPage() {
 
   async function removeExistingFile(file: RepertoireFile) {
     if (!editingItem) return;
-    await authFetch(`${apiUrl}/api/v1/repertoire/${editingItem.id}/files/${encodeURIComponent(file.name)}`, { method: 'DELETE' });
+    await authFetch(`${API_URL}/api/v1/repertoire/${editingItem.id}/files/${encodeURIComponent(file.name)}`, { method: 'DELETE' });
     setExistingFiles(prev => prev.filter(f => f.name !== file.name));
   }
 
   async function removeAllExistingFiles() {
     if (!editingItem) return;
-    await authFetch(`${apiUrl}/api/v1/repertoire/${editingItem.id}/files`, { method: 'DELETE' });
+    await authFetch(`${API_URL}/api/v1/repertoire/${editingItem.id}/files`, { method: 'DELETE' });
     setExistingFiles([]);
   }
 
   async function saveItem() {
     const payload = { ...form, composer: form.composer || null, arranger: form.arranger || null, notes: form.notes || null, youtube_link: form.youtube_link || null };
     const isEditing = Boolean(editingItem);
-    const savedRes = await authFetch(isEditing ? `${apiUrl}/api/v1/repertoire/${editingItem?.id}` : `${apiUrl}/api/v1/repertoire`, {
+    const savedRes = await authFetch(isEditing ? `${API_URL}/api/v1/repertoire/${editingItem?.id}` : `${API_URL}/api/v1/repertoire`, {
       method: isEditing ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -106,7 +101,7 @@ export default function RepertorioPage() {
       for (let i = 0; i < pdfFiles.length; i += BATCH) {
         const fd = new FormData();
         pdfFiles.slice(i, i + BATCH).forEach(f => fd.append('files', f));
-        await authFetch(`${apiUrl}/api/v1/repertoire/${saved.id}/files`, { method: 'POST', body: fd });
+        await authFetch(`${API_URL}/api/v1/repertoire/${saved.id}/files`, { method: 'POST', body: fd });
       }
     }
     setIsModalOpen(false);
@@ -114,12 +109,12 @@ export default function RepertorioPage() {
   }
 
   async function removeItem(id: number) {
-    await authFetch(`${apiUrl}/api/v1/repertoire/${id}`, { method: 'DELETE' });
+    await authFetch(`${API_URL}/api/v1/repertoire/${id}`, { method: 'DELETE' });
     await loadItems();
   }
 
   async function downloadFile(file: RepertoireFile) {
-    const res = await authFetch(`${apiUrl}${file.download_url}`);
+    const res = await authFetch(`${API_URL}${file.download_url}`);
     if (!res.ok) return;
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);

@@ -2,6 +2,9 @@
 
 import AuthenticatedShell from '@/components/AuthenticatedShell';
 import { authFetch } from '@/lib/authFetch';
+import { API_URL } from '@/lib/config';
+import { EVENT_LABELS, MONTHS, MUSICAL_ROLE_LABEL, WEEKDAYS } from '@/lib/format';
+import { getStoredUser, isAdmin as checkIsAdmin } from '@/lib/user';
 import { useEffect, useRef, useState } from 'react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -36,19 +39,6 @@ type PresenceAnalyticsItem = {
   justified: number;
 };
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
-
-const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-const WEEKDAYS = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
-
-const EVENT_TYPE_LABEL: Record<string, string> = { REHEARSAL: 'Ensaio', SPECIAL_REHEARSAL: 'Ensaio Especial', CONCERT: 'Concerto', OTHER: 'Outro' };
-
-const MUSICAL_ROLE_LABEL: Record<string, string> = {
-  MAESTRO: 'Maestro', FLUTE_PLAYER: 'Flauta', CLARINET_PLAYER: 'Clarinete',
-  SAXOPHONE_PLAYER: 'Saxofone', TROMBONE_PLAYER: 'Trombone', EUPHONIUM_PLAYER: 'Eufônio',
-  TUBA_PLAYER: 'Tuba', FRENCH_HORN_PLAYER: 'Trompa', TRUMPET_PLAYER: 'Trompete',
-  PERCUSSION_PLAYER: 'Percussão',
-};
 
 function normalizeColor(status: string | null | undefined): 'present' | 'absent' | null {
   if (!status) return null;
@@ -242,7 +232,7 @@ function PresenceCalendar({ attendance, isAdmin }: { attendance: PresenceItem[];
               <div key={item.id} style={{ display: 'flex', flexDirection: 'column', gap: 3, padding: '4px 0' }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{item.title}</div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <span style={{ fontSize: 11, color: 'var(--muted)' }}>{EVENT_TYPE_LABEL[item.type] ?? item.type}</span>
+                  <span style={{ fontSize: 11, color: 'var(--muted)' }}>{EVENT_LABELS[item.type] ?? item.type}</span>
                   <span style={{
                     fontSize: 11, fontWeight: 700, padding: '1px 6px', borderRadius: 4,
                     background: color === 'present' ? 'var(--success-dim)' : color === 'absent' ? 'var(--danger-dim)' : 'var(--surface-3)',
@@ -288,21 +278,15 @@ export default function PresencasPage() {
   const [analyticsSort, setAnalyticsSort] = useState<'az' | 'za' | 'presences' | 'absences'>('az');
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('airfa_user');
-    let admin = false;
-    if (storedUser) {
-      try {
-        const parsed = JSON.parse(storedUser) as { system_role?: string };
-        admin = parsed.system_role === 'ADMIN' || parsed.system_role === 'SUPER_ADMIN';
-        setIsAdmin(admin);
-      } catch { /* ignore */ }
-    }
+    const user = getStoredUser();
+    const admin = checkIsAdmin(user);
+    setIsAdmin(admin);
 
-    const fetchAttendance = authFetch(`${apiUrl}/api/v1/presences`)
+    const fetchAttendance = authFetch(`${API_URL}/api/v1/presences`)
       .then(r => r.json()).then(setAttendance).catch(() => setAttendance([]));
 
     const fetchAnalytics = admin
-      ? authFetch(`${apiUrl}/api/v1/presences/analytics/members`)
+      ? authFetch(`${API_URL}/api/v1/presences/analytics/members`)
           .then(r => r.json()).then(setAnalytics).catch(() => setAnalytics([]))
       : Promise.resolve();
 
@@ -310,7 +294,7 @@ export default function PresencasPage() {
   }, []);
 
   async function openMarkModal(item: PresenceItem) {
-    const res = await authFetch(`${apiUrl}/api/v1/presences/${item.id}/members`);
+    const res = await authFetch(`${API_URL}/api/v1/presences/${item.id}/members`);
     const members: MemberPresenceItem[] = await res.json();
     setMemberStatuses(members);
     setSelectedEvent(item);
@@ -320,7 +304,7 @@ export default function PresencasPage() {
   async function saveMarks() {
     if (!selectedEvent) return;
     setSaving(true);
-    await authFetch(`${apiUrl}/api/v1/presences/${selectedEvent.id}/bulk-mark`, {
+    await authFetch(`${API_URL}/api/v1/presences/${selectedEvent.id}/bulk-mark`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -329,8 +313,8 @@ export default function PresencasPage() {
     });
     setSaving(false);
     setIsModalOpen(false);
-    authFetch(`${apiUrl}/api/v1/presences`).then(r => r.json()).then(setAttendance).catch(() => {});
-    if (isAdmin) authFetch(`${apiUrl}/api/v1/presences/analytics/members`).then(r => r.json()).then(setAnalytics).catch(() => {});
+    authFetch(`${API_URL}/api/v1/presences`).then(r => r.json()).then(setAttendance).catch(() => {});
+    if (isAdmin) authFetch(`${API_URL}/api/v1/presences/analytics/members`).then(r => r.json()).then(setAnalytics).catch(() => {});
   }
 
   // Derived
@@ -439,7 +423,7 @@ export default function PresencasPage() {
                         <div className="event-row-left">
                           <span className="event-row-title">{item.title}</span>
                           <span className="event-row-meta">
-                            {EVENT_TYPE_LABEL[item.type] ?? item.type} · {new Date(item.start_time).toLocaleDateString('pt-PT', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            {EVENT_LABELS[item.type] ?? item.type} · {new Date(item.start_time).toLocaleDateString('pt-PT', { day: '2-digit', month: 'short', year: 'numeric' })}
                           </span>
                         </div>
                         <div className="event-row-right">
@@ -547,7 +531,7 @@ export default function PresencasPage() {
               <div>
                 <h2 style={{ fontFamily: 'var(--font-display, serif)', fontSize: 22, fontWeight: 600, margin: 0 }}>{selectedEvent.title}</h2>
                 <p style={{ fontSize: 13, color: 'var(--muted)', margin: '4px 0 0' }}>
-                  {EVENT_TYPE_LABEL[selectedEvent.type] ?? selectedEvent.type} · {new Date(selectedEvent.start_time).toLocaleDateString('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' })}
+                  {EVENT_LABELS[selectedEvent.type] ?? selectedEvent.type} · {new Date(selectedEvent.start_time).toLocaleDateString('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' })}
                 </p>
               </div>
               <button type="button" onClick={() => setIsModalOpen(false)} style={{

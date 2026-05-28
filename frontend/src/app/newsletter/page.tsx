@@ -3,6 +3,8 @@
 import AuthenticatedShell from '@/components/AuthenticatedShell';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { authFetch } from '@/lib/authFetch';
+import { API_URL } from '@/lib/config';
+import { getStoredUser, isAdmin as checkIsAdmin, isSuperAdmin as checkIsSuperAdmin } from '@/lib/user';
 import { useEffect, useState } from 'react';
 
 type NewsletterItem = {
@@ -21,8 +23,6 @@ type NewsletterForm = {
   instagram_link: string;
 };
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
-
 const EMPTY_FORM: NewsletterForm = { title: '', content: '', facebook_link: '', instagram_link: '' };
 
 function formatDate(iso: string): string {
@@ -40,7 +40,7 @@ export default function NewsletterPage() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   async function loadItems() {
-    const res = await authFetch(`${apiUrl}/api/v1/newsletter`);
+    const res = await authFetch(`${API_URL}/api/v1/newsletter`);
     const data = await res.json();
     setItems(Array.isArray(data) ? data : []);
     setLoading(false);
@@ -48,14 +48,9 @@ export default function NewsletterPage() {
 
   useEffect(() => {
     loadItems().catch(() => setLoading(false));
-    const storedUser = localStorage.getItem('airfa_user');
-    if (storedUser) {
-      try {
-        const u = JSON.parse(storedUser) as { system_role?: string };
-        setIsAdmin(u.system_role === 'ADMIN' || u.system_role === 'SUPER_ADMIN');
-        setIsSuperAdmin(u.system_role === 'SUPER_ADMIN');
-      } catch { /* ignore */ }
-    }
+    const user = getStoredUser();
+    setIsAdmin(checkIsAdmin(user));
+    setIsSuperAdmin(checkIsSuperAdmin(user));
   }, []);
 
   function openCreate() { setEditingItem(null); setForm(EMPTY_FORM); setIsModalOpen(true); }
@@ -68,7 +63,7 @@ export default function NewsletterPage() {
   async function saveItem() {
     const payload = { ...form, facebook_link: form.facebook_link || null, instagram_link: form.instagram_link || null };
     const isEditing = Boolean(editingItem);
-    await authFetch(isEditing ? `${apiUrl}/api/v1/newsletter/${editingItem?.id}` : `${apiUrl}/api/v1/newsletter`, {
+    await authFetch(isEditing ? `${API_URL}/api/v1/newsletter/${editingItem?.id}` : `${API_URL}/api/v1/newsletter`, {
       method: isEditing ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -78,7 +73,7 @@ export default function NewsletterPage() {
   }
 
   async function removeItem(id: number) {
-    await authFetch(`${apiUrl}/api/v1/newsletter/${id}`, { method: 'DELETE' });
+    await authFetch(`${API_URL}/api/v1/newsletter/${id}`, { method: 'DELETE' });
     await loadItems();
   }
 

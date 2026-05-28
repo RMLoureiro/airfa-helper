@@ -2,6 +2,7 @@
 
 import AuthenticatedShell from '@/components/AuthenticatedShell';
 import { authFetch } from '@/lib/authFetch';
+import { API_URL } from '@/lib/config';
 import { useEffect, useState } from 'react';
 
 type NotificationItem = {
@@ -12,8 +13,6 @@ type NotificationItem = {
   created_at: string;
   notification_type?: string | null;
 };
-
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
 
 const TYPE_BADGE: Record<string, string> = {
   EVENT: 'badge-event',
@@ -49,20 +48,20 @@ export default function NotificacoesPage() {
   const [loading, setLoading] = useState(true);
 
   async function loadNotifications() {
-    const res = await authFetch(`${apiUrl}/api/v1/notifications`);
+    const res = await authFetch(`${API_URL}/api/v1/notifications`);
     const data = await res.json();
     setNotifications(Array.isArray(data) ? data : []);
     setLoading(false);
   }
 
   async function markRead(id: number) {
-    await authFetch(`${apiUrl}/api/v1/notifications/${id}/read`, { method: 'PUT' });
+    await authFetch(`${API_URL}/api/v1/notifications/${id}/read`, { method: 'PUT' });
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
     window.dispatchEvent(new CustomEvent('notif-read'));
   }
 
   async function markAllRead() {
-    await authFetch(`${apiUrl}/api/v1/notifications/read-all`, { method: 'PUT' });
+    await authFetch(`${API_URL}/api/v1/notifications/read-all`, { method: 'PUT' });
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
     window.dispatchEvent(new CustomEvent('notif-read'));
   }

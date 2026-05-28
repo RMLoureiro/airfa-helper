@@ -2,39 +2,20 @@
 
 import AuthenticatedShell from '@/components/AuthenticatedShell';
 import { authFetch } from '@/lib/authFetch';
+import { API_URL } from '@/lib/config';
+import {
+  EVENT_BADGE,
+  EVENT_LABELS,
+  MONTHS,
+  WEEKDAYS,
+  formatDate,
+  formatDays,
+  formatTime,
+} from '@/lib/format';
+import type { BirthdayItem, EventItem, FeedItem } from '@/lib/types';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-type EventItem = {
-  id: number;
-  title: string;
-  description?: string | null;
-  start_time: string;
-  location?: string | null;
-  type: string;
-  facebook_link?: string | null;
-  instagram_link?: string | null;
-};
-
-type BirthdayItem = {
-  id: number;
-  name: string;
-  birth_date?: string | null;
-  days_until?: number | null;
-};
-
-type FeedItem = {
-  id: number;
-  item_type: 'EVENT' | 'NEWSLETTER';
-  title: string;
-  description?: string | null;
-  published_at: string;
-  event_type?: string | null;
-  facebook_link?: string | null;
-  instagram_link?: string | null;
-};
 
 type HomeResponse = {
   name: string;
@@ -45,31 +26,11 @@ type HomeResponse = {
   recent_feed: FeedItem[];
 };
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
-
-const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-const WEEKDAYS = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
-
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString('pt-PT', { day: '2-digit', month: 'short', year: 'numeric' });
-}
-function formatTime(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
-}
-function formatDays(days: number | null | undefined): string {
-  if (days === 0) return 'Hoje';
-  if (days === 1) return 'Amanhã';
-  return `Em ${days} dias`;
-}
 function eventTypeLabel(type: string): string {
-  const map: Record<string, string> = { CONCERT: 'Concerto', REHEARSAL: 'Ensaio', SPECIAL_REHEARSAL: 'Ensaio especial', OTHER: 'Outro' };
-  return map[type] ?? type;
+  return EVENT_LABELS[type] ?? type;
 }
 function eventBadgeClass(type: string): string {
-  const map: Record<string, string> = { CONCERT: 'badge-concert', REHEARSAL: 'badge-rehearsal', SPECIAL_REHEARSAL: 'badge-special', OTHER: 'badge-other' };
-  return map[type] ?? 'badge-other';
+  return EVENT_BADGE[type] ?? 'badge-other';
 }
 
 // ─── EventModal ───────────────────────────────────────────────────────────────
@@ -296,8 +257,8 @@ export default function HomePage() {
 
   useEffect(() => {
     Promise.all([
-      authFetch(`${apiUrl}/api/v1/home`).then(async r => { if (!r.ok) throw new Error(); return r.json(); }),
-      authFetch(`${apiUrl}/api/v1/events`).then(r => r.json()).catch(() => []),
+      authFetch(`${API_URL}/api/v1/home`).then(async r => { if (!r.ok) throw new Error(); return r.json(); }),
+      authFetch(`${API_URL}/api/v1/events`).then(r => r.json()).catch(() => []),
     ]).then(([homeData, events]) => {
       setData(homeData);
       setAllEvents(Array.isArray(events) ? events : []);

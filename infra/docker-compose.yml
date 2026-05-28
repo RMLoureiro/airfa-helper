@@ -1,5 +1,3 @@
-version: '3.9'
-
 # ── Local development ─────────────────────────────────────────────────────────
 # Usage: cd infra && docker compose up --build
 # The backend and frontend source directories are volume-mounted for hot reload.
