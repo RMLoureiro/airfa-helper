@@ -9,9 +9,9 @@ from app.main import app
 from app.seed.seed import seed_all
 
 
-SUPER_ADMIN_EMAIL = os.getenv("SUPER_ADMIN_EMAIL", "superadmin@airfa.pt")
-ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "admin@airfa.pt")
-REGULAR_EMAIL = os.getenv("REGULAR_EMAIL", "membro@airfa.pt")
+SUPER_ADMIN_USERNAME = os.getenv("SUPER_ADMIN_USERNAME", "superadmin")
+ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
+REGULAR_USERNAME = os.getenv("REGULAR_USERNAME", "membro")
 SUPER_ADMIN_PASSWORD = os.getenv("SEED_SUPER_ADMIN_PASSWORD", "admin123")
 ADMIN_PASSWORD = os.getenv("SEED_ADMIN_PASSWORD", "admin123")
 REGULAR_PASSWORD = os.getenv("SEED_REGULAR_PASSWORD", "admin123")
@@ -28,8 +28,8 @@ def seeded_database() -> None:
     seed_all()
 
 
-def _login(client: TestClient, email: str, password: str) -> str:
-    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
+def _login(client: TestClient, username: str, password: str) -> str:
+    response = client.post("/api/v1/auth/login", json={"username": username, "password": password})
     assert response.status_code == 200
     return response.json()["access_token"]
 
@@ -40,17 +40,17 @@ def _headers(token: str) -> dict[str, str]:
 
 @pytest.fixture(scope="module")
 def super_admin_token(client: TestClient) -> str:
-    return _login(client, SUPER_ADMIN_EMAIL, SUPER_ADMIN_PASSWORD)
+    return _login(client, SUPER_ADMIN_USERNAME, SUPER_ADMIN_PASSWORD)
 
 
 @pytest.fixture(scope="module")
 def admin_token(client: TestClient) -> str:
-    return _login(client, ADMIN_EMAIL, ADMIN_PASSWORD)
+    return _login(client, ADMIN_USERNAME, ADMIN_PASSWORD)
 
 
 @pytest.fixture(scope="module")
 def regular_token(client: TestClient) -> str:
-    return _login(client, REGULAR_EMAIL, REGULAR_PASSWORD)
+    return _login(client, REGULAR_USERNAME, REGULAR_PASSWORD)
 
 
 def test_home_is_accessible_for_all_roles(
@@ -70,7 +70,7 @@ def test_home_is_accessible_for_all_roles(
 def test_members_permissions(client: TestClient, admin_token: str, regular_token: str):
     admin_response = client.get("/api/v1/members", headers=_headers(admin_token))
     assert admin_response.status_code == 200
-    assert any(member["email"] == REGULAR_EMAIL for member in admin_response.json())
+    assert any(member["username"] == REGULAR_USERNAME for member in admin_response.json())
 
     regular_response = client.get("/api/v1/members", headers=_headers(regular_token))
     assert regular_response.status_code == 403
@@ -93,7 +93,7 @@ def test_events_permissions(client: TestClient, admin_token: str, regular_token:
 
     admin_create = client.post("/api/v1/events", json=create_payload, headers=_headers(admin_token))
     assert admin_create.status_code == 200
-    created_event_id = admin_create.json()["id"]
+    created_event_id = admin_create.json()[0]["id"]  # create_event returns a list
 
     admin_delete = client.delete(f"/api/v1/events/{created_event_id}", headers=_headers(admin_token))
     assert admin_delete.status_code == 403
@@ -102,7 +102,7 @@ def test_events_permissions(client: TestClient, admin_token: str, regular_token:
         f"/api/v1/events/{created_event_id}",
         headers=_headers(super_admin_token),
     )
-    assert super_admin_delete.status_code == 200
+    assert super_admin_delete.status_code == 204
 
 
 def test_newsletter_permissions(client: TestClient, admin_token: str, regular_token: str):

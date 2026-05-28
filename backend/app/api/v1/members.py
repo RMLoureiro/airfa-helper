@@ -52,8 +52,8 @@ def change_my_password(
     if not verify_password(payload.current_password, current_user.hashed_password):
         raise HTTPException(status_code=400, detail="A password atual está incorreta")
 
-    if len(payload.new_password) < 12:
-        raise HTTPException(status_code=400, detail="A nova password deve ter pelo menos 12 caracteres")
+    if len(payload.new_password) < 8:
+        raise HTTPException(status_code=400, detail="A nova password deve ter pelo menos 8 caracteres")
 
     current_user.hashed_password = get_password_hash(payload.new_password)
     db.add(current_user)
@@ -75,6 +75,10 @@ def create_member(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_roles(SystemRole.ADMIN, SystemRole.SUPER_ADMIN)),
 ):
+    # Only SUPER_ADMIN can create other SUPER_ADMIN accounts
+    if current_user.system_role == SystemRole.ADMIN and payload.system_role == SystemRole.SUPER_ADMIN:
+        raise HTTPException(status_code=403, detail="Apenas SUPER_ADMIN pode criar contas SUPER_ADMIN")
+
     data = payload.model_dump()
     raw_password = data.pop("password")
     new_user = User(**data, hashed_password=get_password_hash(raw_password))
@@ -95,6 +99,13 @@ def update_member(
     if not member:
         raise HTTPException(status_code=404, detail="Member not found")
 
+    # ADMIN cannot modify SUPER_ADMIN accounts or escalate privileges to SUPER_ADMIN
+    if current_user.system_role == SystemRole.ADMIN:
+        if member.system_role == SystemRole.SUPER_ADMIN:
+            raise HTTPException(status_code=403, detail="Não tem permissão para modificar contas SUPER_ADMIN")
+        if payload.system_role == SystemRole.SUPER_ADMIN:
+            raise HTTPException(status_code=403, detail="Não tem permissão para atribuir o papel SUPER_ADMIN")
+
     updates = payload.model_dump(exclude_unset=True)
     if "password" in updates:
         member.hashed_password = get_password_hash(updates.pop("password"))
@@ -111,7 +122,7 @@ def update_member(
 def delete_member(
     member_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles(SystemRole.ADMIN, SystemRole.SUPER_ADMIN)),
+    current_user: User = Depends(require_roles(SystemRole.SUPER_ADMIN)),
 ):
     member = db.query(User).filter(User.id == member_id).first()
     if not member:

@@ -34,11 +34,12 @@ services:
       # Seed control
       RUN_SEED: ${RUN_SEED:-false}
       # Super admin account (used when RUN_SEED=true)
+      # WARNING: all SEED_*_PASSWORD vars must be set explicitly — no weak defaults.
       SUPER_ADMIN_USERNAME: ${SUPER_ADMIN_USERNAME:-superadmin}
       SUPER_ADMIN_NAME: ${SUPER_ADMIN_NAME:-Super Admin}
       SEED_SUPER_ADMIN_PASSWORD: ${SEED_SUPER_ADMIN_PASSWORD}
-      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-admin123}
-      SEED_REGULAR_PASSWORD: ${SEED_REGULAR_PASSWORD:-admin123}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD}
+      SEED_REGULAR_PASSWORD: ${SEED_REGULAR_PASSWORD}
     depends_on:
       db:
         condition: service_healthy

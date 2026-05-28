@@ -31,10 +31,10 @@ def db_session():
         db.close()
 
 
-def _create_user(db, role: SystemRole, password: str = "test12345") -> User:
+def _create_user(db, role: SystemRole, password: str = "testpassword123") -> User:
     identifier = uuid4().hex[:12]
     user = User(
-        email=f"test-{identifier}@airfa.pt",
+        username=f"test-{identifier}",
         hashed_password=get_password_hash(password),
         name=f"Test User {identifier}",
         system_role=role,
@@ -46,8 +46,8 @@ def _create_user(db, role: SystemRole, password: str = "test12345") -> User:
     return user
 
 
-def _login(client: TestClient, email: str, password: str) -> str:
-    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
+def _login(client: TestClient, username: str, password: str) -> str:
+    response = client.post("/api/v1/auth/login", json={"username": username, "password": password})
     assert response.status_code == 200
     return response.json()["access_token"]
 
@@ -82,14 +82,14 @@ def _cleanup_repertoire(db, repertoire_id: int) -> None:
 
 @pytest.mark.integration
 def test_auth_login_and_me_success(client: TestClient, db_session):
-    user = _create_user(db_session, SystemRole.REGULAR, password="abc12345")
+    user = _create_user(db_session, SystemRole.REGULAR, password="testpassword123")
 
     try:
-        token = _login(client, user.email, "abc12345")
+        token = _login(client, user.username, "testpassword123")
         response = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 200
         payload = response.json()
-        assert payload["email"] == user.email
+        assert payload["username"] == user.username
         assert payload["system_role"] == "REGULAR"
     finally:
         _cleanup_user(db_session, user.id)
@@ -97,17 +97,18 @@ def test_auth_login_and_me_success(client: TestClient, db_session):
 
 @pytest.mark.integration
 def test_super_admin_member_create_and_update_success(client: TestClient, db_session):
-    super_admin = _create_user(db_session, SystemRole.SUPER_ADMIN, password="super12345")
+    super_admin = _create_user(db_session, SystemRole.SUPER_ADMIN, password="superpassword123")
 
     created_member_id = None
     try:
-        token = _login(client, super_admin.email, "super12345")
+        token = _login(client, super_admin.username, "superpassword123")
         headers = {"Authorization": f"Bearer {token}"}
 
+        member_username = f"member-{uuid4().hex[:8]}"
         create_payload = {
-            "email": f"member-{uuid4().hex[:8]}@airfa.pt",
+            "username": member_username,
             "name": "Novo Membro",
-            "password": "member12345",
+            "password": "memberpassword123",
             "system_role": "REGULAR",
             "musical_role": "CLARINET_PLAYER",
             "phone": "910000000",
@@ -120,7 +121,7 @@ def test_super_admin_member_create_and_update_success(client: TestClient, db_ses
         assert create_response.status_code == 200
         created = create_response.json()
         created_member_id = created["id"]
-        assert created["email"] == create_payload["email"]
+        assert created["username"] == member_username
 
         update_payload = {
             "name": "Membro Atualizado",
@@ -143,11 +144,11 @@ def test_super_admin_member_create_and_update_success(client: TestClient, db_ses
 
 @pytest.mark.integration
 def test_admin_newsletter_create_and_list_success(client: TestClient, db_session):
-    admin = _create_user(db_session, SystemRole.ADMIN, password="admin12345")
+    admin = _create_user(db_session, SystemRole.ADMIN, password="adminpassword123")
 
     created_newsletter_id = None
     try:
-        token = _login(client, admin.email, "admin12345")
+        token = _login(client, admin.username, "adminpassword123")
         headers = {"Authorization": f"Bearer {token}"}
 
         title = f"Publicacao {uuid4().hex[:8]}"
@@ -183,11 +184,11 @@ def test_admin_newsletter_create_and_list_success(client: TestClient, db_session
 
 @pytest.mark.integration
 def test_admin_repertoire_create_upload_and_list_files_success(client: TestClient, db_session):
-    admin = _create_user(db_session, SystemRole.ADMIN, password="admin12345")
+    admin = _create_user(db_session, SystemRole.ADMIN, password="adminpassword123")
 
     repertoire_id = None
     try:
-        token = _login(client, admin.email, "admin12345")
+        token = _login(client, admin.username, "adminpassword123")
         headers = {"Authorization": f"Bearer {token}"}
 
         create_payload = {

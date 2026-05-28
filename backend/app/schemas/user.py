@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import Optional
 from datetime import date
 from app.models.enums import SystemRole, MusicalRole
@@ -29,6 +29,13 @@ class UserAdminCreate(BaseModel):
     system_role: SystemRole
     musical_role: MusicalRole | None = None
 
+    @field_validator("password")
+    @classmethod
+    def password_min_length(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("A password deve ter pelo menos 8 caracteres")
+        return v
+
 
 class UserAdminUpdate(BaseModel):
     username: str | None = None
@@ -40,6 +47,13 @@ class UserAdminUpdate(BaseModel):
     join_year: int | None = None
     system_role: SystemRole | None = None
     musical_role: MusicalRole | None = None
+
+    @field_validator("password")
+    @classmethod
+    def password_min_length(cls, v: str | None) -> str | None:
+        if v is not None and len(v) < 8:
+            raise ValueError("A password deve ter pelo menos 8 caracteres")
+        return v
 
 
 class UserSelfUpdate(BaseModel):

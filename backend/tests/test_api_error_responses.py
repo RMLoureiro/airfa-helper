@@ -32,14 +32,14 @@ def db_session():
 
 
 def _auth_header(user: User) -> dict[str, str]:
-    token = create_access_token(subject=user.email)
+    token = create_access_token(subject=user.username)
     return {"Authorization": f"Bearer {token}"}
 
 
 def _create_user(db, role: SystemRole) -> User:
     identifier = uuid4().hex[:12]
     user = User(
-        email=f"test-{identifier}@airfa.pt",
+        username=f"test-{identifier}",
         hashed_password=get_password_hash("test12345"),
         name=f"Test User {identifier}",
         system_role=role,
@@ -182,7 +182,7 @@ def test_mark_missing_notification_returns_404(client: TestClient, db_session):
     regular_user = _create_user(db_session, SystemRole.REGULAR)
 
     try:
-        response = client.post("/api/v1/notifications/999999/read", headers=_auth_header(regular_user))
+        response = client.put("/api/v1/notifications/999999/read", headers=_auth_header(regular_user))
         assert response.status_code == 404
     finally:
         _cleanup_user(db_session, regular_user)

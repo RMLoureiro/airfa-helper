@@ -62,6 +62,11 @@ def create_report(
     if not instrument:
         raise HTTPException(status_code=404, detail="Instrumento não encontrado")
 
+    # Regular members can only report instruments assigned to them.
+    if current_user.system_role not in {SystemRole.ADMIN, SystemRole.SUPER_ADMIN}:
+        if instrument.user_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Sem permissões para reportar este instrumento")
+
     report = InstrumentReport(
         instrument_id=instrument_id,
         user_id=current_user.id,

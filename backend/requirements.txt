@@ -10,5 +10,6 @@ pydantic-settings
 email-validator
 python-multipart
 apscheduler
+slowapi
 httpx
 pytest
