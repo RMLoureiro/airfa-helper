@@ -390,6 +390,11 @@ label {
 .cal-day.day-norecord{ background: rgba(91,143,184,0.1);  color: var(--accent);  border-color: rgba(91,143,184,0.18); }
 .cal-day.day-mixed   { background: rgba(122,114,101,0.12); color: var(--muted);  border-color: rgba(122,114,101,0.2); }
 
+.cal-day.day-rehearsal { background: rgba(74,126,196,0.15);  color: var(--rehearsal-color); border-color: rgba(74,126,196,0.25); }
+.cal-day.day-concert   { background: rgba(212,137,42,0.15);  color: var(--concert-color);   border-color: rgba(212,137,42,0.25); }
+.cal-day.day-other-ev  { background: rgba(122,114,101,0.12); color: var(--muted);           border-color: rgba(122,114,101,0.2); }
+.cal-day.day-mixed-ev  { background: rgba(122,114,101,0.12); color: var(--muted);           border-color: rgba(122,114,101,0.2); }
+
 .cal-day.has-events { cursor: pointer; }
 .cal-day.has-events:hover { background: var(--surface-2); border-color: var(--accent); color: var(--accent); }
 
@@ -416,6 +421,10 @@ label {
   box-shadow: var(--shadow-lg);
   font-size: 13px;
 }
+
+.cal-legend { display: flex; align-items: center; gap: 6px; padding: 12px 4px 4px; flex-wrap: wrap; }
+.cal-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+.cal-legend-label { font-size: 11px; color: var(--muted); margin-right: 8px; font-family: var(--font-mono, monospace); }
 
 /* ─── Presence status colors (shared) ───────────────────────────────────── */
 .text-green { color: var(--success); }

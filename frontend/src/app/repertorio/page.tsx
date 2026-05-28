@@ -5,6 +5,11 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { authFetch } from '@/lib/authFetch';
 import { useEffect, useRef, useState } from 'react';
 
+type RepertoireFile = {
+  name: string;
+  download_url: string;
+};
+
 type RepertoireItem = {
   id: number;
   title: string;
@@ -13,7 +18,7 @@ type RepertoireItem = {
   state: string;
   notes?: string | null;
   youtube_link?: string | null;
-  pdf_filename?: string | null;
+  files?: RepertoireFile[];
 };
 
 type RepertoireForm = {
@@ -42,7 +47,9 @@ export default function RepertorioPage() {
   const [editingItem, setEditingItem] = useState<RepertoireItem | null>(null);
   const [form, setForm] = useState<RepertoireForm>(EMPTY_FORM);
   const pdfInputRef = useRef<HTMLInputElement>(null);
-  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [pdfFiles, setPdfFiles] = useState<File[]>([]);
+  const [existingFiles, setExistingFiles] = useState<RepertoireFile[]>([]);
+  const [openFileMenuId, setOpenFileMenuId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   async function loadItems() {
@@ -64,12 +71,25 @@ export default function RepertorioPage() {
     }
   }, []);
 
-  function openCreate() { setEditingItem(null); setForm(EMPTY_FORM); setPdfFile(null); setIsModalOpen(true); }
+  function openCreate() { setEditingItem(null); setForm(EMPTY_FORM); setPdfFiles([]); setExistingFiles([]); setIsModalOpen(true); }
   function openEdit(item: RepertoireItem) {
     setEditingItem(item);
     setForm({ title: item.title, composer: item.composer ?? '', arranger: item.arranger ?? '', state: item.state as RepertoireForm['state'], notes: item.notes ?? '', youtube_link: item.youtube_link ?? '' });
-    setPdfFile(null);
+    setPdfFiles([]);
+    setExistingFiles(item.files ?? []);
     setIsModalOpen(true);
+  }
+
+  async function removeExistingFile(file: RepertoireFile) {
+    if (!editingItem) return;
+    await authFetch(`${apiUrl}/api/v1/repertoire/${editingItem.id}/files/${encodeURIComponent(file.name)}`, { method: 'DELETE' });
+    setExistingFiles(prev => prev.filter(f => f.name !== file.name));
+  }
+
+  async function removeAllExistingFiles() {
+    if (!editingItem) return;
+    await authFetch(`${apiUrl}/api/v1/repertoire/${editingItem.id}/files`, { method: 'DELETE' });
+    setExistingFiles([]);
   }
 
   async function saveItem() {
@@ -81,10 +101,13 @@ export default function RepertorioPage() {
       body: JSON.stringify(payload),
     });
     const saved = await savedRes.json();
-    if (pdfFile && saved.id) {
-      const fd = new FormData();
-      fd.append('file', pdfFile);
-      await authFetch(`${apiUrl}/api/v1/repertoire/${saved.id}/pdf`, { method: 'POST', body: fd });
+    if (pdfFiles.length > 0 && saved.id) {
+      const BATCH = 3;
+      for (let i = 0; i < pdfFiles.length; i += BATCH) {
+        const fd = new FormData();
+        pdfFiles.slice(i, i + BATCH).forEach(f => fd.append('files', f));
+        await authFetch(`${apiUrl}/api/v1/repertoire/${saved.id}/files`, { method: 'POST', body: fd });
+      }
     }
     setIsModalOpen(false);
     await loadItems();
@@ -95,13 +118,13 @@ export default function RepertorioPage() {
     await loadItems();
   }
 
-  async function downloadPdf(item: RepertoireItem) {
-    const res = await authFetch(`${apiUrl}/api/v1/repertoire/${item.id}/pdf`);
+  async function downloadFile(file: RepertoireFile) {
+    const res = await authFetch(`${apiUrl}${file.download_url}`);
     if (!res.ok) return;
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = item.pdf_filename ?? `${item.title}.pdf`; a.click();
+    a.href = url; a.download = file.name; a.click();
     URL.revokeObjectURL(url);
   }
 
@@ -146,8 +169,25 @@ export default function RepertorioPage() {
                   {item.youtube_link && (
                     <a href={item.youtube_link} target="_blank" rel="noopener noreferrer" className="action-link yt" title="YouTube">▶</a>
                   )}
-                  {item.pdf_filename && (
-                    <button type="button" className="action-link pdf" title="Descarregar PDF" onClick={() => downloadPdf(item)}>↓ PDF</button>
+                  {(item.files ?? []).length > 0 && (
+                    <div className="file-menu-wrap">
+                      <button
+                        type="button"
+                        className={`action-link pdf${openFileMenuId === item.id ? ' active' : ''}`}
+                        onClick={() => setOpenFileMenuId(openFileMenuId === item.id ? null : item.id)}
+                      >
+                        ↓ PDF{(item.files!.length > 1) ? ` (${item.files!.length})` : ''}
+                      </button>
+                      {openFileMenuId === item.id && (
+                        <div className="file-menu">
+                          {item.files!.map(file => (
+                            <button key={file.name} type="button" className="file-menu-item" onClick={() => { downloadFile(file); setOpenFileMenuId(null); }}>
+                              📄 {file.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   )}
                   {isAdmin && (
                     <>
@@ -159,6 +199,10 @@ export default function RepertorioPage() {
               </div>
             ))}
           </div>
+        )}
+
+        {openFileMenuId !== null && (
+          <div className="file-menu-backdrop" onClick={() => setOpenFileMenuId(null)} />
         )}
 
         {isModalOpen && (
@@ -197,11 +241,31 @@ export default function RepertorioPage() {
                   Notas
                   <textarea rows={3} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Notas opcionais…" />
                 </label>
-                <label className="field span-2">
-                  Partitura PDF
-                  <input type="file" accept="application/pdf" ref={pdfInputRef} onChange={e => setPdfFile(e.target.files?.[0] ?? null)} />
-                  {pdfFile && <span style={{ fontSize: 12, color: 'var(--muted)' }}>{pdfFile.name}</span>}
-                </label>
+                <div className="field span-2">
+                  <span className="field-label">Partituras PDF</span>
+                  {editingItem && existingFiles.length > 0 && (
+                    <div className="existing-files">
+                      {existingFiles.map(file => (
+                        <div key={file.name} className="existing-file">
+                          <span className="existing-file-name" title={file.name}>📄 {file.name}</span>
+                          <button type="button" className="file-remove-btn" title="Remover ficheiro" onClick={() => removeExistingFile(file)}>✕</button>
+                        </div>
+                      ))}
+                      <button type="button" className="btn-danger-sm" onClick={removeAllExistingFiles}>Remover todos</button>
+                    </div>
+                  )}
+                  {editingItem && existingFiles.length === 0 && (
+                    <p className="no-files">Sem partituras carregadas.</p>
+                  )}
+                  <label className="file-input-label">
+                    <input type="file" accept="application/pdf" multiple ref={pdfInputRef} onChange={e => setPdfFiles(Array.from(e.target.files ?? []))} />
+                    {pdfFiles.length > 0 && (
+                      <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+                        {pdfFiles.map(f => f.name).join(', ')}
+                      </span>
+                    )}
+                  </label>
+                </div>
               </div>
               <div className="mf">
                 <button type="button" className="btn-secondary" onClick={() => setIsModalOpen(false)}>Cancelar</button>
@@ -278,6 +342,13 @@ export default function RepertorioPage() {
         .action-btn.danger { color: var(--danger); border-color: rgba(194,78,66,0.3); }
         .action-btn.danger:hover { background: var(--danger-dim); }
 
+        .file-menu-wrap { position: relative; }
+        .file-menu-backdrop { position: fixed; inset: 0; z-index: 99; }
+        .file-menu { position: absolute; right: 0; top: calc(100% + 4px); z-index: 100; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.18); min-width: 220px; max-width: 320px; overflow: hidden; }
+        .file-menu-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 9px 12px; background: transparent; border: none; text-align: left; font-size: 13px; color: var(--text-2); cursor: pointer; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; transition: background 0.1s; }
+        .file-menu-item:hover { background: var(--surface-2); color: var(--text); }
+        .action-link.pdf.active { background: var(--accent-dim); border-color: var(--accent); }
+
         /* Modal */
         .mh { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
         .mt { font-family: var(--font-display, serif); font-size: 22px; font-weight: 600; margin: 0; }
@@ -286,7 +357,18 @@ export default function RepertorioPage() {
 
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
         .field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 500; color: var(--text-2); }
+        .field-label { font-size: 13px; font-weight: 500; color: var(--text-2); }
         .span-2 { grid-column: span 2; }
+
+        .existing-files { display: flex; flex-direction: column; gap: 4px; margin: 6px 0 8px; }
+        .existing-file { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 5px; }
+        .existing-file-name { flex: 1; font-size: 12px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .file-remove-btn { flex-shrink: 0; width: 20px; height: 20px; border-radius: 4px; border: 1px solid rgba(194,78,66,0.35); background: transparent; color: var(--danger); font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; transition: all 0.12s; }
+        .file-remove-btn:hover { background: var(--danger-dim); border-color: var(--danger); }
+        .btn-danger-sm { align-self: flex-start; padding: 4px 10px; border-radius: 5px; border: 1px solid rgba(194,78,66,0.35); background: transparent; color: var(--danger); font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.12s; margin-top: 2px; }
+        .btn-danger-sm:hover { background: var(--danger-dim); border-color: var(--danger); }
+        .no-files { font-size: 12px; color: var(--muted); font-style: italic; margin: 4px 0 8px; }
+        .file-input-label { display: flex; flex-direction: column; gap: 4px; cursor: pointer; }
 
         .mf { display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border); padding-top: 16px; }
         .btn-primary { padding: 8px 16px; border-radius: 6px; border: none; background: var(--accent); color: var(--accent-fg); font-size: 13px; font-weight: 700; cursor: pointer; transition: background 0.15s; }

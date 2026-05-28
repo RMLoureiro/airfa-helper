@@ -3,7 +3,7 @@
 import AuthenticatedShell from '@/components/AuthenticatedShell';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { authFetch } from '@/lib/authFetch';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type EventItem = {
   id: number;
@@ -55,7 +55,123 @@ const EMPTY_FORM: EventForm = {
   recurrence: '', recurrence_end_date: '',
 };
 
+const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const WEEKDAYS = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
 const REHEARSAL_TYPES = new Set(['REHEARSAL', 'SPECIAL_REHEARSAL']);
+
+function EventsCalendar({ events }: { events: EventItem[] }) {
+  const today = new Date();
+  const [year, setYear] = useState(today.getFullYear());
+  const [month, setMonth] = useState(today.getMonth());
+  const [activeDay, setActiveDay] = useState<number | null>(null);
+  const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
+  const calRef = useRef<HTMLDivElement>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const itemsByDay: Record<number, EventItem[]> = {};
+  for (const ev of events) {
+    const d = new Date(ev.start_time);
+    if (d.getFullYear() === year && d.getMonth() === month) {
+      const day = d.getDate();
+      if (!itemsByDay[day]) itemsByDay[day] = [];
+      itemsByDay[day].push(ev);
+    }
+  }
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDow = (new Date(year, month, 1).getDay() + 6) % 7;
+
+  function prev() { if (month === 0) { setMonth(11); setYear(y => y - 1); } else setMonth(m => m - 1); setActiveDay(null); }
+  function next() { if (month === 11) { setMonth(0); setYear(y => y + 1); } else setMonth(m => m + 1); setActiveDay(null); }
+  function scheduleClose() { closeTimer.current = setTimeout(() => setActiveDay(null), 180); }
+  function cancelClose() { if (closeTimer.current) clearTimeout(closeTimer.current); }
+
+  function handleDayEnter(e: React.MouseEvent<HTMLButtonElement>, day: number) {
+    if (!itemsByDay[day]) return;
+    cancelClose();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const parentRect = calRef.current?.getBoundingClientRect();
+    if (!parentRect) return;
+    setActiveDay(day);
+    setTooltipPos({ x: rect.left - parentRect.left, y: rect.bottom - parentRect.top + 6 });
+  }
+
+  function getDayClass(day: number): string {
+    const items = itemsByDay[day];
+    if (!items) return '';
+    const types = new Set(items.map(i => i.type));
+    const hasRehearsal = types.has('REHEARSAL') || types.has('SPECIAL_REHEARSAL');
+    const hasConcert = types.has('CONCERT');
+    if (hasConcert && hasRehearsal) return 'day-mixed-ev';
+    if (hasConcert) return 'day-concert';
+    if (hasRehearsal) return 'day-rehearsal';
+    return 'day-other-ev';
+  }
+
+  const isToday = (d: number) => d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+
+  const cells: (number | null)[] = [];
+  for (let i = 0; i < firstDow; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  return (
+    <div className="calendar" ref={calRef}>
+      <div className="cal-header">
+        <button type="button" onClick={prev} className="cal-nav">‹</button>
+        <span className="cal-title">{MONTHS[month]} {year}</span>
+        <button type="button" onClick={next} className="cal-nav">›</button>
+      </div>
+      <div className="cal-grid">
+        {WEEKDAYS.map(w => <div key={w} className="cal-weekday">{w}</div>)}
+        {cells.map((day, i) =>
+          day === null ? <div key={`e-${i}`} /> : (
+            <button
+              key={day}
+              type="button"
+              className={['cal-day', getDayClass(day), isToday(day) ? 'today' : '', itemsByDay[day] ? 'has-events' : ''].filter(Boolean).join(' ')}
+              onMouseEnter={(e) => handleDayEnter(e, day)}
+              onMouseLeave={scheduleClose}
+            >
+              {day}
+            </button>
+          )
+        )}
+      </div>
+      <div className="cal-legend">
+        <span className="cal-legend-dot" style={{ background: 'var(--rehearsal-color)' }} />
+        <span className="cal-legend-label">Ensaio</span>
+        <span className="cal-legend-dot" style={{ background: 'var(--concert-color)' }} />
+        <span className="cal-legend-label">Concerto</span>
+        <span className="cal-legend-dot" style={{ background: 'var(--muted)' }} />
+        <span className="cal-legend-label">Outro</span>
+      </div>
+      {activeDay !== null && tooltipPos && itemsByDay[activeDay] && (
+        <div
+          className="cal-tooltip"
+          style={{ top: tooltipPos.y, left: Math.min(tooltipPos.x, 200) }}
+          onMouseEnter={cancelClose}
+          onMouseLeave={scheduleClose}
+        >
+          {itemsByDay[activeDay].map((ev, idx) => (
+            <div key={ev.id} style={{ display: 'flex', flexDirection: 'column', gap: 3, padding: '4px 0', borderBottom: idx < itemsByDay[activeDay].length - 1 ? '1px solid var(--border)' : 'none' }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: ev.is_cancelled ? 'var(--muted)' : 'var(--text)', textDecoration: ev.is_cancelled ? 'line-through' : 'none' }}>{ev.title}</div>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <span className={`badge ${EVENT_BADGE[ev.type] ?? 'badge-other'}`} style={{ fontSize: 10, padding: '1px 5px' }}>
+                  {EVENT_LABELS[ev.type] ?? ev.type}
+                </span>
+                {ev.is_cancelled && <span className="badge badge-cancelled" style={{ fontSize: 10, padding: '1px 5px' }}>Cancelado</span>}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--muted)' }}>
+                {new Date(ev.start_time).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}
+                {ev.location && ` · ${ev.location}`}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function EventsPage() {
   const [events, setEvents] = useState<EventItem[]>([]);
@@ -212,6 +328,9 @@ export default function EventsPage() {
             </button>
           )}
         </div>
+
+        {/* Calendar */}
+        <EventsCalendar events={events} />
 
         {/* Event list */}
         {displayed.length === 0 ? (

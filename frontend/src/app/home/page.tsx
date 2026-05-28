@@ -212,6 +212,18 @@ function MiniCalendar({ events, onEventClick }: { events: EventItem[]; onEventCl
     onEventClick(eventsByDay[day][0]);
   }
 
+  function getDayClass(day: number): string {
+    const items = eventsByDay[day];
+    if (!items) return '';
+    const types = new Set(items.map(i => i.type));
+    const hasRehearsal = types.has('REHEARSAL') || types.has('SPECIAL_REHEARSAL');
+    const hasConcert = types.has('CONCERT');
+    if (hasConcert && hasRehearsal) return 'day-mixed-ev';
+    if (hasConcert) return 'day-concert';
+    if (hasRehearsal) return 'day-rehearsal';
+    return 'day-other-ev';
+  }
+
   const cells: (number | null)[] = [];
   for (let i = 0; i < firstDow; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) cells.push(d);
@@ -232,16 +244,21 @@ function MiniCalendar({ events, onEventClick }: { events: EventItem[]; onEventCl
             <button
               key={day}
               type="button"
-              className={['cal-day', isToday(day) ? 'today' : '', eventsByDay[day] ? 'has-events' : ''].filter(Boolean).join(' ')}
+              className={['cal-day', getDayClass(day), isToday(day) ? 'today' : '', eventsByDay[day] ? 'has-events' : ''].filter(Boolean).join(' ')}
               onMouseEnter={(e) => handleDayEnter(e, day)}
               onMouseLeave={scheduleClose}
               onClick={() => handleDayClick(day)}
             >
               {day}
-              {eventsByDay[day] && <span className="cal-dot" />}
             </button>
           )
         )}
+      </div>
+      <div className="cal-legend">
+        <span className="cal-legend-dot" style={{ background: 'var(--rehearsal-color)' }} />
+        <span className="cal-legend-label">Ensaio</span>
+        <span className="cal-legend-dot" style={{ background: 'var(--concert-color)' }} />
+        <span className="cal-legend-label">Concerto</span>
       </div>
       {tooltip && eventsByDay[tooltip.day] && (
         <div
@@ -273,14 +290,19 @@ function MiniCalendar({ events, onEventClick }: { events: EventItem[]; onEventCl
 export default function HomePage() {
   const router = useRouter();
   const [data, setData] = useState<HomeResponse | null>(null);
+  const [allEvents, setAllEvents] = useState<EventItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
 
   useEffect(() => {
-    authFetch(`${apiUrl}/api/v1/home`)
-      .then(async r => { if (!r.ok) throw new Error(); return r.json(); })
-      .then(d => { setData(d); setLoading(false); })
-      .catch(() => router.push('/login'));
+    Promise.all([
+      authFetch(`${apiUrl}/api/v1/home`).then(async r => { if (!r.ok) throw new Error(); return r.json(); }),
+      authFetch(`${apiUrl}/api/v1/events`).then(r => r.json()).catch(() => []),
+    ]).then(([homeData, events]) => {
+      setData(homeData);
+      setAllEvents(Array.isArray(events) ? events : []);
+      setLoading(false);
+    }).catch(() => router.push('/login'));
   }, [router]);
 
   const newsletters = data?.recent_feed.filter(f => f.item_type === 'NEWSLETTER') ?? [];
@@ -368,7 +390,7 @@ export default function HomePage() {
             <div className="section-head">
               <span className="section-label-mono">Calendário</span>
             </div>
-            <MiniCalendar events={data?.upcoming_events ?? []} onEventClick={setSelectedEvent} />
+            <MiniCalendar events={allEvents} onEventClick={setSelectedEvent} />
 
             <div className="section-head" style={{ marginTop: 24 }}>
               <span className="section-label-mono">Próximos eventos</span>

@@ -145,7 +145,7 @@ def delete_repertoire(
     db.commit()
 
 
-
+@router.post("/{repertoire_id}/files")
 async def upload_repertoire_files(
     repertoire_id: int,
     files: list[UploadFile] = File(...),
@@ -168,9 +168,6 @@ async def upload_repertoire_files(
         filename = _sanitize_filename(upload.filename or "")
         if not filename.lower().endswith(".pdf"):
             raise HTTPException(status_code=400, detail="Apenas ficheiros PDF são permitidos")
-
-        if upload.content_type not in ("application/pdf", "application/octet-stream"):
-            raise HTTPException(status_code=400, detail="Tipo de ficheiro não permitido")
 
         destination = (folder / filename).resolve()
         if folder not in destination.parents:
@@ -218,3 +215,42 @@ def download_repertoire_file(
         raise HTTPException(status_code=404, detail="Ficheiro não encontrado")
 
     return FileResponse(path=file_path, filename=file_path.name, media_type="application/pdf")
+
+
+@router.delete("/{repertoire_id}/files/{filename}", status_code=204)
+def delete_repertoire_file(
+    repertoire_id: int,
+    filename: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(SystemRole.ADMIN, SystemRole.SUPER_ADMIN)),
+):
+    repertoire = db.query(Repertoire).filter(Repertoire.id == repertoire_id).first()
+    if not repertoire:
+        raise HTTPException(status_code=404, detail="Repertório não encontrado")
+
+    folder = _resolve_folder(repertoire.folder_path)
+    if not folder:
+        raise HTTPException(status_code=404, detail="Pasta do repertório não encontrada")
+
+    file_path = (folder / filename).resolve()
+    if folder not in file_path.parents or not file_path.exists() or not file_path.is_file():
+        raise HTTPException(status_code=404, detail="Ficheiro não encontrado")
+
+    file_path.unlink()
+
+
+@router.delete("/{repertoire_id}/files", status_code=204)
+def delete_all_repertoire_files(
+    repertoire_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(SystemRole.ADMIN, SystemRole.SUPER_ADMIN)),
+):
+    repertoire = db.query(Repertoire).filter(Repertoire.id == repertoire_id).first()
+    if not repertoire:
+        raise HTTPException(status_code=404, detail="Repertório não encontrado")
+
+    folder = _resolve_folder(repertoire.folder_path)
+    if folder and folder.exists():
+        for f in folder.iterdir():
+            if f.is_file() and f.suffix.lower() == ".pdf":
+                f.unlink()
