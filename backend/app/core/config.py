@@ -1,7 +1,7 @@
 import logging
 import os
 import socket
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _logger = logging.getLogger(__name__)
 
@@ -60,6 +60,8 @@ def _default_database_url() -> str:
     return f"postgresql://{db_user}:{db_pass}@localhost:5432/{db_name}"
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "Airfa Helper API"
     DATABASE_URL: str = _default_database_url()
