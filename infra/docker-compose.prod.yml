@@ -10,7 +10,7 @@ services:
     build: ../backend
     restart: always
     volumes:
-      - /opt/airfa/uploads:/app/uploads
+      - ../files/uploads:/app/uploads
     environment:
       # Provided by Dokploy's managed PostgreSQL instance
       DATABASE_URL: ${DATABASE_URL}
