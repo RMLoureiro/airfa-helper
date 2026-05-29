@@ -27,6 +27,7 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'Airfa',
   description: 'Sistema de gestão da Banda Filarmónica',
+  icons: { icon: '/logo.jpg' },
 };
 
 export default function RootLayout({

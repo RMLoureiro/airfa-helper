@@ -2,6 +2,8 @@
 
 import AuthenticatedShell from '@/components/AuthenticatedShell';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { DatePicker } from '@/components/DatePicker';
+import { DateTimePicker } from '@/components/DateTimePicker';
 import { authFetch } from '@/lib/authFetch';
 import { API_URL } from '@/lib/config';
 import {
@@ -406,7 +408,7 @@ export default function EventsPage() {
         {/* Create / Edit modal */}
         {isModalOpen && (
           <div className="modal-backdrop" onClick={() => setIsModalOpen(false)}>
-            <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal event-modal" onClick={e => e.stopPropagation()}>
               <div className="modal-header">
                 <h2 className="modal-title">{editingEvent ? 'Editar evento' : 'Novo evento'}</h2>
                 <button type="button" className="modal-close" onClick={() => setIsModalOpen(false)}>✕</button>
@@ -425,12 +427,12 @@ export default function EventsPage() {
 
                 <label className="form-field">
                   Início
-                  <input type="datetime-local" value={form.start_time} onChange={e => setForm({ ...form, start_time: e.target.value })} />
+                  <DateTimePicker value={form.start_time} onChange={v => setForm({ ...form, start_time: v })} placeholder="--/--/----" />
                 </label>
 
                 <label className="form-field">
                   Fim
-                  <input type="datetime-local" value={form.end_time} onChange={e => setForm({ ...form, end_time: e.target.value })} />
+                  <DateTimePicker value={form.end_time} onChange={v => setForm({ ...form, end_time: v })} placeholder="--/--/----" />
                 </label>
 
                 <label className="form-field">
@@ -466,7 +468,7 @@ export default function EventsPage() {
                 {!editingEvent && form.recurrence === 'WEEKLY' && (
                   <label className="form-field span-2">
                     Repetir até (inclusive)
-                    <input type="date" value={form.recurrence_end_date} onChange={e => setForm({ ...form, recurrence_end_date: e.target.value })} />
+                    <DatePicker value={form.recurrence_end_date} onChange={v => setForm({ ...form, recurrence_end_date: v })} placeholder="Selecionar data final" />
                   </label>
                 )}
 
@@ -719,6 +721,7 @@ export default function EventsPage() {
 
         /* Scope dialog */
         .scope-modal { max-width: 420px; }
+        .event-modal { width: min(100%, 700px); }
         .scope-text {
           font-size: 14px;
           color: var(--text-2);

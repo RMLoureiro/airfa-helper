@@ -2,6 +2,7 @@
 
 import AuthenticatedShell from '@/components/AuthenticatedShell';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { DatePicker } from '@/components/DatePicker';
 import { authFetch } from '@/lib/authFetch';
 import { API_URL } from '@/lib/config';
 import { MUSICAL_ROLE_LABEL, SYSTEM_BADGE, SYSTEM_ROLE_LABEL } from '@/lib/format';
@@ -33,7 +34,7 @@ type EditForm = {
   musical_role: string;
 };
 
-const EMPTY_FORM: CreateForm = { username: '', name: '', password: '', phone: '', birth_date: '', address: '', join_year: '', system_role: 'MEMBER', musical_role: '' };
+const EMPTY_FORM: CreateForm = { username: '', name: '', password: '', phone: '', birth_date: '', address: '', join_year: '', system_role: 'REGULAR', musical_role: '' };
 
 export default function MembrosPage() {
   const [members, setMembers] = useState<MemberItem[]>([]);
@@ -360,12 +361,20 @@ function MemberFormFields({ form, onChange, showPassword }: FormFieldsProps) {
       ].map(f => (
         <label key={f.key} style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 13, fontWeight: 500, color: 'var(--text-2)' }}>
           {f.label}
-          <input
-            type={f.type}
-            value={(form as Record<string, string>)[f.key] ?? ''}
-            onChange={e => onChange({ ...form, [f.key]: e.target.value })}
-            placeholder={f.placeholder}
-          />
+          {f.type === 'date' ? (
+            <DatePicker
+              value={(form as Record<string, string>)[f.key] ?? ''}
+              onChange={v => onChange({ ...form, [f.key]: v })}
+              placeholder="Selecionar data"
+            />
+          ) : (
+            <input
+              type={f.type}
+              value={(form as Record<string, string>)[f.key] ?? ''}
+              onChange={e => onChange({ ...form, [f.key]: e.target.value })}
+              placeholder={f.placeholder}
+            />
+          )}
         </label>
       ))}
       <label style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 13, fontWeight: 500, color: 'var(--text-2)' }}>
@@ -378,7 +387,7 @@ function MemberFormFields({ form, onChange, showPassword }: FormFieldsProps) {
       <label style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 13, fontWeight: 500, color: 'var(--text-2)' }}>
         Função no sistema
         <select value={form.system_role} onChange={e => onChange({ ...form, system_role: e.target.value })}>
-          <option value="MEMBER">Membro</option>
+          <option value="REGULAR">Membro</option>
           <option value="ADMIN">Administrador</option>
           <option value="SUPER_ADMIN">Super Admin</option>
         </select>

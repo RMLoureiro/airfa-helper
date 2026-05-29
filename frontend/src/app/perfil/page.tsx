@@ -1,6 +1,7 @@
 "use client";
 
 import AuthenticatedShell from '@/components/AuthenticatedShell';
+import { DatePicker } from '@/components/DatePicker';
 import { authFetch } from '@/lib/authFetch';
 import { API_URL } from '@/lib/config';
 import { MUSICAL_ROLE_LABEL, SYSTEM_BADGE, SYSTEM_ROLE_LABEL } from '@/lib/format';
@@ -130,7 +131,7 @@ export default function PerfilPage() {
                   </label>
                   <label className="field">
                     Data de nascimento
-                    <input type="date" value={form.birth_date} onChange={e => setForm({ ...form, birth_date: e.target.value })} />
+                    <DatePicker value={form.birth_date} onChange={v => setForm({ ...form, birth_date: v })} placeholder="Selecionar data" />
                   </label>
                   <label className="field">
                     Morada
