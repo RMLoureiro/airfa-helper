@@ -441,6 +441,34 @@ def _seed_reports(db: Session, users: tuple[User, User, User, User]) -> None:
     )
 
 
+def seed_prod() -> None:
+    """Production seed: only creates / updates the super admin account."""
+    db: Session = SessionLocal()
+    try:
+        super_admin = _upsert_user(
+            db,
+            {
+                "username": os.getenv("SUPER_ADMIN_USERNAME", "superadmin"),
+                "email": os.getenv("SUPER_ADMIN_USERNAME", "superadmin"),
+                "hashed_password": get_password_hash(SEED_PASSWORD_SUPER_ADMIN),
+                "name": os.getenv("SUPER_ADMIN_NAME", "Super Admin Airfa"),
+                "phone": "910000000",
+                "birth_date": date(1985, 1, 1),
+                "address": "",
+                "join_year": 2000,
+                "system_role": SystemRole.SUPER_ADMIN,
+                "musical_role": MusicalRole.TRUMPET_PLAYER,
+            },
+        )
+        db.commit()
+        _logger.info("Super admin criado/atualizado: %s", super_admin.username)
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
 def seed_all() -> None:
     db: Session = SessionLocal()
     try:
@@ -471,4 +499,7 @@ def seed_all() -> None:
 
 
 if __name__ == "__main__":
-    seed_all()
+    if os.getenv("SEED_DEMO", "false").lower() == "true":
+        seed_all()
+    else:
+        seed_prod()

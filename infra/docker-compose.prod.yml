@@ -16,15 +16,12 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       SECRET_KEY: ${SECRET_KEY}
       CORS_ORIGINS: ${CORS_ORIGINS}
-      # Seed control
+      # Seed control — RUN_SEED=true on first deploy only (creates super admin)
       RUN_SEED: ${RUN_SEED:-false}
       # Super admin account (used when RUN_SEED=true)
-      # WARNING: all SEED_*_PASSWORD vars must be set explicitly — no weak defaults.
       SUPER_ADMIN_USERNAME: ${SUPER_ADMIN_USERNAME:-superadmin}
       SUPER_ADMIN_NAME: ${SUPER_ADMIN_NAME:-Super Admin}
       SEED_SUPER_ADMIN_PASSWORD: ${SEED_SUPER_ADMIN_PASSWORD}
-      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD}
-      SEED_REGULAR_PASSWORD: ${SEED_REGULAR_PASSWORD}
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
       interval: 30s

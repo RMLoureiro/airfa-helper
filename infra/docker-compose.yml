@@ -33,7 +33,8 @@ services:
       DATABASE_URL: postgresql://airfa:airfa@db:5432/airfa
       SECRET_KEY: devsecret-change-in-production
       CORS_ORIGINS: "http://localhost:3000,http://localhost:3001"
-      RUN_SEED: "true"           # seed demo data on every (re)start
+      RUN_SEED: "true"
+      SEED_DEMO: "true"           # seed full demo data (dev only)
     depends_on:
       db:
         condition: service_healthy
