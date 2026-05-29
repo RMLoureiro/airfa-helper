@@ -28,6 +28,9 @@ node_modules/
 .DS_Store
 Thumbs.db
 
+# Local scripts
+gen_passwords.py
+
 # Docker
 volumes/
 db_data/
