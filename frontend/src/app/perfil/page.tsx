@@ -1,7 +1,6 @@
 "use client";
 
 import AuthenticatedShell from '@/components/AuthenticatedShell';
-import { DatePicker } from '@/components/DatePicker';
 import { authFetch } from '@/lib/authFetch';
 import { API_URL } from '@/lib/config';
 import { MUSICAL_ROLE_LABEL, SYSTEM_BADGE, SYSTEM_ROLE_LABEL } from '@/lib/format';
@@ -35,6 +34,7 @@ export default function PerfilPage() {
   const [form, setForm] = useState<ProfileForm>({ name: '', phone: '', birth_date: '', address: '' });
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
+  const [isPwOpen, setIsPwOpen] = useState(false);
   const [pwForm, setPwForm] = useState<PwForm>({ current_password: '', new_password: '', confirm_password: '' });
   const [pwError, setPwError] = useState<string | null>(null);
   const [pwSuccess, setPwSuccess] = useState(false);
@@ -79,8 +79,14 @@ export default function PerfilPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ current_password: pwForm.current_password, new_password: pwForm.new_password }),
     });
-    if (res.ok) { setPwSuccess(true); setPwForm({ current_password: '', new_password: '', confirm_password: '' }); }
-    else { const d = await res.json(); setPwError(d.detail ?? 'Erro ao alterar a password.'); }
+    if (res.ok) {
+      setPwSuccess(true);
+      setPwForm({ current_password: '', new_password: '', confirm_password: '' });
+      setTimeout(() => { setIsPwOpen(false); setPwSuccess(false); }, 1200);
+    } else {
+      const d = await res.json();
+      setPwError(d.detail ?? 'Erro ao alterar a password.');
+    }
   }
 
   const initials = profile?.name?.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() ?? '??';
@@ -131,7 +137,7 @@ export default function PerfilPage() {
                   </label>
                   <label className="field">
                     Data de nascimento
-                    <DatePicker value={form.birth_date} onChange={v => setForm({ ...form, birth_date: v })} placeholder="Selecionar data" />
+                    <input type="date" value={form.birth_date} onChange={e => setForm({ ...form, birth_date: e.target.value })} />
                   </label>
                   <label className="field">
                     Morada
@@ -147,29 +153,48 @@ export default function PerfilPage() {
             )}
           </div>
 
-          {/* Password card */}
-          <div className="card">
-            <h3 className="section-heading">Alterar password</h3>
-            <div className="form-grid">
-              <label className="field span-2">
-                Password atual
-                <input type="password" value={pwForm.current_password} onChange={e => setPwForm({ ...pwForm, current_password: e.target.value })} placeholder="Password atual" />
-              </label>
-              <label className="field">
-                Nova password
-                <input type="password" value={pwForm.new_password} onChange={e => setPwForm({ ...pwForm, new_password: e.target.value })} placeholder="Mínimo 12 caracteres" />
-              </label>
-              <label className="field">
-                Confirmar nova password
-                <input type="password" value={pwForm.confirm_password} onChange={e => setPwForm({ ...pwForm, confirm_password: e.target.value })} placeholder="Repetir nova password" />
-              </label>
+          {/* Password button */}
+          <div className="card" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <h3 className="section-heading" style={{ margin: 0 }}>Palavra-passe</h3>
+              <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--muted)' }}>Alterar a sua palavra-passe de acesso</p>
             </div>
-            {pwError && <div className="save-msg err">{pwError}</div>}
-            {pwSuccess && <div className="save-msg ok">Password alterada com sucesso.</div>}
-            <div className="card-footer">
-              <button type="button" className="btn-primary" onClick={changePassword}>Alterar password</button>
-            </div>
+            <button type="button" className="btn-secondary" onClick={() => { setPwForm({ current_password: '', new_password: '', confirm_password: '' }); setPwError(null); setPwSuccess(false); setIsPwOpen(true); }}>
+              Alterar
+            </button>
           </div>
+
+          {/* Password modal */}
+          {isPwOpen && (
+            <div className="modal-backdrop" onClick={() => setIsPwOpen(false)}>
+              <div className="modal" onClick={e => e.stopPropagation()}>
+                <div className="mh">
+                  <h2 className="mt">Alterar palavra-passe</h2>
+                  <button type="button" className="mc" onClick={() => setIsPwOpen(false)}>✕</button>
+                </div>
+                <div className="form-grid">
+                  <label className="field span-2">
+                    Palavra-passe atual
+                    <input type="password" value={pwForm.current_password} onChange={e => setPwForm({ ...pwForm, current_password: e.target.value })} placeholder="Palavra-passe atual" autoComplete="current-password" />
+                  </label>
+                  <label className="field span-2">
+                    Nova palavra-passe
+                    <input type="password" value={pwForm.new_password} onChange={e => setPwForm({ ...pwForm, new_password: e.target.value })} placeholder="Mínimo 12 caracteres" autoComplete="new-password" />
+                  </label>
+                  <label className="field span-2">
+                    Confirmar nova palavra-passe
+                    <input type="password" value={pwForm.confirm_password} onChange={e => setPwForm({ ...pwForm, confirm_password: e.target.value })} placeholder="Repetir a nova palavra-passe" autoComplete="new-password" />
+                  </label>
+                </div>
+                {pwError && <div className="save-msg err">{pwError}</div>}
+                {pwSuccess && <div className="save-msg ok">Palavra-passe alterada com sucesso.</div>}
+                <div className="mf">
+                  <button type="button" className="btn-secondary" onClick={() => setIsPwOpen(false)}>Cancelar</button>
+                  <button type="button" className="btn-primary" onClick={changePassword}>Confirmar</button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -274,6 +299,12 @@ export default function PerfilPage() {
           .form-grid { grid-template-columns: 1fr; }
           .span-2 { grid-column: span 1; }
         }
+
+        .mh { display: flex; align-items: center; justify-content: space-between; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+        .mt { font-family: var(--font-display, serif); font-size: 18px; font-weight: 600; margin: 0; color: var(--text); }
+        .mc { background: none; border: none; color: var(--muted); font-size: 16px; cursor: pointer; padding: 2px 6px; border-radius: 4px; }
+        .mc:hover { color: var(--text); background: var(--surface-3); }
+        .mf { display: flex; justify-content: flex-end; gap: 8px; padding-top: 14px; border-top: 1px solid var(--border); }
       `}</style>
     </AuthenticatedShell>
   );

@@ -19,14 +19,14 @@ export default function ConfirmDialog({ message, onConfirm, onCancel, confirmLab
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, borderTop: '1px solid var(--border)', paddingTop: 16 }}>
           <button
             type="button"
-            className="btn-secondary"
+            className="btn btn-secondary"
             onClick={onCancel}
           >
             Cancelar
           </button>
           <button
             type="button"
-            className="btn-danger"
+            className="btn btn-danger"
             onClick={onConfirm}
           >
             {confirmLabel}

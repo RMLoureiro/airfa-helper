@@ -6,7 +6,7 @@ from app.models.enums import SystemRole
 from app.models.instrument import Instrument
 from app.models.instrument_report import InstrumentReport
 from app.models.user import User
-from app.schemas.instrument import InstrumentRead
+from app.schemas.instrument import InstrumentCreate, InstrumentRead
 from app.schemas.instrument_report import InstrumentReportCreate, InstrumentReportRead
 
 router = APIRouter(prefix="/instruments", tags=["instruments"])
@@ -20,6 +20,32 @@ def list_instruments(
     if current_user.system_role in {SystemRole.ADMIN, SystemRole.SUPER_ADMIN}:
         return db.query(Instrument).order_by(Instrument.id.asc()).all()
     return db.query(Instrument).filter(Instrument.user_id == current_user.id).order_by(Instrument.id.asc()).all()
+
+
+@router.post("", response_model=InstrumentRead, status_code=201)
+def create_instrument(
+    payload: InstrumentCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(SystemRole.ADMIN, SystemRole.SUPER_ADMIN)),
+):
+    instrument = Instrument(**payload.model_dump())
+    db.add(instrument)
+    db.commit()
+    db.refresh(instrument)
+    return instrument
+
+
+@router.delete("/{instrument_id}", status_code=204)
+def delete_instrument(
+    instrument_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(SystemRole.ADMIN, SystemRole.SUPER_ADMIN)),
+):
+    instrument = db.query(Instrument).filter(Instrument.id == instrument_id).first()
+    if not instrument:
+        raise HTTPException(status_code=404, detail="Instrumento não encontrado")
+    db.delete(instrument)
+    db.commit()
 
 
 @router.post("/{instrument_id}/assign")

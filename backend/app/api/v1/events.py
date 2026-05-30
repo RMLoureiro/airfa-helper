@@ -55,3 +55,16 @@ def delete_event(
     if not event:
         raise HTTPException(status_code=404, detail="Evento não encontrado")
     event_service.cancel_event(db, event, scope)
+
+
+@router.delete("/{event_id}/hard", status_code=204)
+def hard_delete_event(
+    event_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(SystemRole.SUPER_ADMIN)),
+):
+    event = db.query(Event).filter(Event.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Evento não encontrado")
+    db.delete(event)
+    db.commit()

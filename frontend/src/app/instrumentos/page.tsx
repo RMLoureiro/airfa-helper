@@ -15,11 +15,27 @@ type InstrumentItem = {
 
 type MemberItem = { id: number; name: string };
 
+type CreateForm = {
+  type: string;
+  make: string;
+  model: string;
+  state: string;
+};
+
 type ReportForm = {
   report_type: 'MAINTENANCE' | 'FIX';
   severity: 'SMALL' | 'AVERAGE' | 'BIG';
   description: string;
 };
+
+const INSTRUMENT_TYPES = [
+  'PICCOLO','FLUTE','CLARINET','BASS_CLARINET','ALTO_SAXOPHONE','TENOR_SAXOPHONE',
+  'BARITONE_SAXOPHONE','SOPRANO_SAXOPHONE','TROMBONE','EUPHONIUM','TUBA','FRENCH_HORN','TRUMPET',
+];
+
+const INSTRUMENT_STATES = ['OK','NEEDS_MAINTENANCE','NEEDS_FIXING','OUT_OF_SERVICE'];
+
+const EMPTY_CREATE: CreateForm = { type: 'CLARINET', make: '', model: '', state: 'OK' };
 
 type ReportItem = {
   id: number;
@@ -73,6 +89,14 @@ export default function InstrumentosPage() {
   const [assignTarget, setAssignTarget] = useState<InstrumentItem | null>(null);
   const [assignUserId, setAssignUserId] = useState<string>('');
   const [assigning, setAssigning] = useState(false);
+
+  // Create modal (admin)
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [createForm, setCreateForm] = useState<CreateForm>(EMPTY_CREATE);
+  const [creating, setCreating] = useState(false);
+
+  // Delete confirm
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   // Reports panel (admin)
   const [showReports, setShowReports] = useState(false);
@@ -139,6 +163,36 @@ export default function InstrumentosPage() {
       .catch(() => {});
   }
 
+  async function loadInstruments() {
+    const data = await authFetch(`${apiUrl}/api/v1/instruments`).then(r => r.json());
+    if (Array.isArray(data)) setInstruments(data);
+  }
+
+  async function createInstrument() {
+    setCreating(true);
+    await authFetch(`${apiUrl}/api/v1/instruments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: createForm.type,
+        make: createForm.make || null,
+        model: createForm.model || null,
+        state: createForm.state,
+        user_id: null,
+      }),
+    });
+    setCreating(false);
+    setIsCreateOpen(false);
+    setCreateForm(EMPTY_CREATE);
+    await loadInstruments();
+  }
+
+  async function deleteInstrument(id: number) {
+    await authFetch(`${apiUrl}/api/v1/instruments/${id}`, { method: 'DELETE' });
+    setConfirmDeleteId(null);
+    await loadInstruments();
+  }
+
   function openReports() {
     setShowReports(true);
     setReportsLoading(true);
@@ -154,6 +208,7 @@ export default function InstrumentosPage() {
         {isAdmin && (
           <div className="toolbar">
             <button type="button" className="btn-secondary" onClick={openReports}>Ver ocorrências</button>
+            <button type="button" className="btn-primary" onClick={() => { setCreateForm(EMPTY_CREATE); setIsCreateOpen(true); }}>+ Novo instrumento</button>
           </div>
         )}
 
@@ -206,6 +261,15 @@ export default function InstrumentosPage() {
                       onClick={() => { setAssignTarget(inst); setAssignUserId(inst.user_id ? String(inst.user_id) : ''); }}
                     >
                       Atribuir membro
+                    </button>
+                  )}
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      className="action-btn action-btn--danger"
+                      onClick={() => setConfirmDeleteId(inst.id)}
+                    >
+                      Eliminar
                     </button>
                   )}
                 </div>
@@ -286,6 +350,65 @@ export default function InstrumentosPage() {
           </div>
         )}
 
+        {/* Create instrument modal (admin) */}
+        {isCreateOpen && (
+          <div className="modal-backdrop" onClick={() => setIsCreateOpen(false)}>
+            <div className="modal" onClick={e => e.stopPropagation()}>
+              <div className="mh">
+                <h2 className="mt">Novo instrumento</h2>
+                <button type="button" className="mc" onClick={() => setIsCreateOpen(false)}>✕</button>
+              </div>
+              <div className="form">
+                <label className="field">
+                  Tipo
+                  <select value={createForm.type} onChange={e => setCreateForm({ ...createForm, type: e.target.value })}>
+                    {INSTRUMENT_TYPES.map(t => <option key={t} value={t}>{TYPE_LABEL[t] ?? t}</option>)}
+                  </select>
+                </label>
+                <label className="field">
+                  Marca
+                  <input value={createForm.make} onChange={e => setCreateForm({ ...createForm, make: e.target.value })} placeholder="Ex: Yamaha" />
+                </label>
+                <label className="field">
+                  Modelo
+                  <input value={createForm.model} onChange={e => setCreateForm({ ...createForm, model: e.target.value })} placeholder="Ex: YCL-255" />
+                </label>
+                <label className="field">
+                  Estado
+                  <select value={createForm.state} onChange={e => setCreateForm({ ...createForm, state: e.target.value })}>
+                    {INSTRUMENT_STATES.map(s => <option key={s} value={s}>{STATE_LABEL[s] ?? s}</option>)}
+                  </select>
+                </label>
+              </div>
+              <div className="mf">
+                <button type="button" className="btn-secondary" onClick={() => setIsCreateOpen(false)}>Cancelar</button>
+                <button type="button" className="btn-primary" onClick={createInstrument} disabled={creating}>
+                  {creating ? 'A guardar…' : 'Criar instrumento'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Confirm delete */}
+        {confirmDeleteId !== null && (
+          <div className="modal-backdrop" onClick={() => setConfirmDeleteId(null)}>
+            <div className="modal" style={{ maxWidth: 400 }} onClick={e => e.stopPropagation()}>
+              <div className="mh">
+                <h2 className="mt">Eliminar instrumento</h2>
+                <button type="button" className="mc" onClick={() => setConfirmDeleteId(null)}>✕</button>
+              </div>
+              <p style={{ color: 'var(--text-2)', fontSize: 14, margin: '0 0 20px' }}>
+                Tens a certeza que pretendes eliminar este instrumento? Esta acção é irreversível.
+              </p>
+              <div className="mf">
+                <button type="button" className="btn-secondary" onClick={() => setConfirmDeleteId(null)}>Cancelar</button>
+                <button type="button" className="btn-danger" onClick={() => deleteInstrument(confirmDeleteId)}>Eliminar</button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Reports panel (admin) */}
         {showReports && (
           <div className="modal-backdrop" onClick={() => setShowReports(false)}>
@@ -327,7 +450,7 @@ export default function InstrumentosPage() {
       <style jsx>{`
         .page { display: flex; flex-direction: column; gap: 20px; }
         .empty-state { color: var(--muted); font-style: italic; text-align: center; padding: 48px; }
-        .toolbar { display: flex; justify-content: flex-end; }
+        .toolbar { display: flex; justify-content: flex-end; gap: 12px; }
 
         .grid {
           display: grid;
@@ -371,6 +494,8 @@ export default function InstrumentosPage() {
           cursor: pointer; transition: all 0.12s; text-align: center;
         }
         .action-btn:hover { background: var(--accent-dim); border-color: var(--accent); color: var(--accent-2); }
+        .action-btn--danger { border-color: rgba(220,80,80,0.3); color: var(--danger); }
+        .action-btn--danger:hover { background: rgba(220,80,80,0.12); border-color: var(--danger); color: var(--danger); }
 
         .badge { padding: 3px 8px; border-radius: 5px; font-size: 11px; font-weight: 600; }
         .badge-ok { background: rgba(120,200,120,0.15); color: var(--success); border: 1px solid rgba(120,200,120,0.3); }
