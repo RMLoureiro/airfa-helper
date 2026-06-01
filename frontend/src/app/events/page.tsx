@@ -598,11 +598,11 @@ export default function EventsPage() {
         }
 
         /* Event list */
-        .event-list { display: flex; flex-direction: column; gap: 1px; }
+        .event-list { display: flex; flex-direction: column; gap: 8px; }
 
         .event-card {
           display: flex;
-          align-items: flex-start;
+          align-items: stretch;
           gap: 0;
           background: var(--surface);
           border: 1px solid var(--border);

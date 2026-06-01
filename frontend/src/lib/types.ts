@@ -28,6 +28,31 @@ export type MemberItem = {
   musical_role?: string | null;
 };
 
+export type ReinforcementItem = {
+  id: number;
+  name: string;
+  instrument: string | null;
+  contact: string | null;
+  usual_fee: number | null;
+};
+
+export type EventReinforcementItem = {
+  id: number;
+  event_id: number;
+  reinforcement_id: number;
+  fee: number | null;
+  reinforcement: ReinforcementItem;
+};
+
+/** Store user shape as returned from the login/me endpoints. */
+export type StoredUser = {
+  id?: number;
+  username?: string;
+  name?: string;
+  system_role?: string;
+  musical_role?: string | null;
+};
+
 export type BirthdayItem = {
   id: number;
   name: string;
@@ -44,12 +69,4 @@ export type FeedItem = {
   event_type?: string | null;
   facebook_link?: string | null;
   instagram_link?: string | null;
-};
-
-export type StoredUser = {
-  id?: number;
-  username?: string;
-  name?: string;
-  system_role?: string;
-  musical_role?: string | null;
 };

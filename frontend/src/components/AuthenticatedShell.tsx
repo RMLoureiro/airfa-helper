@@ -82,6 +82,15 @@ function IconUsers() {
     </svg>
   );
 }
+function IconUserPlus() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="6.5" cy="5" r="2.5"/>
+      <path d="M1 14c0-2.8 2.2-5 5.5-5"/>
+      <path d="M12 9v6M9 12h6"/>
+    </svg>
+  );
+}
 function IconSun() {
   return (
     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
@@ -122,14 +131,15 @@ function IconClose() {
 
 // ─── Navigation config ────────────────────────────────────────────────────────
 const navigation = [
-  { href: '/home',        label: 'Início',        icon: <IconHome />,          adminOnly: false },
-  { href: '/presencas',   label: 'Presenças',      icon: <IconCalendarCheck />, adminOnly: false },
-  { href: '/events',      label: 'Eventos',        icon: <IconCalendar />,      adminOnly: false },
-  { href: '/instrumentos',label: 'Instrumentos',   icon: <IconMusic />,         adminOnly: false },
-  { href: '/repertorio',  label: 'Repertório',     icon: <IconList />,          adminOnly: false },
-  { href: '/notificacoes',label: 'Notificações',   icon: <IconBell />,          adminOnly: false },
-  { href: '/newsletter',  label: 'Newsletter',     icon: <IconNewspaper />,     adminOnly: true  },
-  { href: '/membros',     label: 'Membros',        icon: <IconUsers />,         adminOnly: true  },
+  { href: '/home',        label: 'Início',        icon: <IconHome />,          adminOnly: false, superAdminOnly: false },
+  { href: '/presencas',   label: 'Presenças',      icon: <IconCalendarCheck />, adminOnly: false, superAdminOnly: false },
+  { href: '/events',      label: 'Eventos',        icon: <IconCalendar />,      adminOnly: false, superAdminOnly: false },
+  { href: '/instrumentos',label: 'Instrumentos',   icon: <IconMusic />,         adminOnly: false, superAdminOnly: false },
+  { href: '/repertorio',  label: 'Repertório',     icon: <IconList />,          adminOnly: false, superAdminOnly: false },
+  { href: '/notificacoes',label: 'Notificações',   icon: <IconBell />,          adminOnly: false, superAdminOnly: false },
+  { href: '/newsletter',  label: 'Newsletter',     icon: <IconNewspaper />,     adminOnly: true,  superAdminOnly: false },
+  { href: '/membros',     label: 'Membros',        icon: <IconUsers />,         adminOnly: true,  superAdminOnly: false },
+  { href: '/reforcoss',   label: 'Reforços',       icon: <IconUserPlus />,      adminOnly: false, superAdminOnly: true  },
 ];
 
 const MUSICAL_ROLE_LABELS: Record<string, string> = {
@@ -260,6 +270,7 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
     });
   }
 
+  const isSuperAdminUser = role === 'SUPER_ADMIN';
   const canSeeMembers = role === 'ADMIN' || role === 'SUPER_ADMIN';
   const isAdmin = canSeeMembers;
   const initials = name ? name.trim()[0].toUpperCase() : '?';
@@ -271,10 +282,11 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
   const sidebarContent = (
     <>
       {/* Brand */}
-      <div className="sidebar-brand" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '22px 16px 18px' }}>
+      <div className="sidebar-brand" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '22px 16px 18px' }}>
+        <img src="/airfa_logo.png" alt="" style={{ height: '36px', width: 'auto', display: 'block', flexShrink: 0 }} />
         <div className="brand-text">
-          <span className="brand-name">Airfa</span>
-          <span className="brand-sub">Banda Filarmónica</span>
+          <div className="brand-name">Airfa</div>
+          <div className="brand-sub">Banda Filarmónica</div>
         </div>
       </div>
 
@@ -284,7 +296,11 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
       {/* Nav */}
       <nav className="sidebar-nav" aria-label="Navegação principal">
         {navigation
-          .filter(item => !item.adminOnly || canSeeMembers)
+          .filter(item => {
+            if (item.superAdminOnly) return isSuperAdminUser;
+            if (item.adminOnly) return canSeeMembers;
+            return true;
+          })
           .map(item => {
             const isActive = pathname === item.href;
             return (
@@ -517,6 +533,9 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
         }
 
         .brand-name {
+          display: flex;
+          align-items: center;
+          gap: 6px;
           font-family: var(--font-display, serif);
           font-size: 18px;
           font-style: italic;
@@ -526,7 +545,15 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
           line-height: 1.1;
         }
 
+        .brand-logo {
+          height: 18px;
+          width: auto;
+          display: block;
+          flex-shrink: 0;
+        }
+
         .brand-sub {
+          display: block;
           font-size: 10px;
           color: var(--muted);
           letter-spacing: 0.08em;

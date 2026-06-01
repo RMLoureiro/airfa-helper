@@ -161,7 +161,7 @@ export default function NotificacoesPage() {
         }
         .action-btn:hover { background: var(--surface-3); border-color: var(--border-strong); color: var(--text); }
 
-        .notif-list { display: flex; flex-direction: column; gap: 1px; }
+        .notif-list { display: flex; flex-direction: column; gap: 8px; }
 
         .notif-card {
           display: flex;

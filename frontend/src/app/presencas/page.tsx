@@ -709,7 +709,7 @@ export default function PresencasPage() {
 
         .empty { color: var(--muted); font-style: italic; font-size: 13px; padding: 16px 0; }
 
-        .event-list { display: flex; flex-direction: column; gap: 1px; }
+        .event-list { display: flex; flex-direction: column; gap: 8px; }
 
         .event-row {
           display: flex;

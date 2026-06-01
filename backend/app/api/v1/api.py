@@ -9,6 +9,7 @@ from app.api.v1.presences import router as presences_router
 from app.api.v1.notifications import router as notifications_router
 from app.api.v1.newsletter import router as newsletter_router
 from app.api.v1.repertoire import router as repertoire_router
+from app.api.v1.reinforcements import router as reinforcements_router
 
 api_router = APIRouter()
 api_router.include_router(auth_router)
@@ -20,3 +21,4 @@ api_router.include_router(notifications_router)
 api_router.include_router(presences_router)
 api_router.include_router(instruments_router)
 api_router.include_router(repertoire_router)
+api_router.include_router(reinforcements_router)
