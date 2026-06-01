@@ -1,5 +1,7 @@
 """Business logic for attendance/presence tracking."""
 
+from datetime import datetime, timezone
+
 from sqlalchemy.orm import Session
 
 from app.models.enums import AttendanceStatus
@@ -14,10 +16,33 @@ from app.schemas.presence import (
 )
 
 
-def list_presences_for_user(db: Session, current_user: User) -> list[dict]:
-    """Return all events with per-event attendance counts and the current user's status."""
+def _academic_year_bounds(year_start: int) -> tuple[datetime, datetime]:
+    """Return (start, end) datetimes for an academic year (Sep 1 → Jul 31)."""
+    start = datetime(year_start, 9, 1, 0, 0, 0, tzinfo=timezone.utc)
+    end = datetime(year_start + 1, 7, 31, 23, 59, 59, tzinfo=timezone.utc)
+    return start, end
+
+
+def get_academic_years(db: Session) -> list[int]:
+    """Return sorted list of academic year-start integers that have events."""
+    rows = db.query(Event.start_time).all()
+    years: set[int] = set()
+    for (start_time,) in rows:
+        dt = start_time if start_time.tzinfo else start_time.replace(tzinfo=timezone.utc)
+        years.add(dt.year if dt.month >= 9 else dt.year - 1)
+    return sorted(years)
+
+
+def list_presences_for_user(
+    db: Session, current_user: User, year_start: int | None = None
+) -> list[dict]:
+    """Return events with per-event attendance counts and the current user's status."""
+    query = db.query(Event)
+    if year_start is not None:
+        start, end = _academic_year_bounds(year_start)
+        query = query.filter(Event.start_time >= start, Event.start_time <= end)
     events = (
-        db.query(Event)
+        query
         .outerjoin(EventAttendance, EventAttendance.event_id == Event.id)
         .group_by(Event.id)
         .order_by(Event.start_time.asc())
@@ -52,22 +77,35 @@ def list_presences_for_user(db: Session, current_user: User) -> list[dict]:
     return result
 
 
-def get_member_analytics(db: Session) -> list[PresenceAnalyticsMemberRead]:
-    """Return per-member attendance analytics across all events."""
+def get_member_analytics(
+    db: Session, year_start: int | None = None
+) -> list[PresenceAnalyticsMemberRead]:
+    """Return per-member attendance analytics, optionally filtered by academic year."""
     members = db.query(User).order_by(User.name.asc()).all()
-    return [
-        PresenceAnalyticsMemberRead(
-            user_id=member.id,
-            name=member.name,
-            naipe=member.musical_role.value if member.musical_role else None,
-            total_events=len(records := db.query(EventAttendance).filter(EventAttendance.user_id == member.id).all()),
-            present=sum(1 for r in records if r.status == AttendanceStatus.PRESENT),
-            tardy=sum(1 for r in records if r.status == AttendanceStatus.TARDY),
-            absent=sum(1 for r in records if r.status == AttendanceStatus.ABSENT),
-            justified=sum(1 for r in records if r.status == AttendanceStatus.JUSTIFIED),
+    result = []
+    for member in members:
+        records_query = db.query(EventAttendance).filter(EventAttendance.user_id == member.id)
+        if year_start is not None:
+            start, end = _academic_year_bounds(year_start)
+            records_query = (
+                records_query
+                .join(Event, Event.id == EventAttendance.event_id)
+                .filter(Event.start_time >= start, Event.start_time <= end)
+            )
+        records = records_query.all()
+        result.append(
+            PresenceAnalyticsMemberRead(
+                user_id=member.id,
+                name=member.name,
+                naipe=member.musical_role.value if member.musical_role else None,
+                total_events=len(records),
+                present=sum(1 for r in records if r.status == AttendanceStatus.PRESENT),
+                tardy=sum(1 for r in records if r.status == AttendanceStatus.TARDY),
+                absent=sum(1 for r in records if r.status == AttendanceStatus.ABSENT),
+                justified=sum(1 for r in records if r.status == AttendanceStatus.JUSTIFIED),
+            )
         )
-        for member in members
-    ]
+    return result
 
 
 def get_event_member_statuses(db: Session, event_id: int) -> list[PresenceMemberStatusRead]:

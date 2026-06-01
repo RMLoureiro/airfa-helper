@@ -22,10 +22,12 @@ from app.models.enums import (
 )
 from app.models.event import Event
 from app.models.event_attendance import EventAttendance
+from app.models.event_reinforcement import EventReinforcement
 from app.models.instrument import Instrument
 from app.models.instrument_report import InstrumentReport
 from app.models.newsletter import Newsletter
 from app.models.notification import Notification
+from app.models.reinforcement import Reinforcement
 from app.models.report import Report
 from app.models.repertoire import Repertoire
 from app.models.user import User
@@ -126,6 +128,116 @@ def _seed_events(db: Session) -> list[Event]:
     db.query(Event).delete(synchronize_session=False)
 
     now = datetime.now(timezone.utc)
+
+    # ── Academic year 2024/2025 (fixed dates: Sep 2024 – Jul 2025) ──────────
+    ay24_events = [
+        Event(
+            title="Ensaio de Setembro 2024",
+            description="Início do ano letivo 2024/2025.",
+            start_time=datetime(2024, 9, 14, 20, 0, tzinfo=timezone.utc),
+            end_time=datetime(2024, 9, 14, 22, 0, tzinfo=timezone.utc),
+            location="Sede da Banda",
+            type=EventType.REHEARSAL,
+        ),
+        Event(
+            title="Ensaio de Outubro 2024",
+            description="Ensaio regular de outubro.",
+            start_time=datetime(2024, 10, 12, 20, 0, tzinfo=timezone.utc),
+            end_time=datetime(2024, 10, 12, 22, 0, tzinfo=timezone.utc),
+            location="Sede da Banda",
+            type=EventType.REHEARSAL,
+        ),
+        Event(
+            title="Concerto de Outono 2024",
+            description="Concerto de outono anual.",
+            start_time=datetime(2024, 11, 9, 17, 0, tzinfo=timezone.utc),
+            end_time=datetime(2024, 11, 9, 20, 0, tzinfo=timezone.utc),
+            location="Auditório Municipal",
+            type=EventType.CONCERT,
+        ),
+        Event(
+            title="Ensaio de Novembro 2024",
+            description="Preparação para o natal.",
+            start_time=datetime(2024, 11, 23, 20, 0, tzinfo=timezone.utc),
+            end_time=datetime(2024, 11, 23, 22, 0, tzinfo=timezone.utc),
+            location="Sede da Banda",
+            type=EventType.REHEARSAL,
+        ),
+        Event(
+            title="Concerto de Natal 2024",
+            description="Concerto especial de Natal.",
+            start_time=datetime(2024, 12, 21, 17, 0, tzinfo=timezone.utc),
+            end_time=datetime(2024, 12, 21, 20, 0, tzinfo=timezone.utc),
+            location="Igreja Matriz",
+            type=EventType.CONCERT,
+        ),
+        Event(
+            title="Ensaio de Janeiro 2025",
+            description="Primeiro ensaio de 2025.",
+            start_time=datetime(2025, 1, 11, 20, 0, tzinfo=timezone.utc),
+            end_time=datetime(2025, 1, 11, 22, 0, tzinfo=timezone.utc),
+            location="Sede da Banda",
+            type=EventType.REHEARSAL,
+        ),
+        Event(
+            title="Ensaio de Fevereiro 2025",
+            description="Preparação para o carnaval.",
+            start_time=datetime(2025, 2, 8, 20, 0, tzinfo=timezone.utc),
+            end_time=datetime(2025, 2, 8, 22, 0, tzinfo=timezone.utc),
+            location="Sede da Banda",
+            type=EventType.REHEARSAL,
+        ),
+        Event(
+            title="Concerto de Carnaval 2025",
+            description="Atuação no desfile de carnaval.",
+            start_time=datetime(2025, 3, 1, 15, 0, tzinfo=timezone.utc),
+            end_time=datetime(2025, 3, 1, 18, 0, tzinfo=timezone.utc),
+            location="Praça Central",
+            type=EventType.CONCERT,
+        ),
+        Event(
+            title="Ensaio de Março 2025",
+            description="Ensaio regular de março.",
+            start_time=datetime(2025, 3, 22, 20, 0, tzinfo=timezone.utc),
+            end_time=datetime(2025, 3, 22, 22, 0, tzinfo=timezone.utc),
+            location="Sede da Banda",
+            type=EventType.REHEARSAL,
+        ),
+        Event(
+            title="Concerto da Páscoa 2025",
+            description="Concerto especial de Páscoa.",
+            start_time=datetime(2025, 4, 19, 17, 0, tzinfo=timezone.utc),
+            end_time=datetime(2025, 4, 19, 20, 0, tzinfo=timezone.utc),
+            location="Igreja Matriz",
+            type=EventType.CONCERT,
+        ),
+        Event(
+            title="Ensaio de Maio 2025",
+            description="Preparação para o concerto de primavera.",
+            start_time=datetime(2025, 5, 10, 20, 0, tzinfo=timezone.utc),
+            end_time=datetime(2025, 5, 10, 22, 0, tzinfo=timezone.utc),
+            location="Sede da Banda",
+            type=EventType.REHEARSAL,
+        ),
+        Event(
+            title="Concerto de Primavera 2025",
+            description="Concerto anual de primavera.",
+            start_time=datetime(2025, 6, 7, 17, 0, tzinfo=timezone.utc),
+            end_time=datetime(2025, 6, 7, 20, 0, tzinfo=timezone.utc),
+            location="Parque da Cidade",
+            type=EventType.CONCERT,
+        ),
+        Event(
+            title="Ensaio Final 2024/2025",
+            description="Último ensaio do ano letivo.",
+            start_time=datetime(2025, 7, 5, 20, 0, tzinfo=timezone.utc),
+            end_time=datetime(2025, 7, 5, 22, 0, tzinfo=timezone.utc),
+            location="Sede da Banda",
+            type=EventType.REHEARSAL,
+        ),
+    ]
+
+    # ── Academic year 2025/2026 (relative to now) ─────────────────────────────
     events = [
         # ── Past rehearsals ───────────────────────────────────────────
         Event(
@@ -246,44 +358,76 @@ def _seed_events(db: Session) -> list[Event]:
             type=EventType.CONCERT,
         ),
     ]
+    db.add_all(ay24_events)
     db.add_all(events)
     db.flush()
-    return events
+    return ay24_events + events
 
 
 def _seed_attendance(db: Session, events: list[Event], users: tuple[User, User, User, User]) -> None:
     super_admin, admin, regular, regular2 = users
 
-    # Status patterns per user across past events (indices 0–9)
-    # super_admin: mostly present
-    # admin: mostly present, some tardy
-    # regular: mix of present/absent/justified
-    # regular2: mix of absent/present
-    patterns: list[tuple[AttendanceStatus | None, AttendanceStatus | None, AttendanceStatus | None, AttendanceStatus | None]] = [
-        # idx 0 – Ensaio de Janeiro
-        (AttendanceStatus.PRESENT,  AttendanceStatus.PRESENT,   AttendanceStatus.ABSENT,    AttendanceStatus.PRESENT),
-        # idx 1 – Ensaio de Fevereiro
-        (AttendanceStatus.PRESENT,  AttendanceStatus.TARDY,     AttendanceStatus.PRESENT,   AttendanceStatus.ABSENT),
-        # idx 2 – Ensaio Especial de Fevereiro
-        (AttendanceStatus.PRESENT,  AttendanceStatus.PRESENT,   AttendanceStatus.JUSTIFIED, AttendanceStatus.PRESENT),
-        # idx 3 – Concerto de Carnaval
+    # events[0..12]  = academic year 2024/2025 (13 events: 8 rehearsals + 4 concerts + 1 special)
+    # events[13..26] = academic year 2025/2026 (14 events: 10 past + 4 upcoming)
+
+    # Attendance patterns for 2024/2025 (indices 0–12)
+    patterns_ay24: list[tuple] = [
+        # idx 0 – Ensaio de Setembro 2024
         (AttendanceStatus.PRESENT,  AttendanceStatus.PRESENT,   AttendanceStatus.PRESENT,   AttendanceStatus.ABSENT),
-        # idx 4 – Ensaio de Março
-        (AttendanceStatus.TARDY,    AttendanceStatus.PRESENT,   AttendanceStatus.ABSENT,    AttendanceStatus.JUSTIFIED),
-        # idx 5 – Ensaio de Abril
-        (AttendanceStatus.PRESENT,  AttendanceStatus.ABSENT,    AttendanceStatus.PRESENT,   AttendanceStatus.PRESENT),
-        # idx 6 – Concerto da Páscoa
+        # idx 1 – Ensaio de Outubro 2024
+        (AttendanceStatus.PRESENT,  AttendanceStatus.TARDY,     AttendanceStatus.ABSENT,    AttendanceStatus.PRESENT),
+        # idx 2 – Concerto de Outono 2024
+        (AttendanceStatus.PRESENT,  AttendanceStatus.PRESENT,   AttendanceStatus.PRESENT,   AttendanceStatus.PRESENT),
+        # idx 3 – Ensaio de Novembro 2024
+        (AttendanceStatus.PRESENT,  AttendanceStatus.PRESENT,   AttendanceStatus.JUSTIFIED, AttendanceStatus.ABSENT),
+        # idx 4 – Concerto de Natal 2024
+        (AttendanceStatus.PRESENT,  AttendanceStatus.PRESENT,   AttendanceStatus.ABSENT,    AttendanceStatus.PRESENT),
+        # idx 5 – Ensaio de Janeiro 2025
+        (AttendanceStatus.TARDY,    AttendanceStatus.PRESENT,   AttendanceStatus.PRESENT,   AttendanceStatus.PRESENT),
+        # idx 6 – Ensaio de Fevereiro 2025
+        (AttendanceStatus.PRESENT,  AttendanceStatus.ABSENT,    AttendanceStatus.PRESENT,   AttendanceStatus.TARDY),
+        # idx 7 – Concerto de Carnaval 2025
         (AttendanceStatus.PRESENT,  AttendanceStatus.PRESENT,   AttendanceStatus.TARDY,     AttendanceStatus.PRESENT),
-        # idx 7 – Ensaio de Maio I
+        # idx 8 – Ensaio de Março 2025
+        (AttendanceStatus.PRESENT,  AttendanceStatus.TARDY,     AttendanceStatus.ABSENT,    AttendanceStatus.PRESENT),
+        # idx 9 – Concerto da Páscoa 2025
+        (AttendanceStatus.PRESENT,  AttendanceStatus.PRESENT,   AttendanceStatus.JUSTIFIED, AttendanceStatus.ABSENT),
+        # idx 10 – Ensaio de Maio 2025
+        (AttendanceStatus.PRESENT,  AttendanceStatus.PRESENT,   AttendanceStatus.PRESENT,   AttendanceStatus.PRESENT),
+        # idx 11 – Concerto de Primavera 2025
+        (AttendanceStatus.PRESENT,  AttendanceStatus.PRESENT,   AttendanceStatus.ABSENT,    AttendanceStatus.PRESENT),
+        # idx 12 – Ensaio Final 2024/2025
+        (AttendanceStatus.ABSENT,   AttendanceStatus.PRESENT,   AttendanceStatus.PRESENT,   AttendanceStatus.JUSTIFIED),
+    ]
+
+    # Attendance patterns for 2025/2026 past events (indices 13–22, i.e. events[13..22])
+    patterns_ay25: list[tuple] = [
+        # idx 0 (ev 13) – Ensaio de Janeiro
+        (AttendanceStatus.PRESENT,  AttendanceStatus.PRESENT,   AttendanceStatus.ABSENT,    AttendanceStatus.PRESENT),
+        # idx 1 (ev 14) – Ensaio de Fevereiro
         (AttendanceStatus.PRESENT,  AttendanceStatus.TARDY,     AttendanceStatus.PRESENT,   AttendanceStatus.ABSENT),
-        # idx 8 – Ensaio de Maio II
+        # idx 2 (ev 15) – Ensaio Especial de Fevereiro
         (AttendanceStatus.PRESENT,  AttendanceStatus.PRESENT,   AttendanceStatus.JUSTIFIED, AttendanceStatus.PRESENT),
-        # idx 9 – Concerto do Dia da Banda
+        # idx 3 (ev 16) – Concerto de Carnaval
+        (AttendanceStatus.PRESENT,  AttendanceStatus.PRESENT,   AttendanceStatus.PRESENT,   AttendanceStatus.ABSENT),
+        # idx 4 (ev 17) – Ensaio de Março
+        (AttendanceStatus.TARDY,    AttendanceStatus.PRESENT,   AttendanceStatus.ABSENT,    AttendanceStatus.JUSTIFIED),
+        # idx 5 (ev 18) – Ensaio de Abril
+        (AttendanceStatus.PRESENT,  AttendanceStatus.ABSENT,    AttendanceStatus.PRESENT,   AttendanceStatus.PRESENT),
+        # idx 6 (ev 19) – Concerto da Páscoa
+        (AttendanceStatus.PRESENT,  AttendanceStatus.PRESENT,   AttendanceStatus.TARDY,     AttendanceStatus.PRESENT),
+        # idx 7 (ev 20) – Ensaio de Maio I
+        (AttendanceStatus.PRESENT,  AttendanceStatus.TARDY,     AttendanceStatus.PRESENT,   AttendanceStatus.ABSENT),
+        # idx 8 (ev 21) – Ensaio de Maio II
+        (AttendanceStatus.PRESENT,  AttendanceStatus.PRESENT,   AttendanceStatus.JUSTIFIED, AttendanceStatus.PRESENT),
+        # idx 9 (ev 22) – Concerto do Dia da Banda
         (AttendanceStatus.PRESENT,  AttendanceStatus.PRESENT,   AttendanceStatus.ABSENT,    AttendanceStatus.TARDY),
     ]
 
     records: list[EventAttendance] = []
-    for idx, (sa_s, ad_s, re_s, r2_s) in enumerate(patterns):
+
+    # 2024/2025 attendance
+    for idx, (sa_s, ad_s, re_s, r2_s) in enumerate(patterns_ay24):
         ev = events[idx]
         records += [
             EventAttendance(event_id=ev.id, user_id=super_admin.id, status=sa_s),
@@ -292,7 +436,18 @@ def _seed_attendance(db: Session, events: list[Event], users: tuple[User, User, 
             EventAttendance(event_id=ev.id, user_id=regular2.id,    status=r2_s),
         ]
 
-    # Upcoming events (indices 10–13) — no attendance yet
+    # 2025/2026 attendance (past events only, indices 13..22)
+    ay25_start = 13
+    for idx, (sa_s, ad_s, re_s, r2_s) in enumerate(patterns_ay25):
+        ev = events[ay25_start + idx]
+        records += [
+            EventAttendance(event_id=ev.id, user_id=super_admin.id, status=sa_s),
+            EventAttendance(event_id=ev.id, user_id=admin.id,       status=ad_s),
+            EventAttendance(event_id=ev.id, user_id=regular.id,     status=re_s),
+            EventAttendance(event_id=ev.id, user_id=regular2.id,    status=r2_s),
+        ]
+
+    # Upcoming events (indices 23–26) — no attendance yet
     db.add_all(records)
 
 
@@ -429,6 +584,48 @@ def _seed_notifications(db: Session, users: tuple[User, User, User, User], event
     db.add_all(notifications)
 
 
+def _seed_reinforcements(db: Session, events: list[Event]) -> None:
+    db.query(EventReinforcement).delete(synchronize_session=False)
+    db.query(Reinforcement).delete(synchronize_session=False)
+
+    rui    = Reinforcement(name="Rui Ferreira",   instrument="Tuba",      contact="910111001", usual_fee=50.00)
+    ana    = Reinforcement(name="Ana Moreira",    instrument="Flauta",    contact="910111002", usual_fee=45.00)
+    carlos = Reinforcement(name="Carlos Neves",   instrument="Trombone",  contact="910111003", usual_fee=50.00)
+    sofia  = Reinforcement(name="Sofia Lopes",    instrument="Clarinete", contact="910111004", usual_fee=40.00)
+    bruno  = Reinforcement(name="Bruno Santos",   instrument="Percussão", contact="910111005", usual_fee=55.00)
+
+    db.add_all([rui, ana, carlos, sofia, bruno])
+    db.flush()
+
+    # events[0..12] = 2024/2025 · events[13..26] = 2025/2026
+    # Concerts: [2]=Outono24  [4]=Natal24  [7]=Carnaval25  [9]=Pascoa25  [11]=Primavera25
+    #           [16]=Carnaval26  [19]=Pascoa26  [22]=DiaBanda26
+    assignments = [
+        # 2024/2025
+        (events[2],  rui,    50.00),
+        (events[2],  ana,    45.00),
+        (events[4],  rui,    50.00),
+        (events[4],  carlos, 50.00),
+        (events[4],  bruno,  55.00),
+        (events[7],  ana,    45.00),
+        (events[7],  sofia,  40.00),
+        (events[11], rui,    50.00),
+        (events[11], ana,    45.00),
+        (events[11], carlos, 50.00),
+        # 2025/2026
+        (events[16], carlos, 50.00),
+        (events[16], bruno,  55.00),
+        (events[19], rui,    50.00),
+        (events[19], sofia,  40.00),
+        (events[22], ana,    45.00),
+        (events[22], bruno,  55.00),
+    ]
+    db.add_all([
+        EventReinforcement(event_id=ev.id, reinforcement_id=rf.id, fee=fee)
+        for ev, rf, fee in assignments
+    ])
+
+
 def _seed_reports(db: Session, users: tuple[User, User, User, User]) -> None:
     _, _, regular, regular2 = users
     db.query(Report).delete(synchronize_session=False)
@@ -480,6 +677,7 @@ def seed_all() -> None:
         newsletters = _seed_newsletter(db, users)
         _seed_repertoire(db)
         _seed_notifications(db, users, events, newsletters)
+        _seed_reinforcements(db, events)
         _seed_reports(db, users)
 
         db.commit()

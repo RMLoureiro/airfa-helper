@@ -40,6 +40,11 @@ type PresenceAnalyticsItem = {
 };
 
 
+function getCurrentAcademicYearStart(): number {
+  const now = new Date();
+  return now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
+}
+
 function normalizeColor(status: string | null | undefined): 'present' | 'absent' | null {
   if (!status) return null;
   if (status === 'PRESENT' || status === 'TARDY') return 'present';
@@ -272,26 +277,39 @@ export default function PresencasPage() {
   const [memberStatuses, setMemberStatuses] = useState<MemberPresenceItem[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [showAltEvents, setShowAltEvents] = useState(false);
+  const [showPastEvents, setShowPastEvents] = useState(false);
   const [filterType, setFilterType] = useState<'REHEARSAL' | 'CONCERT' | null>(null);
   const [analyticsNaipe, setAnalyticsNaipe] = useState<string | null>(null);
   const [analyticsSort, setAnalyticsSort] = useState<'az' | 'za' | 'presences' | 'absences'>('az');
+  const [academicYear, setAcademicYear] = useState<number>(getCurrentAcademicYearStart());
+  const [availableYears, setAvailableYears] = useState<number[]>([]);
+  const [presTab, setPresTab] = useState<'presences' | 'analytics'>('presences');
 
   useEffect(() => {
     const user = getStoredUser();
     const admin = checkIsAdmin(user);
     setIsAdmin(admin);
 
-    const fetchAttendance = authFetch(`${API_URL}/api/v1/presences`)
+    authFetch(`${API_URL}/api/v1/presences/academic_years`)
+      .then(r => r.json())
+      .then((years: number[]) => setAvailableYears(years))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    setLoading(true);
+    setShowPastEvents(false);
+
+    const fetchAttendance = authFetch(`${API_URL}/api/v1/presences?year_start=${academicYear}`)
       .then(r => r.json()).then(setAttendance).catch(() => setAttendance([]));
 
-    const fetchAnalytics = admin
-      ? authFetch(`${API_URL}/api/v1/presences/analytics/members`)
+    const fetchAnalytics = isAdmin
+      ? authFetch(`${API_URL}/api/v1/presences/analytics/members?year_start=${academicYear}`)
           .then(r => r.json()).then(setAnalytics).catch(() => setAnalytics([]))
       : Promise.resolve();
 
     Promise.all([fetchAttendance, fetchAnalytics]).finally(() => setLoading(false));
-  }, []);
+  }, [academicYear, isAdmin]);
 
   async function openMarkModal(item: PresenceItem) {
     const res = await authFetch(`${API_URL}/api/v1/presences/${item.id}/members`);
@@ -313,8 +331,8 @@ export default function PresencasPage() {
     });
     setSaving(false);
     setIsModalOpen(false);
-    authFetch(`${API_URL}/api/v1/presences`).then(r => r.json()).then(setAttendance).catch(() => {});
-    if (isAdmin) authFetch(`${API_URL}/api/v1/presences/analytics/members`).then(r => r.json()).then(setAnalytics).catch(() => {});
+    authFetch(`${API_URL}/api/v1/presences?year_start=${academicYear}`).then(r => r.json()).then(setAttendance).catch(() => {});
+    if (isAdmin) authFetch(`${API_URL}/api/v1/presences/analytics/members?year_start=${academicYear}`).then(r => r.json()).then(setAnalytics).catch(() => {});
   }
 
   // Derived
@@ -326,19 +344,24 @@ export default function PresencasPage() {
   const futureEvents = attendance.filter(i => new Date(i.start_time) > new Date(new Date().setHours(23, 59, 59, 999))).sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
   const pastEvents = attendance.filter(i => new Date(i.start_time) < todayStart).sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime());
 
-  const defaultEvents = isAdmin ? [...todayEvents, ...futureEvents] : [...todayEvents, ...pastEvents];
-  const altEvents = isAdmin ? pastEvents : futureEvents;
-  const altCount = altEvents.length;
-  const altLabel = isAdmin ? 'Eventos passados' : 'Próximos eventos';
-  const panelLabel = showAltEvents ? (isAdmin ? 'Eventos passados' : 'Próximos eventos') : (isAdmin ? 'Marcar presenças' : 'As minhas presenças');
+  const isPastYear = academicYear < getCurrentAcademicYearStart();
+  const defaultEvents = isPastYear
+    ? [...attendance].sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())
+    : [...todayEvents, ...futureEvents];
+  const hasPastToggle = !isPastYear && pastEvents.length > 0;
+  const panelLabel = (!isPastYear && showPastEvents) ? 'Datas passadas'
+    : isPastYear ? 'Eventos do ano letivo'
+    : (isAdmin ? 'Próximos eventos' : 'Os meus próximos eventos');
 
-  const displayedEvents = (showAltEvents ? altEvents : defaultEvents)
+  const displayedEvents = (!isPastYear && showPastEvents ? pastEvents : defaultEvents)
     .filter(i => !filterType || i.type === filterType || (filterType === 'REHEARSAL' && i.type === 'SPECIAL_REHEARSAL'));
 
   const totalPresent = attendance.filter(i => normalizeColor(i.my_status) === 'present').length;
   const totalAbsent = attendance.filter(i => normalizeColor(i.my_status) === 'absent').length;
   const totalTardy = attendance.filter(i => i.my_status === 'TARDY').length;
   const totalJustified = attendance.filter(i => i.my_status === 'JUSTIFIED').length;
+  const totalConcerts = concerts.length;
+  const totalRehearsals = rehearsals.length;
 
   const rP = rehearsals.filter(i => i.my_status === 'PRESENT').length;
   const rT = rehearsals.filter(i => i.my_status === 'TARDY').length;
@@ -348,6 +371,20 @@ export default function PresencasPage() {
   const cT = concerts.filter(i => i.my_status === 'TARDY').length;
   const cJ = concerts.filter(i => i.my_status === 'JUSTIFIED').length;
   const cA = concerts.filter(i => i.my_status === 'ABSENT').length;
+
+  // All-member aggregate stats (analytics tab)
+  const allPresent = analytics.reduce((s, m) => s + m.present + m.tardy, 0);
+  const allAbsent = analytics.reduce((s, m) => s + m.absent + m.justified, 0);
+  const allTardy = analytics.reduce((s, m) => s + m.tardy, 0);
+  const allJustified = analytics.reduce((s, m) => s + m.justified, 0);
+  const rP_all = rehearsals.reduce((s, e) => s + e.present_count, 0);
+  const rT_all = rehearsals.reduce((s, e) => s + e.tardy_count, 0);
+  const rJ_all = rehearsals.reduce((s, e) => s + e.justified_count, 0);
+  const rA_all = rehearsals.reduce((s, e) => s + e.missing_count, 0);
+  const cP_all = concerts.reduce((s, e) => s + e.present_count, 0);
+  const cT_all = concerts.reduce((s, e) => s + e.tardy_count, 0);
+  const cJ_all = concerts.reduce((s, e) => s + e.justified_count, 0);
+  const cA_all = concerts.reduce((s, e) => s + e.missing_count, 0);
 
   const availableNaipes = Array.from(new Set(analytics.map(m => m.naipe ?? ''))).filter(Boolean).sort();
   const filteredAnalytics = analytics
@@ -367,6 +404,33 @@ export default function PresencasPage() {
         </div>
       ) : (
         <div className="page">
+          {/* ── Top bar: tabs + year selector ── */}
+          <div className="page-topbar">
+            {isAdmin && (
+              <div className="tab-bar">
+                <button className={`tab-btn${presTab === 'presences' ? ' active' : ''}`} onClick={() => setPresTab('presences')}>Presenças</button>
+                <button className={`tab-btn${presTab === 'analytics' ? ' active' : ''}`} onClick={() => setPresTab('analytics')}>Análise</button>
+              </div>
+            )}
+            {availableYears.length > 1 && (
+              <div className="year-selector">
+                <span className="col-title">Ano letivo</span>
+                <select
+                  value={academicYear}
+                  onChange={e => setAcademicYear(Number(e.target.value))}
+                  className="year-select"
+                >
+                  {availableYears.map(y => (
+                    <option key={y} value={y}>{y}/{y + 1}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          {/* ── Tab 1: Presenças (stats + event list + calendar) ── */}
+          {(!isAdmin || presTab === 'presences') && <>
+
           {/* ── Stats strip ── */}
           <div className="stats-strip">
             <div className="stats-numbers">
@@ -381,8 +445,12 @@ export default function PresencasPage() {
                 {isAdmin && totalJustified > 0 && <span className="stat-sub">~ {totalJustified} justificadas</span>}
               </div>
               <div className="stat-card">
-                <span className="stat-value" style={{ color: 'var(--accent)' }}>{attendance.length}</span>
-                <span className="stat-label">Total de eventos</span>
+                <span className="stat-value" style={{ color: 'var(--concert-color, #9b59b6)' }}>{totalConcerts}</span>
+                <span className="stat-label">Total de concertos</span>
+              </div>
+              <div className="stat-card">
+                <span className="stat-value" style={{ color: 'var(--rehearsal-color)' }}>{totalRehearsals}</span>
+                <span className="stat-label">Total de ensaios</span>
               </div>
             </div>
             <div className="stat-card chart-card">
@@ -400,9 +468,9 @@ export default function PresencasPage() {
                 <button type="button" className={`fpill${filterType === 'REHEARSAL' ? ' active' : ''}`} onClick={() => setFilterType(f => f === 'REHEARSAL' ? null : 'REHEARSAL')}>Ensaios</button>
                 <button type="button" className={`fpill${filterType === 'CONCERT' ? ' active' : ''}`} onClick={() => setFilterType(f => f === 'CONCERT' ? null : 'CONCERT')}>Concertos</button>
               </div>
-              {altCount > 0 && (
-                <button type="button" className="toggle-btn" onClick={() => setShowAltEvents(v => !v)}>
-                  {showAltEvents ? '← Voltar' : `${altLabel} (${altCount})`}
+              {hasPastToggle && (
+                <button type="button" className="toggle-btn" onClick={() => setShowPastEvents(v => !v)}>
+                  {showPastEvents ? '← Próximos eventos' : `Datas passadas (${pastEvents.length})`}
                 </button>
               )}
             </div>
@@ -460,9 +528,39 @@ export default function PresencasPage() {
             </div>
           </div>
 
-          {/* ── Analytics (admin) ── */}
-          {isAdmin && analytics.length > 0 && (
+          </> /* end Tab 1 */}
+
+          {/* ── Tab 2: Análise (admin only) ── */}
+          {isAdmin && presTab === 'analytics' && analytics.length > 0 && (
             <section className="analytics">
+              {/* ── Aggregate stats strip ── */}
+              <div className="stats-strip">
+                <div className="stats-numbers">
+                  <div className="stat-card">
+                    <span className="stat-value" style={{ color: 'var(--success)' }}>{allPresent}</span>
+                    <span className="stat-label">Presenças</span>
+                    {allTardy > 0 && <span className="stat-sub">⟳ {allTardy} atrasados</span>}
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-value" style={{ color: 'var(--danger)' }}>{allAbsent}</span>
+                    <span className="stat-label">Faltas</span>
+                    {allJustified > 0 && <span className="stat-sub">~ {allJustified} justificadas</span>}
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-value" style={{ color: 'var(--concert-color, #9b59b6)' }}>{totalConcerts}</span>
+                    <span className="stat-label">Total de concertos</span>
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-value" style={{ color: 'var(--rehearsal-color)' }}>{totalRehearsals}</span>
+                    <span className="stat-label">Total de ensaios</span>
+                  </div>
+                </div>
+                <div className="stat-card chart-card">
+                  <DonutChart present={rP_all} tardy={rT_all} justified={rJ_all} absent={rA_all} label="Ensaios" />
+                  <DonutChart present={cP_all} tardy={cT_all} justified={cJ_all} absent={cA_all} label="Concertos" />
+                </div>
+              </div>
+
               <div className="analytics-header">
                 <span className="col-title">Análise de membros</span>
                 <div className="analytics-controls">
@@ -589,6 +687,48 @@ export default function PresencasPage() {
 
       <style jsx>{`
         .page { display: flex; flex-direction: column; gap: 24px; }
+
+        /* Year selector */
+        .page-topbar {
+          display: flex;
+          align-items: flex-end;
+          justify-content: space-between;
+          gap: 8px;
+          border-bottom: 1px solid var(--border);
+          padding-bottom: 0;
+          margin-bottom: 16px;
+        }
+
+        .tab-bar { display: flex; gap: 4px; }
+        .tab-btn { padding: 10px 20px; background: none; border: none; border-bottom: 2px solid transparent; font-size: 14px; font-weight: 500; color: var(--muted); cursor: pointer; transition: color 0.15s, border-color 0.15s; margin-bottom: -1px; }
+        .tab-btn.active { color: var(--accent-2); border-bottom-color: var(--accent-2); }
+        .tab-btn:hover:not(.active) { color: var(--text); }
+
+        .year-selector {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding-bottom: 10px;
+        }
+
+        .year-selector .col-title {
+          font-size: 11px;
+          color: var(--muted);
+          font-weight: 500;
+          white-space: nowrap;
+        }
+
+        .year-select {
+          padding: 3px 8px;
+          border-radius: 5px;
+          border: 1px solid var(--border);
+          background: var(--surface);
+          color: var(--text);
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+        }
+        .year-select:focus { outline: none; border-color: var(--accent); }
 
         /* Stats strip */
         .stats-strip {

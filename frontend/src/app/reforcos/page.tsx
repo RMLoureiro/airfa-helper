@@ -239,6 +239,11 @@ export default function ReforcosPage() {
   const [entryError, setEntryError] = useState('');
   const [confirmDeleteEntryId, setConfirmDeleteEntryId] = useState<number | null>(null);
 
+  // Filters
+  const [searchName, setSearchName] = useState('');
+  const [filterInstrument, setFilterInstrument] = useState<string | null>(null);
+  const [listSort, setListSort] = useState<'az' | 'za'>('az');
+
   // ── Auth guard ─────────────────────────────────────────────────────────────
   useEffect(() => {
     const user = getStoredUser();
@@ -424,6 +429,17 @@ export default function ReforcosPage() {
 
   const eventTotal = eventEntries.reduce((s, e) => s + (e.fee != null ? Number(e.fee) : 0), 0);
 
+  const availableInstruments = Array.from(
+    new Set(reinforcements.map(r => r.instrument ?? '').filter(Boolean))
+  ).sort();
+
+  const filteredReinforcements = reinforcements
+    .filter(r => !filterInstrument || r.instrument === filterInstrument)
+    .filter(r => !searchName.trim() || r.name.toLowerCase().includes(searchName.trim().toLowerCase()))
+    .sort((a, b) => listSort === 'az'
+      ? a.name.localeCompare(b.name, 'pt')
+      : b.name.localeCompare(a.name, 'pt'));
+
   if (loading) {
     return (
       <AuthenticatedShell title="Reforços">
@@ -462,7 +478,15 @@ export default function ReforcosPage() {
         .total-row { display: flex; justify-content: space-between; padding: 10px 0 0; font-weight: 700; font-size: 14px; }
         .total-val { color: var(--warning); }
 
-        .empty-state { text-align: center; padding: 48px 0; color: var(--muted); font-size: 14px; }
+        .reinf-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 16px; }
+        .reinf-search { padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 13px; min-width: 180px; }
+        .reinf-search:focus { outline: none; border-color: var(--accent); }
+        .filter-pills { display: flex; flex-wrap: wrap; gap: 4px; }
+        .fpill { padding: 4px 12px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface-2); color: var(--muted); font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.12s; white-space: nowrap; }
+        .fpill.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+        .fpill:hover:not(.active) { border-color: var(--accent); color: var(--text); }
+        .sort-btn { padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 12px; font-weight: 500; cursor: pointer; white-space: nowrap; }
+        .sort-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); font-weight: 600; }
       `}</style>
 
       {/* Tab bar */}
@@ -488,48 +512,74 @@ export default function ReforcosPage() {
           {reinforcements.length === 0 ? (
             <div className="empty-state">Nenhum reforço registado ainda.</div>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table className="reinf-table">
-                <thead>
-                  <tr>
-                    <th>Nome</th>
-                    <th>Instrumento</th>
-                    <th>Contacto</th>
-                    <th>Valor habitual</th>
-                    <th style={{ width: 100 }}></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {reinforcements.map(r => (
-                    <tr key={r.id}>
-                      <td style={{ fontWeight: 500 }}>{r.name}</td>
-                      <td style={{ color: 'var(--text-2)' }}>{r.instrument ?? '—'}</td>
-                      <td style={{ color: 'var(--text-2)' }}>{r.contact ?? '—'}</td>
-                      <td style={{ color: 'var(--warning)', fontWeight: 600 }}>
-                        {r.usual_fee != null ? `${Number(r.usual_fee).toFixed(2)} €` : '—'}
-                      </td>
-                      <td>
-                        <div className="actions-cell">
-                          <button
-                            className="btn btn-secondary"
-                            style={{ padding: '4px 10px', fontSize: 12 }}
-                            onClick={() => openEdit(r)}
-                          >
-                            Editar
-                          </button>
-                          <button
-                            className="btn btn-danger"
-                            style={{ padding: '4px 10px', fontSize: 12 }}
-                            onClick={() => setConfirmDeleteId(r.id)}
-                          >
-                            Remover
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+            <div>
+              {/* Filters */}
+              <div className="reinf-filters">
+                <input
+                  type="text"
+                  className="reinf-search"
+                  placeholder="Pesquisar por nome…"
+                  value={searchName}
+                  onChange={e => setSearchName(e.target.value)}
+                />
+                <div className="filter-pills">
+                  <button type="button" className={`fpill${filterInstrument === null ? ' active' : ''}`} onClick={() => setFilterInstrument(null)}>Todos</button>
+                  {availableInstruments.map(inst => (
+                    <button key={inst} type="button" className={`fpill${filterInstrument === inst ? ' active' : ''}`} onClick={() => setFilterInstrument(v => v === inst ? null : inst)}>{inst}</button>
                   ))}
-                </tbody>
-              </table>
+                </div>
+                <button type="button" className={`sort-btn active`} onClick={() => setListSort(s => s === 'az' ? 'za' : 'az')}>
+                  {listSort === 'az' ? 'A→Z' : 'Z→A'}
+                </button>
+              </div>
+
+              {filteredReinforcements.length === 0 ? (
+                <div className="empty-state">Sem resultados para os filtros selecionados.</div>
+              ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table className="reinf-table">
+                  <thead>
+                    <tr>
+                      <th>Nome</th>
+                      <th>Instrumento</th>
+                      <th>Contacto</th>
+                      <th>Valor habitual</th>
+                      <th style={{ width: 100 }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredReinforcements.map(r => (
+                      <tr key={r.id}>
+                        <td style={{ fontWeight: 500 }}>{r.name}</td>
+                        <td style={{ color: 'var(--text-2)' }}>{r.instrument ?? '—'}</td>
+                        <td style={{ color: 'var(--text-2)' }}>{r.contact ?? '—'}</td>
+                        <td style={{ color: 'var(--warning)', fontWeight: 600 }}>
+                          {r.usual_fee != null ? `${Number(r.usual_fee).toFixed(2)} €` : '—'}
+                        </td>
+                        <td>
+                          <div className="actions-cell">
+                            <button
+                              className="btn btn-secondary"
+                              style={{ padding: '4px 10px', fontSize: 12 }}
+                              onClick={() => openEdit(r)}
+                            >
+                              Editar
+                            </button>
+                            <button
+                              className="btn btn-danger"
+                              style={{ padding: '4px 10px', fontSize: 12 }}
+                              onClick={() => setConfirmDeleteId(r.id)}
+                            >
+                              Remover
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              )}
             </div>
           )}
         </div>

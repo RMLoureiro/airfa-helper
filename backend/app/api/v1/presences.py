@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.deps.auth import get_current_user, get_db, require_roles
@@ -18,26 +18,37 @@ router = APIRouter(prefix="/presences", tags=["presences"])
 
 @router.get("", response_model=list[PresenceEventRead])
 def list_presences(
+    year_start: int | None = Query(default=None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return presence_service.list_presences_for_user(db, current_user)
+    return presence_service.list_presences_for_user(db, current_user, year_start=year_start)
+
+
+@router.get("/academic_years")
+def get_academic_years(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return presence_service.get_academic_years(db)
 
 
 @router.get("/calendar")
 def presences_calendar(
+    year_start: int | None = Query(default=None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return presence_service.list_presences_for_user(db, current_user)
+    return presence_service.list_presences_for_user(db, current_user, year_start=year_start)
 
 
 @router.get("/analytics/members", response_model=list[PresenceAnalyticsMemberRead])
 def member_analytics(
+    year_start: int | None = Query(default=None),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_roles(SystemRole.ADMIN, SystemRole.SUPER_ADMIN)),
 ):
-    return presence_service.get_member_analytics(db)
+    return presence_service.get_member_analytics(db, year_start=year_start)
 
 
 @router.get("/{event_id}/members", response_model=list[PresenceMemberStatusRead])
