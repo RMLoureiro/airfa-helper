@@ -139,7 +139,7 @@ const navigation = [
   { href: '/notificacoes',label: 'Notificações',   icon: <IconBell />,          adminOnly: false, superAdminOnly: false },
   { href: '/newsletter',  label: 'Newsletter',     icon: <IconNewspaper />,     adminOnly: true,  superAdminOnly: false },
   { href: '/membros',     label: 'Membros',        icon: <IconUsers />,         adminOnly: true,  superAdminOnly: false },
-  { href: '/reforcoss',   label: 'Reforços',       icon: <IconUserPlus />,      adminOnly: false, superAdminOnly: true  },
+  { href: '/reforcos',   label: 'Reforços',       icon: <IconUserPlus />,      adminOnly: false, superAdminOnly: true  },
 ];
 
 const MUSICAL_ROLE_LABELS: Record<string, string> = {

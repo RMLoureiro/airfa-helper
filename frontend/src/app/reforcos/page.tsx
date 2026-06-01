@@ -142,7 +142,7 @@ function ReinforcementsCalendar({ events, eventAssignments, onDayClick }: Calend
         <span className="cal-legend-dot" style={{ background: 'var(--concert-color)' }} />
         <span className="cal-legend-label">Concerto</span>
         <span className="cal-legend-dot" style={{ background: 'var(--warning)' }} />
-        <span className="cal-legend-label">Tem reforços</span>
+        <span className="cal-legend-label">Reforços</span>
       </div>
 
       {/* Hover tooltip */}
@@ -482,7 +482,7 @@ export default function ReforcosPage() {
       {tab === 'list' && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-            <h2 className="section-heading">Reforços cadastrados</h2>
+            <h2 className="section-heading">Lista de reforços</h2>
             <button className="btn btn-primary" onClick={openCreate} style={{ fontSize: 13 }}>
               + Novo reforço
             </button>
@@ -542,7 +542,7 @@ export default function ReforcosPage() {
       {tab === 'calendar' && (
         <div>
           <div style={{ marginBottom: 16 }}>
-            <h2 className="section-heading">Eventos com reforços</h2>
+            <h2 className="section-heading">Eventos</h2>
             <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 6 }}>
               Passe o rato por cima de um evento para ver os reforços. Clique para gerir.
             </p>
@@ -572,13 +572,27 @@ export default function ReforcosPage() {
             </div>
             <div className="form-row">
               <label htmlFor="rf-instrument">Instrumento</label>
-              <input
+              <select
                 id="rf-instrument"
-                type="text"
-                placeholder="Ex: Clarinete, Trompete…"
                 value={form.instrument}
                 onChange={e => setForm(f => ({ ...f, instrument: e.target.value }))}
-              />
+              >
+                <option value="">— Sem instrumento —</option>
+                <option value="Piccolo">Piccolo</option>
+                <option value="Flauta">Flauta</option>
+                <option value="Clarinete">Clarinete</option>
+                <option value="Clarinete Baixo">Clarinete Baixo</option>
+                <option value="Saxofone Alto">Saxofone Alto</option>
+                <option value="Saxofone Tenor">Saxofone Tenor</option>
+                <option value="Saxofone Barítono">Saxofone Barítono</option>
+                <option value="Saxofone Soprano">Saxofone Soprano</option>
+                <option value="Trombone">Trombone</option>
+                <option value="Eufônio">Eufônio</option>
+                <option value="Tuba">Tuba</option>
+                <option value="Trompa">Trompa</option>
+                <option value="Trompete">Trompete</option>
+                <option value="Percussão">Percussão</option>
+              </select>
             </div>
             <div className="form-row">
               <label htmlFor="rf-contact">Contacto</label>
@@ -594,9 +608,8 @@ export default function ReforcosPage() {
               <label htmlFor="rf-fee">Valor habitual (€)</label>
               <input
                 id="rf-fee"
-                type="number"
-                min="0"
-                step="0.01"
+                type="text"
+                inputMode="decimal"
                 placeholder="Ex: 50.00"
                 value={form.usual_fee}
                 onChange={e => setForm(f => ({ ...f, usual_fee: e.target.value }))}
@@ -648,9 +661,8 @@ export default function ReforcosPage() {
                     {editingEntryId === entry.id ? (
                       <>
                         <input
-                          type="number"
-                          min="0"
-                          step="0.01"
+                          type="text"
+                          inputMode="decimal"
                           className="entry-fee-input"
                           value={editingEntryFee}
                           onChange={e => setEditingEntryFee(e.target.value)}
@@ -715,9 +727,8 @@ export default function ReforcosPage() {
                   ))}
                 </select>
                 <input
-                  type="number"
-                  min="0"
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
                   placeholder="Valor (€)"
                   value={newEntryFee}
                   onChange={e => setNewEntryFee(e.target.value)}
