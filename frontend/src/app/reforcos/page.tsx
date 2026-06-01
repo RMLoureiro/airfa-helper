@@ -260,25 +260,22 @@ export default function ReforcosPage() {
     return Array.isArray(data) ? (data as EventItem[]) : [];
   }
 
-  async function loadAllEventAssignments(evs: EventItem[]) {
-    const nonCancelled = evs.filter(e => !e.is_cancelled);
-    const results = await Promise.all(
-      nonCancelled.map(ev =>
-        authFetch(`${API_URL}/api/v1/reinforcements/events/${ev.id}`)
-          .then(r => r.json())
-          .then(d => ({ id: ev.id, entries: Array.isArray(d) ? d as EventReinforcementItem[] : [] }))
-          .catch(() => ({ id: ev.id, entries: [] as EventReinforcementItem[] }))
-      )
-    );
+  async function loadAllEventAssignments() {
+    const r = await authFetch(`${API_URL}/api/v1/reinforcements/events`);
+    const data = await r.json();
+    const entries: EventReinforcementItem[] = Array.isArray(data) ? data : [];
     const map: Record<number, EventReinforcementItem[]> = {};
-    for (const r of results) map[r.id] = r.entries;
+    for (const entry of entries) {
+      if (!map[entry.event_id]) map[entry.event_id] = [];
+      map[entry.event_id].push(entry);
+    }
     setEventAssignments(map);
   }
 
   useEffect(() => {
     Promise.all([
       loadReinforcements(),
-      loadEvents().then(evs => { setEvents(evs); return loadAllEventAssignments(evs); }),
+      loadEvents().then(evs => { setEvents(evs); return loadAllEventAssignments(); }),
     ]).finally(() => setLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -341,7 +338,7 @@ export default function ReforcosPage() {
     setConfirmDeleteId(null);
     await loadReinforcements();
     // Refresh assignments since cascade may have removed some
-    await loadAllEventAssignments(events);
+    await loadAllEventAssignments();
   }
 
   // ── Event reinforcement management ────────────────────────────────────────

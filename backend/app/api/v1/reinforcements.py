@@ -73,6 +73,15 @@ def delete_reinforcement(
 
 # ── Event ↔ Reinforcement assignments ────────────────────────────────────────
 
+@router.get("/events", response_model=list[EventReinforcementRead])
+def list_all_event_reinforcements(
+    db: Session = Depends(get_db),
+    current_user=Depends(require_roles(SystemRole.SUPER_ADMIN)),
+):
+    """Return every event-reinforcement assignment in a single query."""
+    return db.query(EventReinforcement).all()
+
+
 @router.get("/events/{event_id}", response_model=list[EventReinforcementRead])
 def list_event_reinforcements(
     event_id: int,
