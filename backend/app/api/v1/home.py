@@ -37,17 +37,21 @@ def read_home(
     )
     newsletters = db.query(Newsletter).order_by(Newsletter.created_at.desc()).limit(10).all()
 
-    users = db.query(User).filter(User.birth_date.isnot(None)).order_by(User.birth_date.asc()).all()
+    users = db.query(User).filter(User.birth_date.isnot(None)).all()
     birthdays = []
     for user in users:
+        days = _days_until_birthday(user.birth_date)
+        if days is None or days >= 365:
+            continue
         birthdays.append(
             UpcomingBirthdayRead(
                 id=user.id,
                 name=user.name,
                 birth_date=user.birth_date,
-                days_until=_days_until_birthday(user.birth_date),
+                days_until=days,
             )
         )
+    birthdays.sort(key=lambda b: b.days_until if b.days_until is not None else 999)
 
     recent_feed = [
         HomeFeedItemRead(
@@ -97,6 +101,6 @@ def read_home(
             }
             for event in events
         ],
-        upcoming_birthdays=birthdays[:10],
+        upcoming_birthdays=birthdays,
         recent_feed=recent_feed[:12],
     )

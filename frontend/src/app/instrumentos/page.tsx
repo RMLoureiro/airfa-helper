@@ -9,6 +9,7 @@ type InstrumentItem = {
   type: string;
   make?: string | null;
   model?: string | null;
+  serial_number?: string | null;
   state: string;
   user_id?: number | null;
 };
@@ -19,6 +20,16 @@ type CreateForm = {
   type: string;
   make: string;
   model: string;
+  serial_number: string;
+  state: string;
+  user_id: string;
+};
+
+type EditForm = {
+  type: string;
+  make: string;
+  model: string;
+  serial_number: string;
   state: string;
 };
 
@@ -35,7 +46,7 @@ const INSTRUMENT_TYPES = [
 
 const INSTRUMENT_STATES = ['OK','NEEDS_MAINTENANCE','NEEDS_FIXING','OUT_OF_SERVICE'];
 
-const EMPTY_CREATE: CreateForm = { type: 'CLARINET', make: '', model: '', state: 'OK' };
+const EMPTY_CREATE: CreateForm = { type: 'CLARINET', make: '', model: '', serial_number: '', state: 'OK', user_id: '' };
 
 type ReportItem = {
   id: number;
@@ -94,6 +105,11 @@ export default function InstrumentosPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [createForm, setCreateForm] = useState<CreateForm>(EMPTY_CREATE);
   const [creating, setCreating] = useState(false);
+
+  // Edit modal (admin)
+  const [editTarget, setEditTarget] = useState<InstrumentItem | null>(null);
+  const [editForm, setEditForm] = useState<EditForm>({ type: 'CLARINET', make: '', model: '', serial_number: '', state: 'OK' });
+  const [editing, setEditing] = useState(false);
 
   // Delete confirm
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
@@ -177,13 +193,33 @@ export default function InstrumentosPage() {
         type: createForm.type,
         make: createForm.make || null,
         model: createForm.model || null,
+        serial_number: createForm.serial_number || null,
         state: createForm.state,
-        user_id: null,
+        user_id: createForm.user_id ? parseInt(createForm.user_id, 10) : null,
       }),
     });
     setCreating(false);
     setIsCreateOpen(false);
     setCreateForm(EMPTY_CREATE);
+    await loadInstruments();
+  }
+
+  async function editInstrument() {
+    if (!editTarget) return;
+    setEditing(true);
+    await authFetch(`${apiUrl}/api/v1/instruments/${editTarget.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: editForm.type,
+        make: editForm.make || null,
+        model: editForm.model || null,
+        serial_number: editForm.serial_number || null,
+        state: editForm.state,
+      }),
+    });
+    setEditing(false);
+    setEditTarget(null);
     await loadInstruments();
   }
 
@@ -235,6 +271,9 @@ export default function InstrumentosPage() {
                       {[inst.make, inst.model].filter(Boolean).join(' ')}
                     </span>
                   )}
+                  {inst.serial_number && (
+                    <span className="card-serial">N/S: {inst.serial_number}</span>
+                  )}
                   {isAdmin && inst.user_id && memberMap[inst.user_id] && (
                     <span className="card-owner">Responsável: {memberMap[inst.user_id]}</span>
                   )}
@@ -252,6 +291,24 @@ export default function InstrumentosPage() {
                       onClick={() => { setReportTarget(inst); setReportForm(EMPTY_REPORT); }}
                     >
                       Reportar ocorrência
+                    </button>
+                  )}
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      className="action-btn"
+                      onClick={() => {
+                        setEditTarget(inst);
+                        setEditForm({
+                          type: inst.type,
+                          make: inst.make ?? '',
+                          model: inst.model ?? '',
+                          serial_number: inst.serial_number ?? '',
+                          state: inst.state,
+                        });
+                      }}
+                    >
+                      Editar
                     </button>
                   )}
                   {isAdmin && (
@@ -374,9 +431,20 @@ export default function InstrumentosPage() {
                   <input value={createForm.model} onChange={e => setCreateForm({ ...createForm, model: e.target.value })} placeholder="Ex: YCL-255" />
                 </label>
                 <label className="field">
+                  Número de série
+                  <input value={createForm.serial_number} onChange={e => setCreateForm({ ...createForm, serial_number: e.target.value })} placeholder="Ex: YM-123456" />
+                </label>
+                <label className="field">
                   Estado
                   <select value={createForm.state} onChange={e => setCreateForm({ ...createForm, state: e.target.value })}>
                     {INSTRUMENT_STATES.map(s => <option key={s} value={s}>{STATE_LABEL[s] ?? s}</option>)}
+                  </select>
+                </label>
+                <label className="field">
+                  Responsável
+                  <select value={createForm.user_id} onChange={e => setCreateForm({ ...createForm, user_id: e.target.value })}>
+                    <option value="">— Sem responsável —</option>
+                    {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                   </select>
                 </label>
               </div>
@@ -384,6 +452,50 @@ export default function InstrumentosPage() {
                 <button type="button" className="btn-secondary" onClick={() => setIsCreateOpen(false)}>Cancelar</button>
                 <button type="button" className="btn-primary" onClick={createInstrument} disabled={creating}>
                   {creating ? 'A guardar…' : 'Criar instrumento'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit instrument modal (admin) */}
+        {editTarget && (
+          <div className="modal-backdrop" onClick={() => setEditTarget(null)}>
+            <div className="modal" onClick={e => e.stopPropagation()}>
+              <div className="mh">
+                <h2 className="mt">Editar instrumento</h2>
+                <button type="button" className="mc" onClick={() => setEditTarget(null)}>✕</button>
+              </div>
+              <div className="form">
+                <label className="field">
+                  Tipo
+                  <select value={editForm.type} onChange={e => setEditForm({ ...editForm, type: e.target.value })}>
+                    {INSTRUMENT_TYPES.map(t => <option key={t} value={t}>{TYPE_LABEL[t] ?? t}</option>)}
+                  </select>
+                </label>
+                <label className="field">
+                  Marca
+                  <input value={editForm.make} onChange={e => setEditForm({ ...editForm, make: e.target.value })} placeholder="Ex: Yamaha" />
+                </label>
+                <label className="field">
+                  Modelo
+                  <input value={editForm.model} onChange={e => setEditForm({ ...editForm, model: e.target.value })} placeholder="Ex: YCL-255" />
+                </label>
+                <label className="field">
+                  Número de série
+                  <input value={editForm.serial_number} onChange={e => setEditForm({ ...editForm, serial_number: e.target.value })} placeholder="Ex: YM-123456" />
+                </label>
+                <label className="field">
+                  Estado
+                  <select value={editForm.state} onChange={e => setEditForm({ ...editForm, state: e.target.value })}>
+                    {INSTRUMENT_STATES.map(s => <option key={s} value={s}>{STATE_LABEL[s] ?? s}</option>)}
+                  </select>
+                </label>
+              </div>
+              <div className="mf">
+                <button type="button" className="btn-secondary" onClick={() => setEditTarget(null)}>Cancelar</button>
+                <button type="button" className="btn-primary" onClick={editInstrument} disabled={editing}>
+                  {editing ? 'A guardar…' : 'Guardar alterações'}
                 </button>
               </div>
             </div>
@@ -482,6 +594,7 @@ export default function InstrumentosPage() {
         .card-body { display: flex; flex-direction: column; gap: 3px; flex: 1; }
         .card-name { font-size: 15px; font-weight: 600; color: var(--text); margin: 0; }
         .card-make { font-size: 12px; color: var(--text-2); }
+        .card-serial { font-size: 11px; color: var(--muted); font-family: var(--font-mono, monospace); }
         .card-owner { font-size: 12px; color: var(--text-2); }
         .card-unassigned { font-size: 12px; color: var(--muted); font-style: italic; }
         .card-sent { font-size: 12px; color: var(--success); font-weight: 600; }

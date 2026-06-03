@@ -127,7 +127,7 @@ function EventModal({ event, onClose }: { event: EventItem; onClose: () => void 
 }
 
 // ─── MiniCalendar ─────────────────────────────────────────────────────────────
-function MiniCalendar({ events, onEventClick }: { events: EventItem[]; onEventClick: (ev: EventItem) => void }) {
+function MiniCalendar({ events, birthdays = [], onEventClick }: { events: EventItem[]; birthdays?: BirthdayItem[]; onEventClick: (ev: EventItem) => void }) {
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth());
@@ -142,6 +142,18 @@ function MiniCalendar({ events, onEventClick }: { events: EventItem[]; onEventCl
       const day = d.getDate();
       if (!eventsByDay[day]) eventsByDay[day] = [];
       eventsByDay[day].push(ev);
+    }
+  }
+
+  const birthdayNamesByDay: Record<number, string[]> = {};
+  for (const b of birthdays) {
+    if (!b.birth_date) continue;
+    const parts = b.birth_date.split('-');
+    const bMonth = parseInt(parts[1], 10) - 1;
+    const bDay = parseInt(parts[2], 10);
+    if (bMonth === month) {
+      if (!birthdayNamesByDay[bDay]) birthdayNamesByDay[bDay] = [];
+      birthdayNamesByDay[bDay].push(b.name);
     }
   }
 
@@ -160,7 +172,7 @@ function MiniCalendar({ events, onEventClick }: { events: EventItem[]; onEventCl
   function cancelClose() { if (closeTimer.current) clearTimeout(closeTimer.current); }
 
   function handleDayEnter(e: React.MouseEvent<HTMLButtonElement>, day: number) {
-    if (!eventsByDay[day]) return;
+    if (!eventsByDay[day] && !birthdayNamesByDay[day]) return;
     cancelClose();
     const rect = e.currentTarget.getBoundingClientRect();
     const parentRect = calRef.current?.getBoundingClientRect();
@@ -175,14 +187,17 @@ function MiniCalendar({ events, onEventClick }: { events: EventItem[]; onEventCl
 
   function getDayClass(day: number): string {
     const items = eventsByDay[day];
-    if (!items) return '';
-    const types = new Set(items.map(i => i.type));
-    const hasRehearsal = types.has('REHEARSAL') || types.has('SPECIAL_REHEARSAL');
-    const hasConcert = types.has('CONCERT');
-    if (hasConcert && hasRehearsal) return 'day-mixed-ev';
-    if (hasConcert) return 'day-concert';
-    if (hasRehearsal) return 'day-rehearsal';
-    return 'day-other-ev';
+    if (items) {
+      const types = new Set(items.map(i => i.type));
+      const hasRehearsal = types.has('REHEARSAL') || types.has('SPECIAL_REHEARSAL');
+      const hasConcert = types.has('CONCERT');
+      if (hasConcert && hasRehearsal) return 'day-mixed-ev';
+      if (hasConcert) return 'day-concert';
+      if (hasRehearsal) return 'day-rehearsal';
+      return 'day-other-ev';
+    }
+    if (birthdayNamesByDay[day]) return 'day-birthday';
+    return '';
   }
 
   const cells: (number | null)[] = [];
@@ -205,7 +220,7 @@ function MiniCalendar({ events, onEventClick }: { events: EventItem[]; onEventCl
             <button
               key={day}
               type="button"
-              className={['cal-day', getDayClass(day), isToday(day) ? 'today' : '', eventsByDay[day] ? 'has-events' : ''].filter(Boolean).join(' ')}
+              className={['cal-day', getDayClass(day), isToday(day) ? 'today' : '', (eventsByDay[day] || birthdayNamesByDay[day]) ? 'has-events' : ''].filter(Boolean).join(' ')}
               onMouseEnter={(e) => handleDayEnter(e, day)}
               onMouseLeave={scheduleClose}
               onClick={() => handleDayClick(day)}
@@ -220,15 +235,17 @@ function MiniCalendar({ events, onEventClick }: { events: EventItem[]; onEventCl
         <span className="cal-legend-label">Ensaio</span>
         <span className="cal-legend-dot" style={{ background: 'var(--concert-color)' }} />
         <span className="cal-legend-label">Concerto</span>
+        <span className="cal-legend-dot" style={{ background: 'var(--birthday-color)' }} />
+        <span className="cal-legend-label">Aniversário</span>
       </div>
-      {tooltip && eventsByDay[tooltip.day] && (
+      {tooltip && (eventsByDay[tooltip.day] || birthdayNamesByDay[tooltip.day]) && (
         <div
           className="cal-tooltip"
           style={{ top: tooltip.y, left: Math.min(tooltip.x, 180) }}
           onMouseEnter={cancelClose}
           onMouseLeave={scheduleClose}
         >
-          {eventsByDay[tooltip.day].map(ev => (
+          {eventsByDay[tooltip.day]?.map(ev => (
             <div
               key={ev.id}
               style={{ cursor: 'pointer', padding: '6px 4px', borderRadius: 6, display: 'flex', flexDirection: 'column', gap: 4 }}
@@ -239,6 +256,12 @@ function MiniCalendar({ events, onEventClick }: { events: EventItem[]; onEventCl
                 <span className={`badge ${eventBadgeClass(ev.type)}`}>{eventTypeLabel(ev.type)}</span>
               </div>
               <span style={{ fontSize: 11, color: 'var(--muted)', display: 'inline-flex', alignItems: 'center', gap: 3 }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>{formatTime(ev.start_time)}</span>
+            </div>
+          ))}
+          {birthdayNamesByDay[tooltip.day]?.map(name => (
+            <div key={name} style={{ padding: '6px 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 14, flexShrink: 0 }}>🎂</span>
+              <span style={{ fontSize: 13, color: 'var(--accent)', fontWeight: 500 }}>{name}</span>
             </div>
           ))}
         </div>
@@ -254,6 +277,8 @@ export default function HomePage() {
   const [allEvents, setAllEvents] = useState<EventItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
+  const [birthdayLimit, setBirthdayLimit] = useState(5);
+  const [birthdayStep, setBirthdayStep] = useState(10);
 
   useEffect(() => {
     Promise.all([
@@ -320,7 +345,7 @@ export default function HomePage() {
                   <span className="section-count">{birthdays.length}</span>
                 </div>
                 <div className="birthdays">
-                  {birthdays.map(b => (
+                  {birthdays.slice(0, birthdayLimit).map(b => (
                     <div key={b.id} className="birthday-row">
                       <div className="bday-icon">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -342,6 +367,31 @@ export default function HomePage() {
                     </div>
                   ))}
                 </div>
+                {(birthdayLimit < birthdays.length || birthdayLimit > 5) && (
+                  <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                    {birthdayLimit < birthdays.length && (
+                      <button
+                        type="button"
+                        className="btn-ghost-sm"
+                        onClick={() => {
+                          setBirthdayLimit(prev => prev + birthdayStep);
+                          setBirthdayStep(prev => prev + 10);
+                        }}
+                      >
+                        Ver mais ({Math.min(birthdayStep, birthdays.length - birthdayLimit)})
+                      </button>
+                    )}
+                    {birthdayLimit > 5 && (
+                      <button
+                        type="button"
+                        className="btn-ghost-sm"
+                        onClick={() => { setBirthdayLimit(5); setBirthdayStep(10); }}
+                      >
+                        Ver menos
+                      </button>
+                    )}
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -351,7 +401,7 @@ export default function HomePage() {
             <div className="section-head">
               <span className="section-label-mono">Calendário</span>
             </div>
-            <MiniCalendar events={allEvents} onEventClick={setSelectedEvent} />
+            <MiniCalendar events={allEvents} birthdays={birthdays} onEventClick={setSelectedEvent} />
 
             <div className="section-head" style={{ marginTop: 24 }}>
               <span className="section-label-mono">Próximos eventos</span>
@@ -518,6 +568,20 @@ export default function HomePage() {
           color: var(--accent);
           white-space: nowrap;
         }
+
+        .btn-ghost-sm {
+          padding: 5px 12px;
+          font-size: 12px;
+          font-family: var(--font-mono, monospace);
+          font-weight: 500;
+          color: var(--muted);
+          background: transparent;
+          border: 1px solid var(--border);
+          border-radius: 6px;
+          cursor: pointer;
+          transition: color 0.12s, border-color 0.12s;
+        }
+        .btn-ghost-sm:hover { color: var(--accent); border-color: var(--accent); }
 
         .events { display: flex; flex-direction: column; gap: 6px; }
 

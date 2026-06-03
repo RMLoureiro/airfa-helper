@@ -6,7 +6,7 @@ from app.models.enums import SystemRole
 from app.models.instrument import Instrument
 from app.models.instrument_report import InstrumentReport
 from app.models.user import User
-from app.schemas.instrument import InstrumentCreate, InstrumentRead
+from app.schemas.instrument import InstrumentCreate, InstrumentRead, InstrumentUpdate
 from app.schemas.instrument_report import InstrumentReportCreate, InstrumentReportRead
 
 router = APIRouter(prefix="/instruments", tags=["instruments"])
@@ -30,6 +30,23 @@ def create_instrument(
 ):
     instrument = Instrument(**payload.model_dump())
     db.add(instrument)
+    db.commit()
+    db.refresh(instrument)
+    return instrument
+
+
+@router.put("/{instrument_id}", response_model=InstrumentRead)
+def update_instrument(
+    instrument_id: int,
+    payload: InstrumentUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(SystemRole.ADMIN, SystemRole.SUPER_ADMIN)),
+):
+    instrument = db.query(Instrument).filter(Instrument.id == instrument_id).first()
+    if not instrument:
+        raise HTTPException(status_code=404, detail="Instrumento não encontrado")
+    for field, value in payload.model_dump(exclude_unset=True).items():
+        setattr(instrument, field, value)
     db.commit()
     db.refresh(instrument)
     return instrument

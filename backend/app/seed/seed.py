@@ -123,6 +123,194 @@ def _seed_users(db: Session) -> tuple[User, User, User, User]:
     return super_admin, admin, regular, regular2
 
 
+def _seed_extra_members(db: Session) -> None:
+    """Extra band members with birthdays spread across the year for realistic data."""
+    members = [
+        {
+            "username": "quim.alves",
+            "email": "quim.alves",
+            "hashed_password": get_password_hash(SEED_PASSWORD_REGULAR),
+            "name": "Joaquim Alves",
+            "phone": "910200001",
+            "birth_date": date(1991, 6, 3),   # today
+            "address": "Travessa da Banda 1",
+            "join_year": 2015,
+            "system_role": SystemRole.REGULAR,
+            "musical_role": MusicalRole.TUBA_PLAYER,
+        },
+        {
+            "username": "ana.rodrigues",
+            "email": "ana.rodrigues",
+            "hashed_password": get_password_hash(SEED_PASSWORD_REGULAR),
+            "name": "Ana Rodrigues",
+            "phone": "910200002",
+            "birth_date": date(1994, 6, 5),   # 2 days
+            "address": "Rua das Flores 5",
+            "join_year": 2019,
+            "system_role": SystemRole.REGULAR,
+            "musical_role": MusicalRole.FLUTE_PLAYER,
+        },
+        {
+            "username": "bruno.ferreira",
+            "email": "bruno.ferreira",
+            "hashed_password": get_password_hash(SEED_PASSWORD_REGULAR),
+            "name": "Bruno Ferreira",
+            "phone": "910200003",
+            "birth_date": date(1997, 6, 12),  # 9 days
+            "address": "Avenida Central 12",
+            "join_year": 2021,
+            "system_role": SystemRole.REGULAR,
+            "musical_role": MusicalRole.TRUMPET_PLAYER,
+        },
+        {
+            "username": "carla.mendes",
+            "email": "carla.mendes",
+            "hashed_password": get_password_hash(SEED_PASSWORD_REGULAR),
+            "name": "Carla Mendes",
+            "phone": "910200004",
+            "birth_date": date(1993, 6, 18),  # 15 days
+            "address": "Largo do Mercado 8",
+            "join_year": 2017,
+            "system_role": SystemRole.REGULAR,
+            "musical_role": MusicalRole.CLARINET_PLAYER,
+        },
+        {
+            "username": "diogo.pinto",
+            "email": "diogo.pinto",
+            "hashed_password": get_password_hash(SEED_PASSWORD_REGULAR),
+            "name": "Diogo Pinto",
+            "phone": "910200005",
+            "birth_date": date(1999, 6, 28),  # 25 days
+            "address": "Rua do Faial 3",
+            "join_year": 2022,
+            "system_role": SystemRole.REGULAR,
+            "musical_role": MusicalRole.EUPHONIUM_PLAYER,
+        },
+        {
+            "username": "elena.costa",
+            "email": "elena.costa",
+            "hashed_password": get_password_hash(SEED_PASSWORD_REGULAR),
+            "name": "Elena Costa",
+            "phone": "910200006",
+            "birth_date": date(1996, 7, 8),   # 35 days
+            "address": "Beco das Acácias 7",
+            "join_year": 2020,
+            "system_role": SystemRole.REGULAR,
+            "musical_role": MusicalRole.SAXOPHONE_PLAYER,
+        },
+        {
+            "username": "filipe.sousa",
+            "email": "filipe.sousa",
+            "hashed_password": get_password_hash(SEED_PASSWORD_REGULAR),
+            "name": "Filipe Sousa",
+            "phone": "910200007",
+            "birth_date": date(2001, 7, 22),  # 49 days
+            "address": "Rua Nova 19",
+            "join_year": 2023,
+            "system_role": SystemRole.REGULAR,
+            "musical_role": MusicalRole.TROMBONE_PLAYER,
+        },
+        {
+            "username": "gabriela.santos",
+            "email": "gabriela.santos",
+            "hashed_password": get_password_hash(SEED_PASSWORD_REGULAR),
+            "name": "Gabriela Santos",
+            "phone": "910200008",
+            "birth_date": date(1995, 8, 14),  # 72 days
+            "address": "Caminho do Rio 4",
+            "join_year": 2016,
+            "system_role": SystemRole.REGULAR,
+            "musical_role": MusicalRole.FRENCH_HORN_PLAYER,
+        },
+        {
+            "username": "henrique.lima",
+            "email": "henrique.lima",
+            "hashed_password": get_password_hash(SEED_PASSWORD_REGULAR),
+            "name": "Henrique Lima",
+            "phone": "910200009",
+            "birth_date": date(1988, 9, 3),   # 92 days
+            "address": "Estrada Nacional 102",
+            "join_year": 2012,
+            "system_role": SystemRole.REGULAR,
+            "musical_role": MusicalRole.PERCUSSION_PLAYER,
+        },
+        {
+            "username": "ines.carvalho",
+            "email": "ines.carvalho",
+            "hashed_password": get_password_hash(SEED_PASSWORD_REGULAR),
+            "name": "Inês Carvalho",
+            "phone": "910200010",
+            "birth_date": date(2000, 10, 15), # 134 days
+            "address": "Rua das Amendoeiras 2",
+            "join_year": 2022,
+            "system_role": SystemRole.REGULAR,
+            "musical_role": MusicalRole.FLUTE_PLAYER,
+        },
+        {
+            "username": "joao.azevedo",
+            "email": "joao.azevedo",
+            "hashed_password": get_password_hash(SEED_PASSWORD_REGULAR),
+            "name": "João Azevedo",
+            "phone": "910200011",
+            "birth_date": date(1992, 11, 20), # 170 days
+            "address": "Viela dos Pinheiros 9",
+            "join_year": 2014,
+            "system_role": SystemRole.REGULAR,
+            "musical_role": MusicalRole.TUBA_PLAYER,
+        },
+        {
+            "username": "lara.mota",
+            "email": "lara.mota",
+            "hashed_password": get_password_hash(SEED_PASSWORD_REGULAR),
+            "name": "Lara Mota",
+            "phone": "910200012",
+            "birth_date": date(2002, 1, 8),   # ~219 days (Jan 8 2027)
+            "address": "Rua do Pomar 6",
+            "join_year": 2023,
+            "system_role": SystemRole.REGULAR,
+            "musical_role": MusicalRole.CLARINET_PLAYER,
+        },
+        {
+            "username": "miguel.neves",
+            "email": "miguel.neves",
+            "hashed_password": get_password_hash(SEED_PASSWORD_REGULAR),
+            "name": "Miguel Neves",
+            "phone": "910200013",
+            "birth_date": date(1990, 2, 14),  # ~256 days (Feb 14 2027)
+            "address": "Rua da Fonte 11",
+            "join_year": 2013,
+            "system_role": SystemRole.REGULAR,
+            "musical_role": MusicalRole.SAXOPHONE_PLAYER,
+        },
+        {
+            "username": "natalia.gomes",
+            "email": "natalia.gomes",
+            "hashed_password": get_password_hash(SEED_PASSWORD_REGULAR),
+            "name": "Natália Gomes",
+            "phone": "910200014",
+            "birth_date": date(1998, 3, 28),  # ~298 days (Mar 28 2027)
+            "address": "Praceta da Serra 3",
+            "join_year": 2018,
+            "system_role": SystemRole.REGULAR,
+            "musical_role": MusicalRole.TRUMPET_PLAYER,
+        },
+        {
+            "username": "oscar.pereira",
+            "email": "oscar.pereira",
+            "hashed_password": get_password_hash(SEED_PASSWORD_REGULAR),
+            "name": "Óscar Pereira",
+            "phone": "910200015",
+            "birth_date": date(1985, 5, 20),  # ~351 days (May 20 2027)
+            "address": "Alameda dos Carvalhos 14",
+            "join_year": 2010,
+            "system_role": SystemRole.REGULAR,
+            "musical_role": MusicalRole.EUPHONIUM_PLAYER,
+        },
+    ]
+    for payload in members:
+        _upsert_user(db, payload)
+
+
 def _seed_events(db: Session) -> list[Event]:
     db.query(EventAttendance).delete(synchronize_session=False)
     db.query(Event).delete(synchronize_session=False)
@@ -670,6 +858,7 @@ def seed_all() -> None:
     db: Session = SessionLocal()
     try:
         users = _seed_users(db)
+        _seed_extra_members(db)
         events = _seed_events(db)
         _seed_attendance(db, events, users)
         instruments = _seed_instruments(db, users)

@@ -85,6 +85,13 @@ Default database credentials:
 cd backend
 ```
 
+**Create and activate a virtual environment:**
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+```
+
 **Install dependencies:**
 
 ```bash
@@ -102,6 +109,8 @@ alembic upgrade head
 ```bash
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
+
+> On subsequent runs, just activate the venv first: `source backend/.venv/bin/activate`
 
 The API will be available at `http://localhost:8000`.  
 Interactive API docs: `http://localhost:8000/docs`
@@ -198,7 +207,7 @@ The frontend will be available at `http://localhost:3000`.
 
 ### Backend
 
-From the `backend/` directory:
+From the `backend/` directory (venv must be active):
 
 ```bash
 pytest

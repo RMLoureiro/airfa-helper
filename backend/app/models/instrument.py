@@ -11,6 +11,7 @@ class Instrument(Base):
     type = Column(Enum(InstrumentType), nullable=False)
     make = Column(String, nullable=True)
     model = Column(String, nullable=True)
+    serial_number = Column(String, nullable=True)
     state = Column(Enum(InstrumentState), nullable=False, default=InstrumentState.OK)
 
     user = relationship("User", back_populates="instruments")

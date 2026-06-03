@@ -34,6 +34,8 @@
   --rehearsal-color: #4A7EC4;
   --special-color:   #9468C4;
   --other-color:     #7A7265;
+  --birthday-color:  #C4608E;
+  --birthday-dim:    rgba(196, 96, 142, 0.15);
 
   /* Shadows */
   --shadow-sm: 0 1px 4px rgba(0,0,0,0.4);
@@ -65,6 +67,8 @@ html.light {
   --danger-dim:  rgba(176, 58, 48, 0.1);
   --success:     #3D7E54;
   --success-dim: rgba(61, 126, 84, 0.1);
+  --birthday-color:  #B0486E;
+  --birthday-dim:    rgba(176, 72, 110, 0.12);
   --shadow-sm: 0 1px 4px rgba(0,0,0,0.1);
   --shadow-md: 0 4px 16px rgba(0,0,0,0.14);
   --shadow-lg: 0 16px 48px rgba(0,0,0,0.2);
@@ -396,6 +400,7 @@ label {
 .cal-day.day-concert   { background: rgba(212,137,42,0.15);  color: var(--concert-color);   border-color: rgba(212,137,42,0.25); }
 .cal-day.day-other-ev  { background: rgba(122,114,101,0.12); color: var(--muted);           border-color: rgba(122,114,101,0.2); }
 .cal-day.day-mixed-ev  { background: rgba(122,114,101,0.12); color: var(--muted);           border-color: rgba(122,114,101,0.2); }
+.cal-day.day-birthday  { background: var(--birthday-dim);   color: var(--birthday-color);  border-color: rgba(196, 96, 142, 0.25); }
 
 .cal-day.has-events { cursor: pointer; }
 .cal-day.has-events:hover { background: var(--surface-2); border-color: var(--accent); color: var(--accent); }
