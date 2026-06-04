@@ -32,11 +32,18 @@ services:
       - dokploy-network
     labels:
       - "traefik.enable=true"
+      # HTTPS router
       - "traefik.http.routers.airfa-backend.rule=Host(`${API_DOMAIN}`)"
       - "traefik.http.routers.airfa-backend.entrypoints=websecure"
       - "traefik.http.routers.airfa-backend.tls.certresolver=letsencrypt"
       - "traefik.http.services.airfa-backend.loadbalancer.server.port=8000"
       - "traefik.docker.network=dokploy-network"
+      # HTTP → HTTPS redirect
+      - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.https-redirect.redirectscheme.permanent=true"
+      - "traefik.http.routers.airfa-backend-http.rule=Host(`${API_DOMAIN}`)"
+      - "traefik.http.routers.airfa-backend-http.entrypoints=web"
+      - "traefik.http.routers.airfa-backend-http.middlewares=https-redirect"
 
   frontend:
     build:
@@ -52,11 +59,25 @@ services:
       - dokploy-network
     labels:
       - "traefik.enable=true"
+      # HTTPS router — bare domain (banda-airfa.pt)
       - "traefik.http.routers.airfa-frontend.rule=Host(`${APP_DOMAIN}`)"
       - "traefik.http.routers.airfa-frontend.entrypoints=websecure"
       - "traefik.http.routers.airfa-frontend.tls.certresolver=letsencrypt"
       - "traefik.http.services.airfa-frontend.loadbalancer.server.port=3000"
       - "traefik.docker.network=dokploy-network"
+      # www → bare redirect (www.banda-airfa.pt → banda-airfa.pt)
+      - "traefik.http.middlewares.www-redirect.redirectregex.regex=^https://www\\.(.+)"
+      - "traefik.http.middlewares.www-redirect.redirectregex.replacement=https://$${1}"
+      - "traefik.http.middlewares.www-redirect.redirectregex.permanent=true"
+      - "traefik.http.routers.airfa-frontend-www.rule=Host(`www.${APP_DOMAIN}`)"
+      - "traefik.http.routers.airfa-frontend-www.entrypoints=websecure"
+      - "traefik.http.routers.airfa-frontend-www.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.airfa-frontend-www.middlewares=www-redirect"
+      - "traefik.http.routers.airfa-frontend-www.service=airfa-frontend"
+      # HTTP → HTTPS redirect (banda-airfa.pt e www.banda-airfa.pt)
+      - "traefik.http.routers.airfa-frontend-http.rule=Host(`${APP_DOMAIN}`) || Host(`www.${APP_DOMAIN}`)"
+      - "traefik.http.routers.airfa-frontend-http.entrypoints=web"
+      - "traefik.http.routers.airfa-frontend-http.middlewares=https-redirect"
 
 networks:
   dokploy-network:
