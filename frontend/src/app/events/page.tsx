@@ -40,6 +40,39 @@ const EMPTY_FORM: EventForm = {
 
 const REHEARSAL_TYPES = new Set(['REHEARSAL', 'SPECIAL_REHEARSAL']);
 
+function splitDateTime(value: string): { date: string; time: string } {
+  const [date = '', time = ''] = value.split('T');
+  return { date, time };
+}
+
+function combineDateTime(date: string, time: string): string {
+  if (!date && !time) return '';
+  return `${date}T${time || '00:00'}`;
+}
+
+const HOUR_OPTIONS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+const MINUTE_OPTIONS = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0'));
+
+function TimeSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [hour = '', minute = ''] = value.split(':');
+  const minuteOptions = minute && !MINUTE_OPTIONS.includes(minute)
+    ? [...MINUTE_OPTIONS, minute].sort()
+    : MINUTE_OPTIONS;
+  return (
+    <div className="time-select">
+      <select value={hour} onChange={e => onChange(`${e.target.value}:${minute || '00'}`)} aria-label="Horas">
+        <option value="" disabled>HH</option>
+        {HOUR_OPTIONS.map(h => <option key={h} value={h}>{h}</option>)}
+      </select>
+      <span className="time-sep">:</span>
+      <select value={minute} onChange={e => onChange(`${hour || '00'}:${e.target.value}`)} aria-label="Minutos">
+        <option value="" disabled>MM</option>
+        {minuteOptions.map(m => <option key={m} value={m}>{m}</option>)}
+      </select>
+    </div>
+  );
+}
+
 function EventsCalendar({ events }: { events: EventItem[] }) {
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
@@ -439,14 +472,20 @@ export default function EventsPage() {
                   <textarea rows={3} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Descrição opcional" />
                 </label>
 
-                <label className="form-field">
+                <label className="form-field span-2">
                   Início
-                  <input type="datetime-local" value={form.start_time} onChange={e => setForm({ ...form, start_time: e.target.value })} />
+                  <div className="datetime-split">
+                    <input type="date" value={splitDateTime(form.start_time).date} onChange={e => setForm({ ...form, start_time: combineDateTime(e.target.value, splitDateTime(form.start_time).time) })} />
+                    <TimeSelect value={splitDateTime(form.start_time).time} onChange={t => setForm({ ...form, start_time: combineDateTime(splitDateTime(form.start_time).date, t) })} />
+                  </div>
                 </label>
 
-                <label className="form-field">
+                <label className="form-field span-2">
                   Fim
-                  <input type="datetime-local" value={form.end_time} onChange={e => setForm({ ...form, end_time: e.target.value })} />
+                  <div className="datetime-split">
+                    <input type="date" value={splitDateTime(form.end_time).date} onChange={e => setForm({ ...form, end_time: combineDateTime(e.target.value, splitDateTime(form.end_time).time) })} />
+                    <TimeSelect value={splitDateTime(form.end_time).time} onChange={t => setForm({ ...form, end_time: combineDateTime(splitDateTime(form.end_time).date, t) })} />
+                  </div>
                 </label>
 
                 <label className="form-field">

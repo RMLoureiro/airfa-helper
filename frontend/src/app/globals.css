@@ -154,6 +154,56 @@ input:focus, select:focus, textarea:focus {
   box-shadow: 0 0 0 3px var(--accent-dim);
 }
 
+/* Restore native picker UI for date/time inputs (appearance:none above hides
+   the calendar/clock indicator that opens the picker, breaking time selection). */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+input[type="month"],
+input[type="week"] {
+  appearance: auto;
+  -webkit-appearance: auto;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+input[type="month"]::-webkit-calendar-picker-indicator,
+input[type="week"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(0.6);
+}
+
+.datetime-split {
+  display: flex;
+  gap: 8px;
+}
+
+.datetime-split input {
+  min-width: 0;
+}
+
+.datetime-split input[type="date"] { flex: 2 1 0; }
+
+.time-select {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.time-select select {
+  flex: 1 1 0;
+  min-width: 0;
+  padding-right: 24px;
+  text-align: center;
+}
+
+.time-sep {
+  color: var(--muted);
+  font-weight: 600;
+}
+
 select {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237A7265' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
