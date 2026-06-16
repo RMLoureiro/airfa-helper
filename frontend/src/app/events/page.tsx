@@ -278,8 +278,8 @@ export default function EventsPage() {
     const payload: Record<string, unknown> = {
       title: form.title,
       description: form.description || null,
-      start_time: new Date(form.start_time).toISOString(),
-      end_time: new Date(form.end_time).toISOString(),
+      start_time: `${form.start_time}:00`,
+      end_time: `${form.end_time}:00`,
       location: form.location || null,
       type: form.type,
       facebook_link: form.facebook_link || null,

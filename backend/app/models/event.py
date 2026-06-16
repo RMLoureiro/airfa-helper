@@ -8,8 +8,9 @@ class Event(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
     description = Column(String, nullable=True)
-    start_time = Column(DateTime(timezone=True), nullable=False)
-    end_time = Column(DateTime(timezone=True), nullable=False)
+    # Naive wall-clock time (hora local de Portugal) — sem conversão de timezone
+    start_time = Column(DateTime, nullable=False)
+    end_time = Column(DateTime, nullable=False)
     location = Column(String, nullable=True)
     type = Column(Enum(EventType), nullable=False)
     facebook_link = Column(String, nullable=True)

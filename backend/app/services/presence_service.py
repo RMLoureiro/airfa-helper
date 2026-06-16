@@ -1,6 +1,6 @@
 """Business logic for attendance/presence tracking."""
 
-from datetime import datetime, timezone
+from datetime import datetime
 
 from sqlalchemy.orm import Session
 
@@ -18,8 +18,8 @@ from app.schemas.presence import (
 
 def _academic_year_bounds(year_start: int) -> tuple[datetime, datetime]:
     """Return (start, end) datetimes for an academic year (Sep 1 → Jul 31)."""
-    start = datetime(year_start, 9, 1, 0, 0, 0, tzinfo=timezone.utc)
-    end = datetime(year_start + 1, 7, 31, 23, 59, 59, tzinfo=timezone.utc)
+    start = datetime(year_start, 9, 1, 0, 0, 0)
+    end = datetime(year_start + 1, 7, 31, 23, 59, 59)
     return start, end
 
 
@@ -28,7 +28,7 @@ def get_academic_years(db: Session) -> list[int]:
     rows = db.query(Event.start_time).all()
     years: set[int] = set()
     for (start_time,) in rows:
-        dt = start_time if start_time.tzinfo else start_time.replace(tzinfo=timezone.utc)
+        dt = start_time
         years.add(dt.year if dt.month >= 9 else dt.year - 1)
     return sorted(years)
 

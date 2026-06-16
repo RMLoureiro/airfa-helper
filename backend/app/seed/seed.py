@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timedelta
 
 from sqlalchemy.orm import Session
 
@@ -315,111 +315,111 @@ def _seed_events(db: Session) -> list[Event]:
     db.query(EventAttendance).delete(synchronize_session=False)
     db.query(Event).delete(synchronize_session=False)
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now()
 
     # ── Academic year 2024/2025 (fixed dates: Sep 2024 – Jul 2025) ──────────
     ay24_events = [
         Event(
             title="Ensaio de Setembro 2024",
             description="Início do ano letivo 2024/2025.",
-            start_time=datetime(2024, 9, 14, 20, 0, tzinfo=timezone.utc),
-            end_time=datetime(2024, 9, 14, 22, 0, tzinfo=timezone.utc),
+            start_time=datetime(2024, 9, 14, 20, 0),
+            end_time=datetime(2024, 9, 14, 22, 0),
             location="Sede da Banda",
             type=EventType.REHEARSAL,
         ),
         Event(
             title="Ensaio de Outubro 2024",
             description="Ensaio regular de outubro.",
-            start_time=datetime(2024, 10, 12, 20, 0, tzinfo=timezone.utc),
-            end_time=datetime(2024, 10, 12, 22, 0, tzinfo=timezone.utc),
+            start_time=datetime(2024, 10, 12, 20, 0),
+            end_time=datetime(2024, 10, 12, 22, 0),
             location="Sede da Banda",
             type=EventType.REHEARSAL,
         ),
         Event(
             title="Concerto de Outono 2024",
             description="Concerto de outono anual.",
-            start_time=datetime(2024, 11, 9, 17, 0, tzinfo=timezone.utc),
-            end_time=datetime(2024, 11, 9, 20, 0, tzinfo=timezone.utc),
+            start_time=datetime(2024, 11, 9, 17, 0),
+            end_time=datetime(2024, 11, 9, 20, 0),
             location="Auditório Municipal",
             type=EventType.CONCERT,
         ),
         Event(
             title="Ensaio de Novembro 2024",
             description="Preparação para o natal.",
-            start_time=datetime(2024, 11, 23, 20, 0, tzinfo=timezone.utc),
-            end_time=datetime(2024, 11, 23, 22, 0, tzinfo=timezone.utc),
+            start_time=datetime(2024, 11, 23, 20, 0),
+            end_time=datetime(2024, 11, 23, 22, 0),
             location="Sede da Banda",
             type=EventType.REHEARSAL,
         ),
         Event(
             title="Concerto de Natal 2024",
             description="Concerto especial de Natal.",
-            start_time=datetime(2024, 12, 21, 17, 0, tzinfo=timezone.utc),
-            end_time=datetime(2024, 12, 21, 20, 0, tzinfo=timezone.utc),
+            start_time=datetime(2024, 12, 21, 17, 0),
+            end_time=datetime(2024, 12, 21, 20, 0),
             location="Igreja Matriz",
             type=EventType.CONCERT,
         ),
         Event(
             title="Ensaio de Janeiro 2025",
             description="Primeiro ensaio de 2025.",
-            start_time=datetime(2025, 1, 11, 20, 0, tzinfo=timezone.utc),
-            end_time=datetime(2025, 1, 11, 22, 0, tzinfo=timezone.utc),
+            start_time=datetime(2025, 1, 11, 20, 0),
+            end_time=datetime(2025, 1, 11, 22, 0),
             location="Sede da Banda",
             type=EventType.REHEARSAL,
         ),
         Event(
             title="Ensaio de Fevereiro 2025",
             description="Preparação para o carnaval.",
-            start_time=datetime(2025, 2, 8, 20, 0, tzinfo=timezone.utc),
-            end_time=datetime(2025, 2, 8, 22, 0, tzinfo=timezone.utc),
+            start_time=datetime(2025, 2, 8, 20, 0),
+            end_time=datetime(2025, 2, 8, 22, 0),
             location="Sede da Banda",
             type=EventType.REHEARSAL,
         ),
         Event(
             title="Concerto de Carnaval 2025",
             description="Atuação no desfile de carnaval.",
-            start_time=datetime(2025, 3, 1, 15, 0, tzinfo=timezone.utc),
-            end_time=datetime(2025, 3, 1, 18, 0, tzinfo=timezone.utc),
+            start_time=datetime(2025, 3, 1, 15, 0),
+            end_time=datetime(2025, 3, 1, 18, 0),
             location="Praça Central",
             type=EventType.CONCERT,
         ),
         Event(
             title="Ensaio de Março 2025",
             description="Ensaio regular de março.",
-            start_time=datetime(2025, 3, 22, 20, 0, tzinfo=timezone.utc),
-            end_time=datetime(2025, 3, 22, 22, 0, tzinfo=timezone.utc),
+            start_time=datetime(2025, 3, 22, 20, 0),
+            end_time=datetime(2025, 3, 22, 22, 0),
             location="Sede da Banda",
             type=EventType.REHEARSAL,
         ),
         Event(
             title="Concerto da Páscoa 2025",
             description="Concerto especial de Páscoa.",
-            start_time=datetime(2025, 4, 19, 17, 0, tzinfo=timezone.utc),
-            end_time=datetime(2025, 4, 19, 20, 0, tzinfo=timezone.utc),
+            start_time=datetime(2025, 4, 19, 17, 0),
+            end_time=datetime(2025, 4, 19, 20, 0),
             location="Igreja Matriz",
             type=EventType.CONCERT,
         ),
         Event(
             title="Ensaio de Maio 2025",
             description="Preparação para o concerto de primavera.",
-            start_time=datetime(2025, 5, 10, 20, 0, tzinfo=timezone.utc),
-            end_time=datetime(2025, 5, 10, 22, 0, tzinfo=timezone.utc),
+            start_time=datetime(2025, 5, 10, 20, 0),
+            end_time=datetime(2025, 5, 10, 22, 0),
             location="Sede da Banda",
             type=EventType.REHEARSAL,
         ),
         Event(
             title="Concerto de Primavera 2025",
             description="Concerto anual de primavera.",
-            start_time=datetime(2025, 6, 7, 17, 0, tzinfo=timezone.utc),
-            end_time=datetime(2025, 6, 7, 20, 0, tzinfo=timezone.utc),
+            start_time=datetime(2025, 6, 7, 17, 0),
+            end_time=datetime(2025, 6, 7, 20, 0),
             location="Parque da Cidade",
             type=EventType.CONCERT,
         ),
         Event(
             title="Ensaio Final 2024/2025",
             description="Último ensaio do ano letivo.",
-            start_time=datetime(2025, 7, 5, 20, 0, tzinfo=timezone.utc),
-            end_time=datetime(2025, 7, 5, 22, 0, tzinfo=timezone.utc),
+            start_time=datetime(2025, 7, 5, 20, 0),
+            end_time=datetime(2025, 7, 5, 22, 0),
             location="Sede da Banda",
             type=EventType.REHEARSAL,
         ),
