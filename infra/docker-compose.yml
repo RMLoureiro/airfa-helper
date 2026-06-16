@@ -35,6 +35,7 @@ services:
       CORS_ORIGINS: "http://localhost:3000,http://localhost:3001"
       RUN_SEED: "true"
       SEED_DEMO: "true"           # seed full demo data (dev only)
+      TZ: Europe/Lisbon
     depends_on:
       db:
         condition: service_healthy

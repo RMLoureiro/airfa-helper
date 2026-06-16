@@ -12,6 +12,8 @@ services:
     volumes:
       - ../files/uploads:/app/uploads
     environment:
+      # Container timezone (affects date.today() and local-time logic)
+      TZ: ${TZ:-Europe/Lisbon}
       # Provided by Dokploy's managed PostgreSQL instance
       DATABASE_URL: ${DATABASE_URL}
       SECRET_KEY: ${SECRET_KEY}
@@ -53,6 +55,8 @@ services:
         # NEXT_PUBLIC_* variables are baked in at build time — rebuild image to change URL
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     restart: always
+    environment:
+      TZ: ${TZ:-Europe/Lisbon}
     depends_on:
       - backend
     networks:
