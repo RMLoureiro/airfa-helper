@@ -17,5 +17,12 @@ class User(Base):
     join_year = Column(Integer, nullable=True)
     system_role = Column(Enum(SystemRole), nullable=False)
     musical_role = Column(Enum(MusicalRole), nullable=True)
+    # Soft delete: when set, the member is a "former member" and is excluded
+    # from all active features while keeping their historical records intact.
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
 
     instruments = relationship("Instrument", back_populates="user")
+
+    @property
+    def is_deleted(self) -> bool:
+        return self.deleted_at is not None

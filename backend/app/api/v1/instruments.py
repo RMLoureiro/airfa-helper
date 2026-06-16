@@ -76,7 +76,7 @@ def assign_instrument(
     if not instrument:
         raise HTTPException(status_code=404, detail="Instrumento não encontrado")
 
-    member = db.query(User).filter(User.id == user_id).first()
+    member = db.query(User).filter(User.id == user_id, User.deleted_at.is_(None)).first()
     if not member:
         raise HTTPException(status_code=404, detail="Membro não encontrado")
 

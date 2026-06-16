@@ -44,3 +44,6 @@ db_data/
 # Others
 *.sqlite3
 REQUIREMENTS.md
+
+# Personal scripts
+personal/

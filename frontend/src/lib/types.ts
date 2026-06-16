@@ -26,6 +26,7 @@ export type MemberItem = {
   join_year?: number | null;
   system_role: string;
   musical_role?: string | null;
+  deleted_at?: string | null;
 };
 
 export type ReinforcementItem = {

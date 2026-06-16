@@ -46,10 +46,13 @@ export default function MembrosPage() {
   const [editForm, setEditForm] = useState<EditForm>(EMPTY_FORM);
   const [filterNaipe, setFilterNaipe] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [showFormer, setShowFormer] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [confirmHardDelete, setConfirmHardDelete] = useState<MemberItem | null>(null);
 
   async function loadMembers() {
-    const res = await authFetch(`${API_URL}/api/v1/members/`);
+    setLoading(true);
+    const res = await authFetch(`${API_URL}/api/v1/members/?status=${showFormer ? 'former' : 'active'}`);
     const data = await res.json();
     setMembers(Array.isArray(data) ? data : []);
     setLoading(false);
@@ -58,7 +61,8 @@ export default function MembrosPage() {
   useEffect(() => {
     loadMembers().catch(() => setLoading(false));
     setIsSuperAdmin(checkIsSuperAdmin(getStoredUser()));
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showFormer]);
 
   async function createMember() {
     const payload = {
@@ -109,6 +113,16 @@ export default function MembrosPage() {
     await loadMembers();
   }
 
+  async function restoreMember(id: number) {
+    await authFetch(`${API_URL}/api/v1/members/${id}/restore`, { method: 'POST' });
+    await loadMembers();
+  }
+
+  async function hardDeleteMember(id: number) {
+    await authFetch(`${API_URL}/api/v1/members/${id}/permanent`, { method: 'DELETE' });
+    await loadMembers();
+  }
+
   function openEdit(m: MemberItem) {
     setEditingMember(m);
     setEditForm({ username: m.username, name: m.name, password: '', phone: m.phone ?? '', birth_date: m.birth_date ? m.birth_date.slice(0, 10) : '', address: m.address ?? '', join_year: m.join_year ? String(m.join_year) : '', system_role: m.system_role, musical_role: m.musical_role ?? '' });
@@ -133,28 +147,29 @@ export default function MembrosPage() {
               onChange={e => setSearch(e.target.value)}
             />
             <div className="filter-pills">
-              <button type="button" className={`fpill${filterNaipe === null ? ' active' : ''}`} onClick={() => setFilterNaipe(null)}>Todos</button>
-              {availableNaipes.map(n => (
+              <button type="button" className={`fpill${!showFormer && filterNaipe === null ? ' active' : ''}`} onClick={() => { setShowFormer(false); setFilterNaipe(null); }}>Todos</button>
+              {!showFormer && availableNaipes.map(n => (
                 <button key={n} type="button" className={`fpill${filterNaipe === n ? ' active' : ''}`} onClick={() => setFilterNaipe(v => v === n ? null : n)}>
                   {MUSICAL_ROLE_LABEL[n] ?? n}
                 </button>
               ))}
+              <button type="button" className={`fpill${showFormer ? ' active' : ''}`} onClick={() => { setShowFormer(v => !v); setFilterNaipe(null); }}>Antigos membros</button>
             </div>
           </div>
-          <button type="button" className="btn-primary" onClick={() => setIsCreateOpen(true)}>+ Novo membro</button>
+          {!showFormer && <button type="button" className="btn-primary" onClick={() => setIsCreateOpen(true)}>+ Novo membro</button>}
         </div>
 
         {/* Count */}
         <div className="count-row">
           <span className="section-label-mono">
-            {displayed.length} {displayed.length === 1 ? 'membro' : 'membros'}
+            {displayed.length} {showFormer ? (displayed.length === 1 ? 'antigo membro' : 'antigos membros') : (displayed.length === 1 ? 'membro' : 'membros')}
           </span>
         </div>
 
         {loading ? (
           <div className="loading">A carregar…</div>
         ) : displayed.length === 0 ? (
-          <div className="empty">Sem membros encontrados.</div>
+          <div className="empty">{showFormer ? 'Sem antigos membros.' : 'Sem membros encontrados.'}</div>
         ) : (
           <div className="grid">
             {displayed.map(m => {
@@ -177,8 +192,19 @@ export default function MembrosPage() {
                     {m.join_year && <span>desde {m.join_year}</span>}
                   </div>
                   <div className="member-actions">
-                    <button type="button" className="action-btn" onClick={() => openEdit(m)}>Editar</button>
-                    {isSuperAdmin && <button type="button" className="action-btn danger" onClick={() => setConfirmDeleteId(m.id)}>Remover</button>}
+                    {showFormer ? (
+                      isSuperAdmin && (
+                        <>
+                          <button type="button" className="action-btn" onClick={() => restoreMember(m.id)}>Restaurar</button>
+                          <button type="button" className="action-btn danger" onClick={() => setConfirmHardDelete(m)}>Eliminar definitivamente</button>
+                        </>
+                      )
+                    ) : (
+                      <>
+                        <button type="button" className="action-btn" onClick={() => openEdit(m)}>Editar</button>
+                        {isSuperAdmin && <button type="button" className="action-btn danger" onClick={() => setConfirmDeleteId(m.id)}>Remover</button>}
+                      </>
+                    )}
                   </div>
                 </div>
               );
@@ -225,6 +251,14 @@ export default function MembrosPage() {
             confirmLabel="Remover"
             onConfirm={() => { deleteMember(confirmDeleteId); setConfirmDeleteId(null); }}
             onCancel={() => setConfirmDeleteId(null)}
+          />
+        )}
+        {confirmHardDelete !== null && (
+          <ConfirmDialog
+            message={`Eliminar definitivamente ${confirmHardDelete.name}? Esta ação é permanente e irreversível. Todo o histórico (presenças, relatórios, etc.) deste utilizador será apagado para sempre.`}
+            confirmLabel="Eliminar definitivamente"
+            onConfirm={() => { hardDeleteMember(confirmHardDelete.id); setConfirmHardDelete(null); }}
+            onCancel={() => setConfirmHardDelete(null)}
           />
         )}
       </div>

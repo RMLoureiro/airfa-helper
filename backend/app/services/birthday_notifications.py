@@ -20,6 +20,7 @@ def send_daily_birthday_notifications() -> None:
 
         birthday_members = (
             db.query(User)
+            .filter(User.deleted_at.is_(None))
             .filter(User.birth_date.isnot(None))
             .filter(extract("month", User.birth_date) == today.month)
             .filter(extract("day", User.birth_date) == today.day)
@@ -28,7 +29,7 @@ def send_daily_birthday_notifications() -> None:
         if not birthday_members:
             return
 
-        users = db.query(User).all()
+        users = db.query(User).filter(User.deleted_at.is_(None)).all()
 
         for birthday_member in birthday_members:
             content = f"Hoje é aniversário de {birthday_member.name}."

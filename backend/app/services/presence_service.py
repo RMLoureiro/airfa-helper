@@ -81,7 +81,7 @@ def get_member_analytics(
     db: Session, year_start: int | None = None
 ) -> list[PresenceAnalyticsMemberRead]:
     """Return per-member attendance analytics, optionally filtered by academic year."""
-    members = db.query(User).order_by(User.name.asc()).all()
+    members = db.query(User).filter(User.deleted_at.is_(None)).order_by(User.name.asc()).all()
     result = []
     for member in members:
         records_query = db.query(EventAttendance).filter(EventAttendance.user_id == member.id)
@@ -114,7 +114,7 @@ def get_event_member_statuses(db: Session, event_id: int) -> list[PresenceMember
         a.user_id: a.status
         for a in db.query(EventAttendance).filter(EventAttendance.event_id == event_id).all()
     }
-    members = db.query(User).order_by(User.name.asc()).all()
+    members = db.query(User).filter(User.deleted_at.is_(None)).order_by(User.name.asc()).all()
     return [
         PresenceMemberStatusRead(
             user_id=member.id,

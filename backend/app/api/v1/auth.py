@@ -21,7 +21,7 @@ _DUMMY_HASH = get_password_hash("__dummy_password_never_used__")
 @router.post("/login", response_model=TokenResponse)
 @limiter.limit("10/minute")
 def login(request: Request, payload: LoginRequest, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.username == payload.username).first()
+    user = db.query(User).filter(User.username == payload.username, User.deleted_at.is_(None)).first()
 
     # Always verify even when user is not found — prevents timing-based enumeration.
     hash_to_check = user.hashed_password if user else _DUMMY_HASH

@@ -32,6 +32,7 @@ def generate_upcoming_birthday_events(days_before: int = 7) -> None:
 
         users = (
             db.query(User)
+            .filter(User.deleted_at.is_(None))
             .filter(User.birth_date.isnot(None))
             .filter(extract("month", User.birth_date) == target_date.month)
             .filter(extract("day", User.birth_date) == target_date.day)

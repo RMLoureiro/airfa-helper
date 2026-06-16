@@ -1,9 +1,8 @@
 from pydantic import BaseModel, field_validator
 from typing import Optional
-from datetime import date
+from datetime import date, datetime
 from app.models.enums import SystemRole, MusicalRole
 from app.schemas.base import ReadSchema
-
 class UserBase(BaseModel):
     username: str
     name: str
@@ -70,3 +69,4 @@ class PasswordChangeRequest(BaseModel):
 
 class UserRead(UserBase, ReadSchema):
     id: int
+    deleted_at: Optional[datetime] = None

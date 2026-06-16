@@ -1,3 +1,6 @@
+from datetime import datetime, timezone
+from typing import Literal
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from sqlalchemy.orm import Session
@@ -5,6 +8,12 @@ from sqlalchemy.orm import Session
 from app.core.security import get_password_hash, verify_password
 from app.deps.auth import get_current_user, get_db, require_roles
 from app.models.enums import SystemRole
+from app.models.event_attendance import EventAttendance
+from app.models.instrument import Instrument
+from app.models.instrument_report import InstrumentReport
+from app.models.newsletter import Newsletter
+from app.models.notification import Notification
+from app.models.report import Report
 from app.models.user import User
 from app.schemas.user import (
     PasswordChangeRequest,
@@ -63,10 +72,16 @@ def change_my_password(
 
 @router.get("/", response_model=list[UserRead])
 def list_members(
+    status: Literal["active", "former", "all"] = "active",
     db: Session = Depends(get_db),
     current_user: User = Depends(require_roles(SystemRole.ADMIN, SystemRole.SUPER_ADMIN)),
 ):
-    return db.query(User).all()
+    query = db.query(User)
+    if status == "active":
+        query = query.filter(User.deleted_at.is_(None))
+    elif status == "former":
+        query = query.filter(User.deleted_at.isnot(None))
+    return query.all()
 
 
 @router.post("/", response_model=UserRead)
@@ -95,7 +110,7 @@ def update_member(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_roles(SystemRole.ADMIN, SystemRole.SUPER_ADMIN)),
 ):
-    member = db.query(User).filter(User.id == member_id).first()
+    member = db.query(User).filter(User.id == member_id, User.deleted_at.is_(None)).first()
     if not member:
         raise HTTPException(status_code=404, detail="Member not found")
 
@@ -124,10 +139,72 @@ def delete_member(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_roles(SystemRole.SUPER_ADMIN)),
 ):
-    member = db.query(User).filter(User.id == member_id).first()
+    member = db.query(User).filter(User.id == member_id, User.deleted_at.is_(None)).first()
     if not member:
         raise HTTPException(status_code=404, detail="Member not found")
 
-    db.delete(member)
+    if member.id == current_user.id:
+        raise HTTPException(status_code=400, detail="Não pode eliminar a sua própria conta")
+
+    # Soft delete: mark as a former member so the historical records
+    # (attendances, reports, newsletters, etc.) remain intact while the user
+    # is excluded from all active features.
+    member.deleted_at = datetime.now(timezone.utc)
+
+    # Instruments are shared band assets: keep them but unassign from the member.
+    db.query(Instrument).filter(Instrument.user_id == member_id).update(
+        {Instrument.user_id: None}, synchronize_session=False
+    )
+
     db.commit()
     return {"detail": "Member deleted successfully"}
+
+
+@router.post("/{member_id}/restore", response_model=UserRead)
+def restore_member(
+    member_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(SystemRole.SUPER_ADMIN)),
+):
+    member = db.query(User).filter(User.id == member_id, User.deleted_at.isnot(None)).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="Former member not found")
+
+    member.deleted_at = None
+    db.commit()
+    db.refresh(member)
+    return member
+
+
+@router.delete("/{member_id}/permanent", status_code=204)
+def hard_delete_member(
+    member_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(SystemRole.SUPER_ADMIN)),
+):
+    """Permanently delete a former member and all their historical records.
+
+    Only members that were already soft-deleted can be permanently removed.
+    This is irreversible.
+    """
+    member = db.query(User).filter(User.id == member_id, User.deleted_at.isnot(None)).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="Former member not found")
+
+    if member.id == current_user.id:
+        raise HTTPException(status_code=400, detail="Não pode eliminar a sua própria conta")
+
+    # Remove every record that references this user before deleting it,
+    # otherwise the database raises a foreign key constraint error.
+    db.query(EventAttendance).filter(EventAttendance.user_id == member_id).delete(synchronize_session=False)
+    db.query(InstrumentReport).filter(InstrumentReport.user_id == member_id).delete(synchronize_session=False)
+    db.query(Report).filter(Report.user_id == member_id).delete(synchronize_session=False)
+    db.query(Newsletter).filter(Newsletter.author_id == member_id).delete(synchronize_session=False)
+    db.query(Notification).filter(Notification.user_id == member_id).delete(synchronize_session=False)
+    # Instruments are shared band assets: keep them but unassign from the member.
+    db.query(Instrument).filter(Instrument.user_id == member_id).update(
+        {Instrument.user_id: None}, synchronize_session=False
+    )
+
+    db.delete(member)
+    db.commit()

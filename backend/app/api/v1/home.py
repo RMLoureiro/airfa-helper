@@ -37,7 +37,7 @@ def read_home(
     )
     newsletters = db.query(Newsletter).order_by(Newsletter.created_at.desc()).limit(10).all()
 
-    users = db.query(User).filter(User.birth_date.isnot(None)).all()
+    users = db.query(User).filter(User.birth_date.isnot(None), User.deleted_at.is_(None)).all()
     birthdays = []
     for user in users:
         days = _days_until_birthday(user.birth_date)

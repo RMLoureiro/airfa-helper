@@ -9,7 +9,7 @@ from app.models.user import User
 
 def broadcast_notification(db: Session, notification_type: NotificationType, content: str) -> None:
     """Create a notification with *content* for every user in the system."""
-    users = db.query(User).all()
+    users = db.query(User).filter(User.deleted_at.is_(None)).all()
     for user in users:
         db.add(
             Notification(
