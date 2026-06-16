@@ -389,6 +389,9 @@ label {
   border-color: var(--accent);
   color: var(--accent);
   font-weight: 700;
+  /* Inset ring keeps "today" visible even when an event paints the cell.
+     box-shadow isn't used by the event color rules, so it never gets overridden. */
+  box-shadow: inset 0 0 0 2px var(--accent);
 }
 
 .cal-day.day-present { background: rgba(78,152,104,0.15); color: var(--success); border-color: rgba(78,152,104,0.25); }
