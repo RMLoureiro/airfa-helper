@@ -195,6 +195,7 @@ export default function EventsPage() {
   const [editingEvent, setEditingEvent] = useState<EventItem | null>(null);
   const [editScope, setEditScope] = useState<EditScope>('single');
   const [form, setForm] = useState<EventForm>(EMPTY_FORM);
+  const [formError, setFormError] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<string | null>(null);
 
   // Delete flow (non-recurring)
@@ -224,6 +225,7 @@ export default function EventsPage() {
     setEditingEvent(null);
     setEditScope('single');
     setForm(EMPTY_FORM);
+    setFormError(null);
     setIsModalOpen(true);
   }
 
@@ -242,6 +244,7 @@ export default function EventsPage() {
       recurrence: (event.recurrence as '' | 'WEEKLY') ?? '',
       recurrence_end_date: event.recurrence_end_date ?? '',
     });
+    setFormError(null);
     setIsModalOpen(true);
   }
 
@@ -275,6 +278,23 @@ export default function EventsPage() {
   }
 
   async function saveEvent() {
+    // Validate start < end
+    if (form.start_time && form.end_time && form.start_time >= form.end_time) {
+      setFormError('A hora de início deve ser anterior à hora de fim.');
+      return;
+    }
+    // Validate recurrence_end_date >= start_date + 7 days
+    if (form.recurrence === 'WEEKLY' && form.recurrence_end_date && form.start_time) {
+      const startDate = splitDateTime(form.start_time).date;
+      const minEnd = new Date(startDate);
+      minEnd.setDate(minEnd.getDate() + 7);
+      const endDate = new Date(form.recurrence_end_date);
+      if (endDate < minEnd) {
+        setFormError('A data de fim das repetições deve ser pelo menos 1 semana após a data do evento.');
+        return;
+      }
+    }
+    setFormError(null);
     const payload: Record<string, unknown> = {
       title: form.title,
       description: form.description || null,
@@ -537,6 +557,7 @@ export default function EventsPage() {
               </div>
 
               <div className="modal-footer">
+                {formError && <span className="form-error">{formError}</span>}
                 <button type="button" className="btn-secondary" onClick={() => setIsModalOpen(false)}>Cancelar</button>
                 <button type="button" className="btn-primary" onClick={saveEvent}>Guardar</button>
               </div>
@@ -865,10 +886,19 @@ export default function EventsPage() {
 
         .modal-footer {
           display: flex;
+          flex-wrap: wrap;
+          align-items: center;
           justify-content: flex-end;
           gap: 8px;
           padding-top: 8px;
           border-top: 1px solid var(--border);
+        }
+
+        .form-error {
+          flex: 1 1 100%;
+          font-size: 12px;
+          color: var(--danger);
+          order: -1;
         }
 
         @media (max-width: 900px) {
