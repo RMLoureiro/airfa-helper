@@ -1,121 +1,87 @@
 import { expect, test } from '@playwright/test';
+import { AUTH_TOKEN, STORED_USER, seedAuth, stubApi } from './helpers';
+
+const HOME_PAYLOAD = {
+  name: 'Admin Airfa',
+  system_role: 'SUPER_ADMIN',
+  musical_role: 'TRUMPET_PLAYER',
+  upcoming_events: [
+    {
+      id: 10,
+      title: 'Ensaio Geral',
+      description: 'Últimos preparativos.',
+      start_time: '2026-05-18T20:00:00.000Z',
+      end_time: '2026-05-18T22:00:00.000Z',
+      location: 'Auditório',
+      type: 'REHEARSAL',
+    },
+  ],
+  upcoming_birthdays: [
+    { id: 5, name: 'João Silva', birth_date: '1990-05-17', days_until: 0 },
+  ],
+  recent_feed: [
+    {
+      id: 1,
+      item_type: 'NEWSLETTER',
+      title: 'Boletim semanal',
+      description: 'Resumo das novidades.',
+      published_at: '2026-05-17T10:00:00.000Z',
+    },
+  ],
+};
 
 test('login submits credentials and redirects to the home page', async ({ page }) => {
+  await stubApi(page);
+
   await page.route('**/api/v1/auth/login', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        access_token: 'mock-token',
+        access_token: AUTH_TOKEN,
         token_type: 'bearer',
-        user: {
-          id: 1,
-          email: 'admin@airfa.pt',
-          name: 'Admin Airfa',
-          system_role: 'SUPER_ADMIN',
-        },
+        user: STORED_USER,
       }),
     });
   });
 
   await page.route('**/api/v1/home', async (route) => {
-    const authorization = route.request().headers().authorization;
-    expect(authorization).toContain('Bearer mock-token');
-
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        name: 'Admin Airfa',
-        system_role: 'SUPER_ADMIN',
-        musical_role: null,
-        upcoming_events: [],
-        upcoming_birthdays: [],
-        recent_feed: [],
-      }),
-    });
+    expect(route.request().headers().authorization).toContain(`Bearer ${AUTH_TOKEN}`);
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(HOME_PAYLOAD) });
   });
 
   await page.goto('/login');
-  await page.getByLabel('Email').fill('admin@airfa.pt');
+  await page.getByLabel('Username').fill('admin');
   await page.getByLabel('Password').fill('admin123');
   await page.getByRole('button', { name: 'Entrar' }).click();
 
   await expect(page).toHaveURL(/\/home$/);
-  await expect(page.getByRole('heading', { name: 'Bem-vindo, Admin Airfa.' })).toBeVisible();
-  await expect(page.getByRole('complementary').getByText('SUPER_ADMIN')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Início' })).toBeVisible();
+  await expect(page.getByText('Super Admin').first()).toBeVisible();
 
   const token = await page.evaluate(() => localStorage.getItem('airfa_token'));
-  expect(token).toBe('mock-token');
+  expect(token).toBe(AUTH_TOKEN);
 });
 
 test('authenticated home renders the main dashboard sections', async ({ page }) => {
-  await page.addInitScript(() => {
-    localStorage.setItem('airfa_token', 'mock-token');
-    localStorage.setItem(
-      'airfa_user',
-      JSON.stringify({ id: 1, email: 'admin@airfa.pt', name: 'Admin Airfa', system_role: 'SUPER_ADMIN' })
-    );
-  });
+  await seedAuth(page);
+  await stubApi(page);
 
   await page.route('**/api/v1/home', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        name: 'Admin Airfa',
-        system_role: 'SUPER_ADMIN',
-        musical_role: null,
-        upcoming_events: [
-          {
-            id: 10,
-            title: 'Ensaio Geral',
-            description: 'Últimos preparativos.',
-            start_time: '2026-05-18T20:00:00.000Z',
-            location: 'Auditório',
-            type: 'REHEARSAL',
-          },
-        ],
-        upcoming_birthdays: [
-          {
-            id: 5,
-            name: 'João Silva',
-            birth_date: '1990-05-17',
-            days_until: 0,
-          },
-        ],
-        recent_feed: [
-          {
-            id: 1,
-            item_type: 'NEWSLETTER',
-            title: 'Boletim semanal',
-            description: 'Resumo das novidades.',
-            published_at: '2026-05-17T10:00:00.000Z',
-          },
-        ],
-      }),
-    });
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(HOME_PAYLOAD) });
   });
 
   await page.goto('/home');
 
-  await expect(page.getByRole('heading', { name: 'Bem-vindo, Admin Airfa.' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Newsletter e agenda' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Próximos eventos' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Próximos aniversários' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Início' })).toBeVisible();
   await expect(page.getByText('Boletim semanal')).toBeVisible();
   await expect(page.getByText('Ensaio Geral')).toBeVisible();
   await expect(page.getByText('João Silva')).toBeVisible();
 });
 
 test('authenticated newsletter page renders items and creates a publication', async ({ page }) => {
-  await page.addInitScript(() => {
-    localStorage.setItem('airfa_token', 'mock-token');
-    localStorage.setItem(
-      'airfa_user',
-      JSON.stringify({ id: 1, email: 'admin@airfa.pt', name: 'Admin Airfa', system_role: 'SUPER_ADMIN' })
-    );
-  });
+  await seedAuth(page);
+  await stubApi(page);
 
   const items = [
     {
@@ -132,11 +98,7 @@ test('authenticated newsletter page renders items and creates a publication', as
     const method = route.request().method();
 
     if (method === 'GET') {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(items),
-      });
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(items) });
       return;
     }
 
@@ -151,12 +113,7 @@ test('authenticated newsletter page renders items and creates a publication', as
         created_at: '2026-05-17T11:00:00.000Z',
       };
       items.unshift(created);
-
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(created),
-      });
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(created) });
       return;
     }
 
@@ -173,9 +130,9 @@ test('authenticated newsletter page renders items and creates a publication', as
   await expect(page.getByRole('heading', { name: 'Nova publicação' })).toBeVisible();
 
   await page.getByLabel('Título').fill('Nova nota interna');
-  await page.getByLabel('Conteúdo').fill('Conteúdo de teste da publicação.');
+  await page.getByLabel('Texto').fill('Conteúdo de teste da publicação.');
   await page.getByRole('button', { name: 'Guardar' }).click();
 
-  await expect(page.getByText('Publicação criada com sucesso.')).toBeVisible();
+  // The modal closes and the list reloads with the new publication.
   await expect(page.getByText('Nova nota interna')).toBeVisible();
 });

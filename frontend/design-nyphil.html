@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Airfa — New York Philharmonic, menos IA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Archivo:wght@400;500;600;700;800;900&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,500&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: #0B0A09; color: #B9B1A4; -webkit-font-smoothing: antialiased; }
+
+  .doc-header { max-width: 1320px; margin: 0 auto; padding: 72px 56px 44px; border-bottom: 1px solid #211D17; }
+  .doc-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: #6E6354; margin-bottom: 18px; }
+  .doc-title { font-family: 'Fraunces', Georgia, serif; font-size: clamp(34px, 5vw, 56px); font-weight: 500; color: #F1ECE2; line-height: 1.05; letter-spacing: -0.015em; margin-bottom: 18px; }
+  .doc-sub { font-size: 15.5px; color: #847A6B; max-width: 660px; line-height: 1.7; }
+  .doc-toc { display: flex; gap: 9px; flex-wrap: wrap; margin-top: 30px; }
+  .toc-pill { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.04em; color: #9A8F7E; text-decoration: none; padding: 7px 12px; border: 1px solid #2A251E; border-radius: 999px; transition: .15s; }
+  .toc-pill:hover { border-color: #4A4234; color: #E7E0D4; }
+  .toc-pill b { color: #E7E0D4; font-weight: 600; }
+
+  /* references intro */
+  .refs { max-width: 1320px; margin: 0 auto; padding: 44px 56px 0; }
+  .refs-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: #6E6354; margin-bottom: 16px; }
+  .refs-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 13px; }
+  .ref-card { border: 1px solid #211D17; border-radius: 10px; padding: 17px 19px; }
+  .ref-card h4 { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; color: #E7E0D4; margin-bottom: 6px; }
+  .ref-card p { font-size: 12.5px; line-height: 1.6; color: #7C7160; }
+  .ref-card a { color: #9A8F7E; text-decoration: underline; text-underline-offset: 2px; }
+  .rec-badge { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #0B0A08; background: #C9A227; padding: 3px 9px; border-radius: 999px; align-self: center; }
+  .sec-ref { font-size: 12.5px; color: #6E6757; }
+  .sec-ref span { color: #A89C89; }
+
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 30px 56px 90px; }
+  section { padding-top: 56px; }
+  section + section { border-top: 1px solid #1B1813; }
+  .sec-head { display: flex; align-items: baseline; gap: 15px; margin-bottom: 6px; flex-wrap: wrap; }
+  .sec-num { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #57503F; letter-spacing: 0.1em; }
+  .sec-name { font-family: 'Fraunces', serif; font-size: 30px; font-weight: 600; color: #F1ECE2; letter-spacing: -0.01em; }
+  .sec-tag { font-size: 14px; color: #7C7160; }
+  .sec-desc { font-size: 14px; color: #6E6757; max-width: 770px; line-height: 1.65; margin: 12px 0 20px; }
+  .sec-meta { display: flex; gap: 26px; flex-wrap: wrap; margin-bottom: 24px; }
+  .meta-b { font-size: 12.5px; color: #6E6757; }
+  .meta-b span { color: #A89C89; }
+
+  .pal { display: flex; align-items: center; gap: 5px; margin-bottom: 26px; flex-wrap: wrap; }
+  .pal .lbl { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #5A5343; margin-right: 6px; }
+  .sw { width: 30px; height: 30px; border-radius: 6px; }
+  .pal .gap { width: 18px; }
+
+  .frames { display: flex; flex-direction: column; gap: 22px; }
+  .frame-lbl { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: #6E6354; margin-bottom: 9px; }
+  .frame { border-radius: 14px; overflow: hidden; box-shadow: 0 1px 0 rgba(255,255,255,0.03), 0 30px 70px -30px rgba(0,0,0,0.8); }
+
+  /* ===================================================================== */
+  /*  APP MOCK — CSS-var driven, with per-language "flavor" overrides       */
+  /* ===================================================================== */
+  .app { display: flex; height: 520px; font-family: var(--body); background: var(--bg); color: var(--text2); }
+  .app * { font-family: inherit; }
+  .sb { width: 220px; flex-shrink: 0; background: var(--surf); border-right: var(--card-bw,1px) solid var(--border); display: flex; flex-direction: column; }
+  .sb-brand { display: flex; align-items: center; gap: 11px; padding: 20px 18px 16px; }
+  .sb-mark { width: 34px; height: 34px; border-radius: var(--mark-r); flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: var(--mark-bg); color: var(--mark-fg); font-family: var(--display); font-weight: 700; font-size: 18px; font-style: var(--mark-style); box-shadow: var(--mark-shadow, none); }
+  .sb-bn { font-family: var(--brand-font); font-size: 16px; font-weight: 700; color: var(--text); font-style: var(--brand-style); letter-spacing: var(--brand-ls); line-height: 1; }
+  .sb-bs { font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+  .sb-div { height: 1px; background: var(--border); margin: 4px 16px 8px; }
+  .sb-nav { display: flex; flex-direction: column; gap: 2px; padding: 6px 10px; }
+  .ni { display: flex; align-items: center; gap: 10px; padding: 8px 11px; border-radius: var(--nav-r); font-size: 13px; font-weight: 500; color: var(--muted); position: relative; }
+  .ni .dot { width: 13px; height: 13px; border-radius: var(--dot-r,4px); background: currentColor; opacity: .5; flex-shrink: 0; }
+  .ni.on { background: var(--nav-on-bg); color: var(--accent); font-weight: 600; box-shadow: var(--nav-on-shadow, inset 2px 0 0 var(--accent)); }
+  .ni .bdg { margin-left: auto; font-family: var(--mono); font-size: 9px; font-weight: 700; background: var(--accent); color: var(--mark-fg); border-radius: 999px; padding: 1px 6px; }
+  .sb-user { display: flex; align-items: center; gap: 10px; margin: auto 10px 14px; padding: 9px; background: var(--surf2); border-radius: var(--card-r); border: var(--user-bw,0) solid var(--border); }
+  .av { width: 32px; height: 32px; border-radius: var(--av-r); background: var(--accent-dim); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0; }
+  .un { font-size: 12px; font-weight: 600; color: var(--text); }
+  .ur { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  .mn { flex: 1; min-width: 0; padding: 26px 30px; overflow: hidden; }
+  .mn-top { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 22px; }
+  .greet { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .ptitle { font-family: var(--display); font-size: var(--title-size); font-weight: var(--title-weight); font-style: var(--title-style); color: var(--text); letter-spacing: var(--title-ls); line-height: 1; text-transform: var(--title-tt, none); }
+  .acts { display: flex; gap: 9px; }
+  .btn { font-size: 12.5px; font-weight: 600; padding: 8px 14px; border-radius: var(--btn-r); border: var(--card-bw,1px) solid transparent; }
+  .btn.ghost { background: transparent; color: var(--text2); border-color: var(--border-strong); }
+  .btn.prim { background: var(--accent); color: var(--mark-fg); box-shadow: var(--btn-shadow, none); }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 26px; }
+  .stat { background: var(--surf); border: var(--card-bw,1px) solid var(--border); border-radius: var(--card-r); padding: 16px 18px; box-shadow: var(--card-shadow, none); }
+  .stat .sv { font-family: var(--stat-font); font-size: 32px; font-weight: var(--stat-weight); color: var(--text); line-height: 1; }
+  .stat .sv.acc { color: var(--accent); }
+  .stat .sl { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-top: 10px; }
+
+  .sh { font-family: var(--sh-font); font-size: var(--sh-size); font-weight: var(--sh-weight); font-style: var(--sh-style); color: var(--text); margin-bottom: 13px; letter-spacing: var(--sh-ls); text-transform: var(--sh-tt, none); display: flex; align-items: center; gap: 10px; }
+  .sh::after { content: ''; flex: 1; height: 1px; background: var(--border); opacity: var(--sh-rule); }
+
+  .ev { display: flex; align-items: center; gap: 13px; background: var(--surf); border: var(--card-bw,1px) solid var(--border); border-radius: var(--card-r); padding: 12px 14px; margin-bottom: 9px; box-shadow: var(--card-shadow, none); }
+  .ev .stripe { width: var(--stripe-w,3px); align-self: stretch; border-radius: 3px; background: var(--ev-c); }
+  .ev .en { font-size: 13.5px; font-weight: 600; color: var(--text); }
+  .ev .ed { font-family: var(--mono); font-size: 10.5px; color: var(--muted); margin-top: 3px; letter-spacing: 0.02em; }
+  .ev .eb { margin-left: auto; font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: var(--badge-r); background: var(--ev-bg); color: var(--ev-c); border: 1px solid var(--ev-bd); white-space: nowrap; }
+
+  /* login */
+  .login { display: flex; height: 360px; background: var(--bg); font-family: var(--body); }
+  .login-l { flex: 1; background: var(--login-l); position: relative; overflow: hidden; display: flex; align-items: flex-end; padding: 34px; }
+  .login-l .staff { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 13px; padding-left: 34px; }
+  .login-l .staff i { height: 1px; background: var(--login-stave, var(--text)); opacity: var(--stave-op,.08); }
+  .login-l .lt { position: relative; font-family: var(--display); font-style: var(--title-style); font-weight: var(--title-weight); font-size: 30px; color: var(--login-l-text, var(--text)); line-height: 1.12; letter-spacing: var(--title-ls); }
+  .login-r { width: 320px; background: var(--surf); display: flex; flex-direction: column; justify-content: center; padding: 0 40px; gap: 13px; }
+  .login-r .lmark { width: 40px; height: 40px; border-radius: var(--mark-r); background: var(--mark-bg); color: var(--mark-fg); display: flex; align-items: center; justify-content: center; font-family: var(--display); font-weight: 700; font-size: 20px; font-style: var(--mark-style); margin-bottom: 6px; box-shadow: var(--mark-shadow,none); }
+  .login-r .ltitle { font-family: var(--display); font-size: 22px; font-weight: var(--title-weight); font-style: var(--title-style); color: var(--text); margin-bottom: 6px; }
+  .login-r .lfield { height: 38px; background: var(--surf2); border: var(--card-bw,1px) solid var(--border); border-radius: var(--btn-r); }
+  .login-r .lbtn { height: 40px; background: var(--accent); color: var(--mark-fg); border-radius: var(--btn-r); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; margin-top: 4px; box-shadow: var(--btn-shadow,none); }
+
+  /* ─── FLAVOR: Bauhaus — primary-colour stat blocks ─────────────────── */
+  .fl-bauhaus .stat:nth-child(1) { background: #E63329; border-color: var(--border); }
+  .fl-bauhaus .stat:nth-child(2) { background: #2D5BBF; border-color: var(--border); }
+  .fl-bauhaus .stat:nth-child(3) { background: #F2C014; border-color: var(--border); }
+  .fl-bauhaus .stat:nth-child(1) .sv, .fl-bauhaus .stat:nth-child(1) .sl,
+  .fl-bauhaus .stat:nth-child(2) .sv, .fl-bauhaus .stat:nth-child(2) .sl { color: #FBF8F0; }
+  .fl-bauhaus .stat:nth-child(3) .sv, .fl-bauhaus .stat:nth-child(3) .sl { color: #161310; }
+  .fl-bauhaus .ni .dot:nth-child(1) { border-radius: 50%; }
+
+  /* ─── FLAVOR: Swiss — numbered nav, no dots ────────────────────────── */
+  .fl-swiss .sb-nav { counter-reset: navc; }
+  .fl-swiss .ni .dot { display: none; }
+  .fl-swiss .ni::before { counter-increment: navc; content: counter(navc, decimal-leading-zero); font-family: var(--mono); font-size: 10px; color: currentColor; opacity: .55; margin-right: 2px; min-width: 16px; }
+  .fl-swiss .ni.on { background: transparent; box-shadow: none; }
+  .fl-swiss .ni.on::after { content: ''; position: absolute; left: 11px; right: 11px; bottom: 3px; height: 2px; background: var(--accent); }
+
+  /* ─── FLAVOR: Terminal — > prefix, [bracket] badges ────────────────── */
+  .fl-terminal .ni .dot { display: none; }
+  .fl-terminal .ni::before { content: '> '; font-family: var(--mono); color: currentColor; opacity: .8; }
+  .fl-terminal .ni.on { background: var(--nav-on-bg); box-shadow: none; }
+  .fl-terminal .eb { background: none !important; border: none !important; padding: 3px 0; }
+  .fl-terminal .eb::before { content: '['; }
+  .fl-terminal .eb::after { content: ']'; }
+  .fl-terminal .greet::before { content: '$ '; }
+
+  /* brutalist: active nav is a solid accent fill — text must contrast, not match it */
+  .fl-brutal .ni.on { color: var(--mark-fg); }
+
+  /* ─── FLAVOR: Ledger — flat hairline grid instead of floating cards ─── */
+  .fl-ledger .mn-top { border-bottom: 1.5px solid var(--border-strong); padding-bottom: 18px; }
+  .fl-ledger .stats { gap: 0; border-bottom: 1.5px solid var(--border-strong); margin-bottom: 26px; }
+  .fl-ledger .stat { background: transparent; border: 0; border-right: 1px solid var(--border); border-radius: 0; box-shadow: none; padding: 16px 18px 18px 0; }
+  .fl-ledger .stat:last-child { border-right: 0; }
+  .fl-ledger .mn { counter-reset: evc; }
+  .fl-ledger .ev { background: transparent; border: 0; border-bottom: 1px solid var(--border); border-radius: 0; box-shadow: none; margin: 0; padding: 14px 2px; gap: 16px; }
+  .fl-ledger .ev .stripe { display: none; }
+  .fl-ledger .ev::before { counter-increment: evc; content: counter(evc, decimal-leading-zero); font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--ev-c); align-self: center; min-width: 22px; }
+  .fl-ledger .eb { background: transparent !important; border: 0 !important; padding: 0; font-family: var(--mono); font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; }
+
+  /* ─── FLAVOR: Blocks — solid flat blue/ink blocks (poster) ─────────── */
+  .fl-blocks .stat { border-radius: 2px; box-shadow: none; border-color: var(--border-strong); }
+  .fl-blocks .stat:nth-child(1) { background: var(--accent); border-color: var(--accent); }
+  .fl-blocks .stat:nth-child(1) .sv, .fl-blocks .stat:nth-child(1) .sl { color: var(--mark-fg); }
+  .fl-blocks .stat:nth-child(2) { background: var(--text); border-color: var(--text); }
+  .fl-blocks .stat:nth-child(2) .sv, .fl-blocks .stat:nth-child(2) .sl { color: var(--bg); }
+  .fl-blocks .stat:nth-child(3) .sv { color: var(--accent); }
+
+  .two { display: grid; grid-template-columns: 1fr; gap: 22px; }
+  @media (max-width: 720px) {
+    .doc-header, .wrap { padding-left: 22px; padding-right: 22px; }
+    .app, .login { height: auto; flex-direction: column; }
+    .sb { width: 100%; }
+    .login-r { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header class="doc-header">
+  <div class="doc-eyebrow">Airfa · Baseado no New York Philharmonic — sem o ar "de IA"</div>
+  <h1 class="doc-title">A mesma ideia,<br>menos genérica.</h1>
+  <p class="doc-sub">
+    Gostaste da Filarmónica mas pareceu-te "IA". E parecia — porque a versão ingénua do
+    NY Phil (azul-cobalto vivo + branco puro + cartões redondos flutuantes + Inter) é
+    exatamente o template de toda a app gerada. Mas a identidade real do NY Phil não é isso:
+    é <b>papel quente, grelhas planas de linha fina, um módulo quadrado, tipografia grande com
+    carácter e um azul específico</b>. Estas quatro mantêm o ADN do NY Phil e tiram, uma a uma,
+    as marcas de "IA".
+  </p>
+  <nav class="doc-toc">
+    <a class="toc-pill" href="#d1">01 · <b>Pauta Azul</b> ★ recomendada</a>
+    <a class="toc-pill" href="#d2">02 · <b>Tinta</b> editorial</a>
+    <a class="toc-pill" href="#d3">03 · <b>Reflex</b> poster</a>
+    <a class="toc-pill" href="#d4">04 · <b>Sussurro</b> monocromática</a>
+  </nav>
+</header>
+
+<div class="refs">
+  <div class="refs-eyebrow">O que torna a versão "IA" → e como a corrigimos</div>
+  <div class="refs-grid">
+    <div class="ref-card"><h4>✗ Branco puro &amp; cobalto vivo → ✓ Papel quente &amp; azul específico</h4><p>O par #FFFFFF + azul-tailwind grita "SaaS de template". Trocamos por um off-white quente e um azul ultramarino/tinta mais particular — o mesmo princípio "azul, não vermelho" do NY Phil, mas com alma.</p></div>
+    <div class="ref-card"><h4>✗ Cartões redondos flutuantes → ✓ Grelha plana de linha fina</h4><p>O "card grid" com sombras suaves é a coisa mais template que existe. Substituímos por uma grelha tipo livro-razão: réguas finas, cantos vivos, sem sombras, números de índice — sinais de direção de arte humana.</p></div>
+    <div class="ref-card"><h4>✗ Inter / Space Grotesk → ✓ Tipografia com carácter</h4><p>São as duas fontes de todos os mockups de IA. Usamos Archivo, Bricolage Grotesque e Newsreader — grandes, confiantes, com personalidade. A tipografia faz o trabalho pesado.</p></div>
+    <div class="ref-card"><h4>✗ Tudo centrado e suave → ✓ Módulo quadrado &amp; tensão editorial</h4><p>O logótipo do NY Phil é literalmente um quadrado (o palco central do David Geffen Hall). Usamo-lo como motivo estrutural real — marca quadrada, bullets quadrados, ticks — não decoração.</p></div>
+  </div>
+</div>
+
+<div class="wrap" id="root"></div>
+
+<script>
+const BASE = {
+  body:"'Inter', sans-serif", display:"'Inter', sans-serif", mono:"'JetBrains Mono', monospace",
+  'brand-font':"'Inter', sans-serif", 'brand-style':'normal', 'brand-ls':'0',
+  'mark-style':'normal', 'mark-r':'8px', radius:'8px', 'card-r':'10px', 'btn-r':'7px',
+  'nav-r':'7px', 'badge-r':'5px', 'av-r':'9px', 'card-bw':'1px',
+  'title-weight':'600', 'title-style':'normal', 'title-ls':'-0.01em',
+  'stat-font':"'Inter', sans-serif", 'stat-weight':'700',
+  'sh-size':'15px', 'sh-weight':'700', 'sh-style':'normal', 'sh-ls':'0', 'sh-rule':'0.6',
+};
+
+const THEMES = [
+  {
+    id:'d1', num:'01', name:'Pauta Azul', flavor:'fl-ledger', recommended:true,
+    tag:'— Módulo quadrado + grelha plana, papel quente.',
+    ref:'Anti-IA · <span>papel quente · grelha-razão plana · marca quadrada · Archivo</span>',
+    desc:'Pega no verdadeiro NY Phil: o quadrado como motivo estrutural e uma grelha plana tipo livro-razão em vez de cartões. Papel quente (não branco frio), azul ultramarino específico usado como tinta, réguas finas, números de índice e Archivo (grotesca mecânica, não Inter). Cantos vivos, zero sombras. Continua limpíssima para densidade de dados — mas lê-se como sistema gráfico, não template.',
+    fonts:'Archivo · Inter · JetBrains Mono', feel:'Gráfica, plana, art-directed',
+    primaryLabel:'Modo claro', altLabel:'Modo escuro',
+    vars:{ ...BASE, display:"'Archivo', sans-serif", 'brand-font':"'Archivo', sans-serif",
+      bg:'#F4F1E8', surf:'#FBF9F2', surf2:'#ECE8DB', border:'#D8D2C2', 'border-strong':'#15140F',
+      text:'#15140F', text2:'#4A463B', muted:'#8A8472',
+      accent:'#2A3CC2', 'accent-dim':'rgba(42,60,194,0.08)', 'mark-bg':'#2A3CC2', 'mark-fg':'#FBF9F2',
+      radius:'2px','card-r':'2px','btn-r':'2px','nav-r':'2px','badge-r':'2px','av-r':'2px','mark-r':'2px',
+      'nav-on-bg':'rgba(42,60,194,0.09)','nav-on-shadow':'inset 2px 0 0 #2A3CC2',
+      'title-size':'34px','title-weight':'700','title-ls':'-0.025em',
+      'stat-font':"'Archivo', sans-serif",'stat-weight':'700',
+      'sh-font':"'Archivo', sans-serif",'sh-size':'13px','sh-weight':'700','sh-tt':'uppercase','sh-ls':'0.05em','sh-rule':'0',
+      'login-l':'#15140F','login-l-text':'#FBF9F2','login-stave':'#FBF9F2','stave-op':'0.14' },
+    alt:{ bg:'#0E0E10', surf:'#16161A', surf2:'#1C1C21', border:'#2A2A31', 'border-strong':'#E8E5DB',
+      text:'#ECEAE2', text2:'#A6A296', muted:'#6E6A60', accent:'#6076FF', 'accent-dim':'rgba(96,118,255,0.14)',
+      'mark-bg':'#6076FF', 'mark-fg':'#0E0E10', 'nav-on-bg':'rgba(96,118,255,0.12)','nav-on-shadow':'inset 2px 0 0 #6076FF',
+      'login-l':'#16161A','login-l-text':'#ECEAE2','login-stave':'#6076FF','stave-op':'0.22' },
+    ev:{ concert:['#B57514','rgba(181,117,20,0.0)','transparent'], rehearsal:['#2A3CC2','rgba(42,60,194,0.0)','transparent'] },
+  },
+  {
+    id:'d2', num:'02', name:'Tinta', flavor:'fl-ledger',
+    tag:'— Serifa editorial, azul-tinta sobre papel.',
+    ref:'Anti-IA · <span>serifa Newsreader · azul-tinta como cor de texto · papel quente</span>',
+    desc:'O lado "texto de parede de museu / programa impresso". O azul deixa de ser um acento vivo e passa a ser a tinta dos títulos — uma serifa Newsreader grande sobre papel quente, com a mesma grelha plana de linha fina. Culta, calma, assimétrica. Uma serifa numa instituição é talvez o sinal mais forte de "isto foi desenhado por uma pessoa".',
+    fonts:'Newsreader · Inter · JetBrains Mono', feel:'Editorial, culta, impressa',
+    primaryLabel:'Modo claro', altLabel:'Modo escuro',
+    vars:{ ...BASE, display:"'Newsreader', serif", 'brand-font':"'Newsreader', serif",
+      bg:'#F5F2EA', surf:'#FBF8F0', surf2:'#EDE9DD', border:'#DAD3C3', 'border-strong':'#1A2334',
+      text:'#15233A', text2:'#43506A', muted:'#8A8576',
+      accent:'#1E3FA0', 'accent-dim':'rgba(30,63,160,0.07)', 'mark-bg':'#15233A', 'mark-fg':'#FBF8F0',
+      radius:'2px','card-r':'2px','btn-r':'2px','nav-r':'2px','badge-r':'2px','av-r':'3px','mark-r':'3px',
+      'nav-on-bg':'rgba(30,63,160,0.08)','nav-on-shadow':'inset 2px 0 0 #1E3FA0',
+      'title-size':'38px','title-weight':'500','title-ls':'-0.015em',
+      'stat-font':"'Newsreader', serif",'stat-weight':'500',
+      'sh-font':"'Newsreader', serif",'sh-size':'18px','sh-weight':'500','sh-style':'italic','sh-ls':'0','sh-rule':'0',
+      'login-l':'#15233A','login-l-text':'#FBF8F0','login-stave':'#FBF8F0','stave-op':'0.16' },
+    alt:{ bg:'#0E1014', surf:'#161A20', surf2:'#1C2028', border:'#28303C', 'border-strong':'#E6E2D6',
+      text:'#E9ECF2', text2:'#A8B0BE', muted:'#6E7682', accent:'#7FA0E8', 'mark-bg':'#7FA0E8', 'mark-fg':'#0E1014',
+      'login-l':'#161A20','login-l-text':'#E9ECF2','login-stave':'#7FA0E8','stave-op':'0.26' },
+    ev:{ concert:['#9A6B12','transparent','transparent'], rehearsal:['#1E3FA0','transparent','transparent'] },
+  },
+  {
+    id:'d3', num:'03', name:'Reflex', flavor:'fl-blocks',
+    tag:'— Ultramarino vivo em blocos planos. Cartaz.',
+    ref:'Anti-IA · <span>um ultramarino clássico · blocos planos · Bricolage Grotesque</span>',
+    desc:'A versão poster do NY Phil. Um único ultramarino clássico (família Reflex/Klein) em blocos sólidos e planos, com preto e papel. Tipografia Bricolage Grotesque — uma grotesca com terminais peculiares, o oposto da fonte de mockup. Sem gradientes, sem sombras, sem cantos redondos. Ousada e confiante: claramente desenhada, nunca gerada.',
+    fonts:'Bricolage Grotesque · Inter · JetBrains Mono', feel:'Ousada, plana, poster',
+    primaryLabel:'Modo claro', altLabel:'Modo escuro',
+    vars:{ ...BASE, display:"'Bricolage Grotesque', sans-serif", 'brand-font':"'Bricolage Grotesque', sans-serif",
+      bg:'#EFEBDF', surf:'#F7F3E8', surf2:'#E5DFCF', border:'#14130E', 'border-strong':'#14130E',
+      text:'#14130E', text2:'#3A352B', muted:'#86806F',
+      accent:'#1E22C8', 'accent-dim':'rgba(30,34,200,0.1)', 'mark-bg':'#1E22C8', 'mark-fg':'#F7F3E8',
+      radius:'2px','card-r':'2px','btn-r':'2px','nav-r':'2px','badge-r':'2px','av-r':'2px','mark-r':'2px','card-bw':'1.5px',
+      'nav-on-bg':'#1E22C8','nav-on-shadow':'none',
+      'title-size':'34px','title-weight':'800','title-ls':'-0.02em',
+      'stat-font':"'Bricolage Grotesque', sans-serif",'stat-weight':'800',
+      'sh-font':"'Bricolage Grotesque', sans-serif",'sh-size':'14px','sh-weight':'700','sh-tt':'uppercase','sh-ls':'0.03em','sh-rule':'0',
+      'login-l':'#1E22C8','login-l-text':'#F7F3E8','login-stave':'#F7F3E8','stave-op':'0.2' },
+    alt:{ bg:'#14130E', surf:'#1C1A13', surf2:'#242017', border:'#F7F3E8', 'border-strong':'#F7F3E8',
+      text:'#F7F3E8', text2:'#C8C2B2', muted:'#8A8472', accent:'#5A60FF', 'mark-bg':'#5A60FF', 'mark-fg':'#14130E',
+      'nav-on-bg':'#5A60FF', 'login-l':'#1C1A13','login-l-text':'#F7F3E8','login-stave':'#5A60FF','stave-op':'0.4' },
+    ev:{ concert:['#D06A1E','rgba(208,106,30,0.1)','#14130E'], rehearsal:['#1E22C8','rgba(30,34,200,0.1)','#14130E'] },
+  },
+  {
+    id:'d4', num:'04', name:'Sussurro', flavor:'fl-ledger',
+    tag:'— Quase monocromática, azul só num sussurro.',
+    ref:'Anti-IA · <span>quase-mono · azul em micro-doses · restrição extrema</span>',
+    desc:'O oposto do maximalismo de IA. Preto, cinzentos e branco-quente; o azul aparece só em micro-doses — um ponto, um sublinhado, o foco. A grelha plana e a tipografia (Archivo apertada) fazem tudo. A contenção é precisamente o que uma IA não faz: nada de acentos por todo o lado, nada de decoração. Sofisticada e silenciosa.',
+    fonts:'Archivo · Inter · JetBrains Mono', feel:'Contida, silenciosa, sofisticada',
+    primaryLabel:'Modo claro', altLabel:'Modo escuro',
+    vars:{ ...BASE, display:"'Archivo', sans-serif", 'brand-font':"'Archivo', sans-serif",
+      bg:'#F3F1EC', surf:'#FAF8F4', surf2:'#EAE7DF', border:'#DCD8CF', 'border-strong':'#1A1916',
+      text:'#1A1916', text2:'#54514A', muted:'#928D82',
+      accent:'#2C46D8', 'accent-dim':'rgba(44,70,216,0.07)', 'mark-bg':'#1A1916', 'mark-fg':'#FAF8F4',
+      radius:'2px','card-r':'2px','btn-r':'2px','nav-r':'2px','badge-r':'2px','av-r':'2px','mark-r':'2px',
+      'nav-on-bg':'transparent','nav-on-shadow':'inset 2px 0 0 #2C46D8',
+      'title-size':'33px','title-weight':'700','title-ls':'-0.03em',
+      'stat-font':"'Archivo', sans-serif",'stat-weight':'700',
+      'sh-font':"'Archivo', sans-serif",'sh-size':'12px','sh-weight':'700','sh-tt':'uppercase','sh-ls':'0.06em','sh-rule':'0',
+      'login-l':'#1A1916','login-l-text':'#FAF8F4','login-stave':'#2C46D8','stave-op':'0.2' },
+    alt:{ bg:'#0F0F0E', surf:'#171715', surf2:'#1E1E1B', border:'#2C2B27', 'border-strong':'#E8E5DD',
+      text:'#EAE8E1', text2:'#A4A096', muted:'#6E6A60', accent:'#6B82FF', 'mark-bg':'#EAE8E1', 'mark-fg':'#0F0F0E',
+      'nav-on-shadow':'inset 2px 0 0 #6B82FF', 'login-l':'#171715','login-l-text':'#EAE8E1','login-stave':'#6B82FF','stave-op':'0.24' },
+    ev:{ concert:['#7A746A','transparent','transparent'], rehearsal:['#2C46D8','transparent','transparent'] },
+  },
+];
+
+const NAV = [['Início',true,null],['Presenças',false,null],['Eventos',false,null],['Instrumentos',false,null],['Repertório',false,null],['Notificações',false,'3']];
+
+function varStyle(theme, alt) {
+  const v = { ...theme.vars, ...(alt ? theme.alt : {}) };
+  return Object.entries(v).map(([k, val]) => `--${k}:${val}`).join(';');
+}
+function appMock(theme, alt) {
+  const ev = theme.ev;
+  const nav = NAV.map(([label, on, badge]) =>
+    `<div class="ni${on ? ' on' : ''}"><span class="dot"></span>${label}${badge ? `<span class="bdg">${badge}</span>` : ''}</div>`).join('');
+  return `
+  <div class="app ${theme.flavor}" style="${varStyle(theme, alt)}">
+    <div class="sb">
+      <div class="sb-brand"><div class="sb-mark">A</div><div><div class="sb-bn">Airfa</div><div class="sb-bs">Banda Filarmónica</div></div></div>
+      <div class="sb-div"></div>
+      <div class="sb-nav">${nav}</div>
+      <div class="sb-user"><div class="av">J</div><div><div class="un">João Pereira</div><div class="ur">Trompete</div></div></div>
+    </div>
+    <div class="mn">
+      <div class="mn-top">
+        <div><div class="greet">Boa tarde, João</div><div class="ptitle">Início</div></div>
+        <div class="acts"><button class="btn ghost">Calendário</button><button class="btn prim">+ Evento</button></div>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="sv">4</div><div class="sl">Próximos eventos</div></div>
+        <div class="stat"><div class="sv">28</div><div class="sl">Membros ativos</div></div>
+        <div class="stat"><div class="sv acc">91%</div><div class="sl">Presença média</div></div>
+      </div>
+      <div class="sh">Próximos eventos</div>
+      <div class="ev" style="--ev-c:${ev.concert[0]};--ev-bg:${ev.concert[1]};--ev-bd:${ev.concert[2]}">
+        <div class="stripe"></div><div style="flex:1;min-width:0"><div class="en">Concerto de São João</div><div class="ed">Sáb · 7 Jun · 21h00 · Largo da Feira</div></div><div class="eb">Concerto</div>
+      </div>
+      <div class="ev" style="--ev-c:${ev.rehearsal[0]};--ev-bg:${ev.rehearsal[1]};--ev-bd:${ev.rehearsal[2]}">
+        <div class="stripe"></div><div style="flex:1;min-width:0"><div class="en">Ensaio Semanal</div><div class="ed">Qui · 29 Mai · 21h30 · Sede</div></div><div class="eb">Ensaio</div>
+      </div>
+    </div>
+  </div>`;
+}
+function loginMock(theme, alt) {
+  return `
+  <div class="login ${theme.flavor}" style="${varStyle(theme, alt)}">
+    <div class="login-l"><div class="staff"><i></i><i></i><i></i><i></i><i></i></div><div class="lt">Banda<br>Filarmónica<br>da Airfa</div></div>
+    <div class="login-r"><div class="lmark">A</div><div class="ltitle">Iniciar sessão</div><div class="lfield"></div><div class="lfield"></div><div class="lbtn">Entrar</div></div>
+  </div>`;
+}
+function swatches(theme) {
+  const order = ['bg','surf','surf2','border','muted','accent'];
+  const dark = order.map(k => `<div class="sw" style="background:${theme.vars[k]};box-shadow:inset 0 0 0 1px rgba(255,255,255,0.06)"></div>`).join('');
+  const lv = { ...theme.vars, ...theme.alt };
+  const lt = order.map(k => `<div class="sw" style="background:${lv[k]};box-shadow:inset 0 0 0 1px rgba(0,0,0,0.1)"></div>`).join('');
+  return `<div class="pal"><span class="lbl">${theme.primaryLabel}</span>${dark}<span class="gap"></span><span class="lbl">${theme.altLabel}</span>${lt}</div>`;
+}
+function section(theme) {
+  return `
+  <section id="${theme.id}">
+    <div class="sec-head"><span class="sec-num">${theme.num}</span><span class="sec-name" style="color:${theme.vars.accent}">${theme.name}</span><span class="sec-tag">${theme.tag}</span>${theme.recommended ? '<span class="rec-badge">★ Recomendada</span>' : ''}</div>
+    <div class="sec-ref">${theme.ref}</div>
+    <p class="sec-desc">${theme.desc}</p>
+    <div class="sec-meta"><div class="meta-b">Tipografia · <span>${theme.fonts}</span></div><div class="meta-b">Tom · <span>${theme.feel}</span></div></div>
+    ${swatches(theme)}
+    <div class="frames">
+      <div><div class="frame-lbl">Início — ${theme.primaryLabel}</div><div class="frame">${appMock(theme, false)}</div></div>
+      <div><div class="frame-lbl">Início — ${theme.altLabel}</div><div class="frame">${appMock(theme, true)}</div></div>
+      <div><div class="frame-lbl">Login — ${theme.primaryLabel}</div><div class="frame">${loginMock(theme, false)}</div></div>
+    </div>
+  </section>`;
+}
+document.getElementById('root').innerHTML = THEMES.map(section).join('');
+</script>
+</body>
+</html>

@@ -1,46 +1,50 @@
-/* ─── COMPASSO Design System ─────────────────────────────────────────────── */
+/* ─── PAUTA AZUL Design System ───────────────────────────────────────────────
+   Warm paper · ink · ultramarine blue · Archivo + Inter · flat hairline grids.
+   Default (html.light) is the warm-paper experience; :root holds the dark mode. */
 
 :root {
-  /* Backgrounds */
-  --bg:        #0B0A08;
-  --surface:   #141210;
-  --surface-2: #1A1815;
-  --surface-3: #222019;
+  /* Dark mode (studio ink) */
+  --bg:        #0E0E10;
+  --surface:   #16161A;
+  --surface-2: #1C1C21;
+  --surface-3: #24242B;
 
-  /* Borders */
-  --border:       #2C2823;
-  --border-strong: #3C3730;
+  --border:        #2A2A31;
+  --border-strong: #3C3C46;
 
-  /* Typography */
-  --text:   #EDE8DF;
-  --text-2: #C0B8AD;
-  --muted:  #7A7265;
+  --text:   #ECEAE2;
+  --text-2: #A8A498;
+  --muted:  #6E6A60;
 
-  /* Accent — ink blue / Partitura */
-  --accent:     #5B8FB8;
-  --accent-2:   #6FA5CC;
-  --accent-dim: rgba(91, 143, 184, 0.14);
-  --accent-fg:  #0D0B09;
+  /* Accent — ultramarine */
+  --accent:     #6076FF;
+  --accent-2:   #8094FF;
+  --accent-dim: rgba(96, 118, 255, 0.14);
+  --accent-fg:  #0E0E10;
 
   /* Semantic */
-  --danger:       #C24E42;
-  --danger-dim:   rgba(194, 78, 66, 0.14);
-  --success:      #4E9868;
-  --success-dim:  rgba(78, 152, 104, 0.14);
-  --warning:      #C8852B;
+  --danger:       #E0796C;
+  --danger-dim:   rgba(224, 121, 108, 0.14);
+  --success:      #5BBE82;
+  --success-dim:  rgba(91, 190, 130, 0.14);
+  --warning:      #D8A24E;
 
   /* Event types */
-  --concert-color:   #D4892A;
-  --rehearsal-color: #4A7EC4;
-  --special-color:   #9468C4;
-  --other-color:     #7A7265;
-  --birthday-color:  #C4608E;
-  --birthday-dim:    rgba(196, 96, 142, 0.15);
+  --concert-color:   #D8A24E;
+  --rehearsal-color: #6076FF;
+  --special-color:   #A98BE0;
+  --other-color:     #8A8676;
+  --birthday-color:  #E08AB0;
+  --birthday-dim:    rgba(224, 138, 176, 0.15);
 
-  /* Shadows */
-  --shadow-sm: 0 1px 4px rgba(0,0,0,0.4);
-  --shadow-md: 0 4px 16px rgba(0,0,0,0.5);
-  --shadow-lg: 0 16px 48px rgba(0,0,0,0.65);
+  /* Blue tint used by rehearsal/event/musical badges & calendar */
+  --blue-tint:    rgba(96, 118, 255, 0.16);
+  --blue-tint-bd: rgba(96, 118, 255, 0.34);
+
+  /* Shadows — flat aesthetic, kept subtle */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-md: 0 4px 14px rgba(0,0,0,0.45);
+  --shadow-lg: 0 20px 50px rgba(0,0,0,0.55);
 
   /* Legacy aliases (used in presences page) */
   --panel:      var(--surface);
@@ -50,34 +54,47 @@
 }
 
 html.light {
-  --bg:        #F0EAD8;
-  --surface:   #FBF7EE;
-  --surface-2: #EDE5D2;
-  --surface-3: #E2D9C4;
-  --border:       #CFC6B0;
-  --border-strong: #BBB097;
-  --text:   #1E1B14;
-  --text-2: #4A4336;
-  --muted:  #8A8070;
-  --accent:     #3A6E9A;
-  --accent-2:   #4E84B4;
-  --accent-dim: rgba(58, 110, 154, 0.12);
-  --accent-fg:  #EDE8DF;
-  --danger:      #B03A30;
-  --danger-dim:  rgba(176, 58, 48, 0.1);
-  --success:     #3D7E54;
-  --success-dim: rgba(61, 126, 84, 0.1);
+  /* Warm paper */
+  --bg:        #F4F1E8;
+  --surface:   #FBF9F2;
+  --surface-2: #ECE8DB;
+  --surface-3: #E4DFCF;
+  --border:        #DED8C8;
+  --border-strong: #C7C0AE;
+  --text:   #15140F;
+  --text-2: #4A463B;
+  --muted:  #8A8472;
+
+  --accent:     #2A3CC2;
+  --accent-2:   #1F2EA8;
+  --accent-dim: rgba(42, 60, 194, 0.08);
+  --accent-fg:  #FBF9F2;
+
+  --danger:      #A8392C;
+  --danger-dim:  rgba(168, 57, 44, 0.10);
+  --success:     #2F6B43;
+  --success-dim: rgba(47, 107, 67, 0.10);
+  --warning:     #9A6310;
+
+  --concert-color:   #B57514;
+  --rehearsal-color: #2A3CC2;
+  --special-color:   #6D4AA6;
+  --other-color:     #8A8472;
   --birthday-color:  #B0486E;
   --birthday-dim:    rgba(176, 72, 110, 0.12);
-  --shadow-sm: 0 1px 4px rgba(0,0,0,0.1);
-  --shadow-md: 0 4px 16px rgba(0,0,0,0.14);
-  --shadow-lg: 0 16px 48px rgba(0,0,0,0.2);
+
+  --blue-tint:    rgba(42, 60, 194, 0.10);
+  --blue-tint-bd: rgba(42, 60, 194, 0.28);
+
+  --shadow-sm: 0 1px 2px rgba(40,30,15,0.07);
+  --shadow-md: 0 4px 14px rgba(40,30,15,0.10);
+  --shadow-lg: 0 18px 46px rgba(40,30,15,0.16);
 
   /* Legacy */
   --panel:      var(--surface);
   --panel-soft: var(--surface-2);
-  --btn-subtle: rgba(0,0,0,0.06);
-  --btn-subtle-border: rgba(0,0,0,0.12);
+  --btn-subtle: rgba(0,0,0,0.05);
+  --btn-subtle-border: rgba(0,0,0,0.11);
 }
 
 /* ─── Reset & Base ───────────────────────────────────────────────────────── */
@@ -89,7 +106,7 @@ html, body {
   min-height: 100%;
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font-body, 'DM Sans'), system-ui, sans-serif;
+  font-family: var(--font-body, 'Inter'), system-ui, sans-serif;
   font-size: 15px;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
@@ -101,26 +118,28 @@ a { color: inherit; text-decoration: none; }
 /* ─── Typography scale ───────────────────────────────────────────────────── */
 h1, h2, h3, h4 {
   margin: 0;
-  font-family: var(--font-display, 'Cormorant Garamond'), Georgia, serif;
-  line-height: 1.15;
-  font-weight: 600;
+  font-family: var(--font-display, 'Archivo'), system-ui, sans-serif;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   color: var(--text);
 }
 
 /* Page titles use display font */
 .page-title {
-  font-family: var(--font-display, 'Cormorant Garamond'), Georgia, serif;
-  font-size: clamp(28px, 4vw, 38px);
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-family: var(--font-display, 'Archivo'), system-ui, sans-serif;
+  font-size: clamp(28px, 4vw, 36px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
   color: var(--text);
   margin: 0;
 }
 
 .section-heading {
-  font-family: var(--font-display, 'Cormorant Garamond'), Georgia, serif;
-  font-size: 20px;
-  font-weight: 600;
+  font-family: var(--font-display, 'Archivo'), system-ui, sans-serif;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   color: var(--text);
   margin: 0;
 }
@@ -136,12 +155,12 @@ h1, h2, h3, h4 {
 /* ─── Form elements ──────────────────────────────────────────────────────── */
 button, input, select, textarea { font: inherit; }
 
-input, select, textarea {
+input:not([type="checkbox"]):not([type="radio"]), select, textarea {
   width: 100%;
   background: var(--surface-2);
   color: var(--text);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 3px;
   padding: 9px 13px;
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
@@ -149,9 +168,16 @@ input, select, textarea {
   -webkit-appearance: none;
 }
 
-input:focus, select:focus, textarea:focus {
+input:not([type="checkbox"]):not([type="radio"]):focus, select:focus, textarea:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+/* Native checkboxes / radios keep their appearance and use the accent colour */
+input[type="checkbox"], input[type="radio"] {
+  accent-color: var(--accent);
+  width: auto;
+  cursor: pointer;
 }
 
 /* Restore native picker UI for date/time inputs (appearance:none above hides
@@ -240,7 +266,7 @@ label {
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: 3px;
   border: 1px solid transparent;
   font-size: 13px;
   font-weight: 600;
@@ -281,7 +307,7 @@ label {
   align-items: center;
   gap: 4px;
   padding: 3px 8px;
-  border-radius: 4px;
+  border-radius: 2px;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -290,19 +316,19 @@ label {
 
 /* ─── Event type badges ─────────────────────────────────────────────────── */
 .badge-concert   { background: rgba(212,137,42,0.15); color: var(--concert-color);   border: 1px solid rgba(212,137,42,0.3); }
-.badge-rehearsal { background: rgba(74,126,196,0.15); color: var(--rehearsal-color); border: 1px solid rgba(74,126,196,0.3); }
+.badge-rehearsal { background: var(--blue-tint); color: var(--rehearsal-color); border: 1px solid var(--blue-tint-bd); }
 .badge-special   { background: rgba(148,104,196,0.15); color: var(--special-color);  border: 1px solid rgba(148,104,196,0.3); }
 .badge-other     { background: rgba(122,114,101,0.15); color: var(--other-color);    border: 1px solid rgba(122,114,101,0.3); }
 
 /* ─── Notification type badges ───────────────────────────────────────────── */
-.badge-event        { background: rgba(74,126,196,0.15); color: var(--rehearsal-color); border: 1px solid rgba(74,126,196,0.3); }
+.badge-event        { background: var(--blue-tint); color: var(--rehearsal-color); border: 1px solid var(--blue-tint-bd); }
 .badge-newsletter   { background: rgba(148,104,196,0.15); color: var(--special-color);  border: 1px solid rgba(148,104,196,0.3); }
 .badge-birthday     { background: rgba(212,137,42,0.15); color: var(--concert-color);   border: 1px solid rgba(212,137,42,0.3); }
 .badge-report       { background: rgba(194,78,66,0.15);  color: var(--danger);          border: 1px solid rgba(194,78,66,0.3); }
 
 /* ─── Role badges ────────────────────────────────────────────────────────── */
 .badge-musical  { background: var(--accent-dim); color: var(--accent-2); border: 1px solid rgba(91,143,184,0.25); }
-.badge-admin    { background: rgba(74,126,196,0.15); color: #6B9ED6; border: 1px solid rgba(74,126,196,0.3); }
+.badge-admin    { background: var(--blue-tint); color: var(--accent-2); border: 1px solid var(--blue-tint-bd); }
 .badge-super    { background: rgba(148,104,196,0.15); color: #B08CE0; border: 1px solid rgba(148,104,196,0.3); }
 
 /* ─── Instrument state badges ────────────────────────────────────────────── */
@@ -345,7 +371,7 @@ label {
 .modal {
   background: var(--surface);
   border: 1px solid var(--border-strong);
-  border-radius: 12px;
+  border-radius: 4px;
   padding: 32px;
   width: min(100%, 520px);
   max-height: calc(100vh - 48px);
@@ -363,7 +389,7 @@ label {
 .calendar {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 3px;
   padding: 20px;
   position: relative;
   max-width: 100%;
@@ -378,18 +404,18 @@ label {
 }
 
 .cal-title {
-  font-family: var(--font-display, 'Cormorant Garamond'), serif;
-  font-size: 18px;
-  font-weight: 600;
+  font-family: var(--font-display, 'Archivo'), sans-serif;
+  font-size: 17px;
+  font-weight: 700;
   color: var(--text);
-  letter-spacing: 0.01em;
+  letter-spacing: -0.01em;
 }
 
 .cal-nav {
   background: none;
   border: 1px solid var(--border);
   color: var(--muted);
-  border-radius: 5px;
+  border-radius: 2px;
   width: 28px;
   height: 28px;
   cursor: pointer;
@@ -420,7 +446,7 @@ label {
 
 .cal-day {
   aspect-ratio: 1;
-  border-radius: 5px;
+  border-radius: 2px;
   border: 1px solid transparent;
   background: none;
   color: var(--text-2);
@@ -446,10 +472,10 @@ label {
 
 .cal-day.day-present { background: rgba(78,152,104,0.15); color: var(--success); border-color: rgba(78,152,104,0.25); }
 .cal-day.day-absent  { background: rgba(194,78,66,0.12);  color: var(--danger);  border-color: rgba(194,78,66,0.22); }
-.cal-day.day-norecord{ background: rgba(91,143,184,0.1);  color: var(--accent);  border-color: rgba(91,143,184,0.18); }
+.cal-day.day-norecord{ background: var(--accent-dim);  color: var(--accent);  border-color: var(--blue-tint-bd); }
 .cal-day.day-mixed   { background: rgba(122,114,101,0.12); color: var(--muted);  border-color: rgba(122,114,101,0.2); }
 
-.cal-day.day-rehearsal { background: rgba(74,126,196,0.15);  color: var(--rehearsal-color); border-color: rgba(74,126,196,0.25); }
+.cal-day.day-rehearsal { background: var(--blue-tint);  color: var(--rehearsal-color); border-color: var(--blue-tint-bd); }
 .cal-day.day-concert   { background: rgba(212,137,42,0.15);  color: var(--concert-color);   border-color: rgba(212,137,42,0.25); }
 .cal-day.day-other-ev  { background: rgba(122,114,101,0.12); color: var(--muted);           border-color: rgba(122,114,101,0.2); }
 .cal-day.day-mixed-ev  { background: rgba(122,114,101,0.12); color: var(--muted);           border-color: rgba(122,114,101,0.2); }
@@ -475,7 +501,7 @@ label {
   z-index: 30;
   background: var(--surface-3);
   border: 1px solid var(--border-strong);
-  border-radius: 8px;
+  border-radius: 3px;
   padding: 10px 14px;
   min-width: 200px;
   box-shadow: var(--shadow-lg);

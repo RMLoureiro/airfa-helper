@@ -100,7 +100,7 @@ export default function LoginPage() {
           width: min(100%, 820px);
           display: grid;
           grid-template-columns: 1fr 1fr;
-          border-radius: 14px;
+          border-radius: 4px;
           overflow: hidden;
           box-shadow: 0 32px 80px rgba(0,0,0,0.4), 0 0 0 1px var(--border);
         }
@@ -150,7 +150,7 @@ export default function LoginPage() {
           font-family: var(--font-display, serif);
           font-size: 32px;
           line-height: 1.15;
-          font-style: italic;
+          font-style: normal;
           color: var(--text);
           margin: 0;
           font-weight: 500;
@@ -168,7 +168,7 @@ export default function LoginPage() {
         .brand-mark {
           width: 40px;
           height: 40px;
-          border-radius: 8px;
+          border-radius: 3px;
           background: var(--accent);
           color: var(--accent-fg);
           font-family: var(--font-display, serif);
@@ -178,7 +178,7 @@ export default function LoginPage() {
           align-items: center;
           justify-content: center;
           margin-bottom: 24px;
-          font-style: italic;
+          font-style: normal;
         }
 
         .form-title {
@@ -224,7 +224,7 @@ export default function LoginPage() {
           margin-top: 4px;
           padding: 12px;
           border: none;
-          border-radius: 7px;
+          border-radius: 3px;
           background: var(--accent);
           color: var(--accent-fg);
           font-size: 14px;

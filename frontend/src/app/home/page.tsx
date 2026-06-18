@@ -260,7 +260,15 @@ function MiniCalendar({ events, birthdays = [], onEventClick }: { events: EventI
           ))}
           {birthdayNamesByDay[tooltip.day]?.map(name => (
             <div key={name} style={{ padding: '6px 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 14, flexShrink: 0 }}>🎂</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }} aria-hidden="true">
+                <path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8" />
+                <path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1" />
+                <path d="M2 21h20" />
+                <path d="M7 8v3" /><path d="M12 8v3" /><path d="M17 8v3" />
+                <path d="M7 4a1 1 0 0 1 1-1 1 1 0 0 1 1 1v1H7V4z" />
+                <path d="M12 4a1 1 0 0 1 1-1 1 1 0 0 1 1 1v1h-2V4z" />
+                <path d="M17 4a1 1 0 0 1 1-1 1 1 0 0 1 1 1v1h-2V4z" />
+              </svg>
               <span style={{ fontSize: 13, color: 'var(--accent)', fontWeight: 500 }}>{name}</span>
             </div>
           ))}

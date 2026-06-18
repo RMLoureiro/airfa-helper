@@ -1,25 +1,26 @@
 import type { Metadata } from 'next';
-import { Cormorant_Garamond, DM_Sans, JetBrains_Mono } from 'next/font/google';
+import { Archivo, Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 
-const cormorant = Cormorant_Garamond({
+// Display / headings / numerals — Archivo (geometric grotesque, "Pauta Azul")
+const archivo = Archivo({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
-  style: ['normal', 'italic'],
+  weight: ['400', '500', '600', '700', '800', '900'],
   variable: '--font-display',
   display: 'swap',
 });
 
-const dmSans = DM_Sans({
+// Body — Inter
+const inter = Inter({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600'],
+  weight: ['400', '500', '600', '700'],
   variable: '--font-body',
   display: 'swap',
 });
 
 const jetbrains = JetBrains_Mono({
   subsets: ['latin'],
-  weight: ['400', '500'],
+  weight: ['400', '500', '600'],
   variable: '--font-mono',
   display: 'swap',
 });
@@ -36,7 +37,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-PT" className={`${cormorant.variable} ${dmSans.variable} ${jetbrains.variable}`}>
+    <html lang="pt-PT" className={`light ${archivo.variable} ${inter.variable} ${jetbrains.variable}`}>
       <body>{children}</body>
     </html>
   );

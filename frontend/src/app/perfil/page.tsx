@@ -1,6 +1,7 @@
 "use client";
 
 import AuthenticatedShell from '@/components/AuthenticatedShell';
+import { DatePicker } from '@/components/DatePicker';
 import { authFetch } from '@/lib/authFetch';
 import { API_URL } from '@/lib/config';
 import { MUSICAL_ROLE_LABEL, SYSTEM_BADGE, SYSTEM_ROLE_LABEL } from '@/lib/format';
@@ -109,6 +110,9 @@ export default function PerfilPage() {
                 </div>
                 <span className="username">@{profile.username}</span>
               </div>
+              {!editMode && (
+                <button type="button" className="btn-secondary edit-btn" onClick={() => { setEditMode(true); setSaveMsg(null); }}>Editar perfil</button>
+              )}
             </div>
 
             {!editMode ? (
@@ -120,9 +124,6 @@ export default function PerfilPage() {
                   {profile.address && <div className="field-row"><span className="fl">Morada</span><span className="fv">{profile.address}</span></div>}
                 </div>
                 {saveMsg && <div className="save-msg ok">{saveMsg}</div>}
-                <div className="card-footer">
-                  <button type="button" className="btn-primary" onClick={() => { setEditMode(true); setSaveMsg(null); }}>Editar perfil</button>
-                </div>
               </>
             ) : (
               <>
@@ -137,7 +138,7 @@ export default function PerfilPage() {
                   </label>
                   <label className="field">
                     Data de nascimento
-                    <input type="date" value={form.birth_date} onChange={e => setForm({ ...form, birth_date: e.target.value })} />
+                    <DatePicker value={form.birth_date} onChange={v => setForm({ ...form, birth_date: v })} placeholder="Selecionar data" />
                   </label>
                   <label className="field">
                     Morada
@@ -215,6 +216,13 @@ export default function PerfilPage() {
           display: flex;
           align-items: flex-start;
           gap: 16px;
+        }
+
+        .edit-btn { margin-left: auto; align-self: flex-start; flex-shrink: 0; }
+
+        @media (max-width: 520px) {
+          .edit-btn { margin-left: 0; width: 100%; }
+          .card-head { flex-wrap: wrap; }
         }
 
         .avatar {

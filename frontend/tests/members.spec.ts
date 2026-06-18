@@ -1,21 +1,18 @@
 import { expect, test } from '@playwright/test';
+import { seedAuth, stubApi } from './helpers';
 
 test('members page loads with the expected data', async ({ page }) => {
-  await page.addInitScript(() => {
-    localStorage.setItem('airfa_token', 'mock-token');
-    localStorage.setItem(
-      'airfa_user',
-      JSON.stringify({ id: 1, email: 'admin@airfa.pt', name: 'Admin Airfa', system_role: 'SUPER_ADMIN' })
-    );
-  });
+  await seedAuth(page);
+  await stubApi(page);
 
-  await page.route('**/api/v1/members', async (route) => {
+  // The page fetches /api/v1/members/?status=active — match the trailing slash + query.
+  await page.route('**/api/v1/members/**', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify([
-        { id: 1, email: 'john@airfa.pt', name: 'John Doe', system_role: 'REGULAR' },
-        { id: 2, email: 'jane@airfa.pt', name: 'Jane Smith', system_role: 'ADMIN' },
+        { id: 1, username: 'john', name: 'John Doe', system_role: 'REGULAR', musical_role: 'CLARINET_PLAYER' },
+        { id: 2, username: 'jane', name: 'Jane Smith', system_role: 'ADMIN', musical_role: 'FLUTE_PLAYER' },
       ]),
     });
   });
@@ -25,5 +22,5 @@ test('members page loads with the expected data', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1, name: 'Membros' })).toBeVisible();
   await expect(page.getByText('John Doe')).toBeVisible();
   await expect(page.getByText('Jane Smith')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Criar membro' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Novo membro' })).toBeVisible();
 });

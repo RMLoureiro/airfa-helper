@@ -2,6 +2,7 @@
 
 import AuthenticatedShell from '@/components/AuthenticatedShell';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { DatePicker, DateTimePicker } from '@/components/DatePicker';
 import { authFetch } from '@/lib/authFetch';
 import { API_URL } from '@/lib/config';
 import {
@@ -43,34 +44,6 @@ const REHEARSAL_TYPES = new Set(['REHEARSAL', 'SPECIAL_REHEARSAL']);
 function splitDateTime(value: string): { date: string; time: string } {
   const [date = '', time = ''] = value.split('T');
   return { date, time };
-}
-
-function combineDateTime(date: string, time: string): string {
-  if (!date && !time) return '';
-  return `${date}T${time || '00:00'}`;
-}
-
-const HOUR_OPTIONS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
-const MINUTE_OPTIONS = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0'));
-
-function TimeSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const [hour = '', minute = ''] = value.split(':');
-  const minuteOptions = minute && !MINUTE_OPTIONS.includes(minute)
-    ? [...MINUTE_OPTIONS, minute].sort()
-    : MINUTE_OPTIONS;
-  return (
-    <div className="time-select">
-      <select value={hour} onChange={e => onChange(`${e.target.value}:${minute || '00'}`)} aria-label="Horas">
-        <option value="" disabled>HH</option>
-        {HOUR_OPTIONS.map(h => <option key={h} value={h}>{h}</option>)}
-      </select>
-      <span className="time-sep">:</span>
-      <select value={minute} onChange={e => onChange(`${hour || '00'}:${e.target.value}`)} aria-label="Minutos">
-        <option value="" disabled>MM</option>
-        {minuteOptions.map(m => <option key={m} value={m}>{m}</option>)}
-      </select>
-    </div>
-  );
 }
 
 function EventsCalendar({ events }: { events: EventItem[] }) {
@@ -494,18 +467,12 @@ export default function EventsPage() {
 
                 <label className="form-field span-2">
                   Início
-                  <div className="datetime-split">
-                    <input type="date" value={splitDateTime(form.start_time).date} onChange={e => setForm({ ...form, start_time: combineDateTime(e.target.value, splitDateTime(form.start_time).time) })} />
-                    <TimeSelect value={splitDateTime(form.start_time).time} onChange={t => setForm({ ...form, start_time: combineDateTime(splitDateTime(form.start_time).date, t) })} />
-                  </div>
+                  <DateTimePicker value={form.start_time} onChange={v => setForm({ ...form, start_time: v })} placeholder="Selecionar data e hora" />
                 </label>
 
                 <label className="form-field span-2">
                   Fim
-                  <div className="datetime-split">
-                    <input type="date" value={splitDateTime(form.end_time).date} onChange={e => setForm({ ...form, end_time: combineDateTime(e.target.value, splitDateTime(form.end_time).time) })} />
-                    <TimeSelect value={splitDateTime(form.end_time).time} onChange={t => setForm({ ...form, end_time: combineDateTime(splitDateTime(form.end_time).date, t) })} />
-                  </div>
+                  <DateTimePicker value={form.end_time} onChange={v => setForm({ ...form, end_time: v })} placeholder="Selecionar data e hora" />
                 </label>
 
                 <label className="form-field">
@@ -525,23 +492,24 @@ export default function EventsPage() {
 
                 {/* Recurrence — only when creating a rehearsal */}
                 {!editingEvent && isRehearsal && (
-                  <label className="form-field span-2 toggle-field">
-                    <span className="toggle-row">
-                      <input
-                        type="checkbox"
-                        checked={form.recurrence === 'WEEKLY'}
-                        onChange={e => setForm({ ...form, recurrence: e.target.checked ? 'WEEKLY' : '', recurrence_end_date: '' })}
-                        style={{ width: 'auto', marginRight: 8 }}
-                      />
-                      Repetir semanalmente
-                    </span>
-                  </label>
+                  <div className="form-field span-2 toggle-field">
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={form.recurrence === 'WEEKLY'}
+                      className={`toggle-switch${form.recurrence === 'WEEKLY' ? ' on' : ''}`}
+                      onClick={() => setForm({ ...form, recurrence: form.recurrence === 'WEEKLY' ? '' : 'WEEKLY', recurrence_end_date: '' })}
+                    >
+                      <span className="toggle-track"><span className="toggle-thumb" /></span>
+                      <span className="toggle-text">Repetir semanalmente</span>
+                    </button>
+                  </div>
                 )}
 
                 {!editingEvent && form.recurrence === 'WEEKLY' && (
                   <label className="form-field span-2">
                     Repetir até (inclusive)
-                    <input type="date" value={form.recurrence_end_date} onChange={e => setForm({ ...form, recurrence_end_date: e.target.value })} />
+                    <DatePicker value={form.recurrence_end_date} onChange={v => setForm({ ...form, recurrence_end_date: v })} placeholder="Selecionar data" />
                   </label>
                 )}
 
@@ -828,16 +796,56 @@ export default function EventsPage() {
         .scope-btn-label { font-size: 14px; font-weight: 600; color: var(--text); }
         .scope-btn-sub { font-size: 12px; color: var(--muted); }
 
-        /* Recurrence toggle */
+        /* Recurrence toggle — switch */
         .toggle-field { cursor: default; }
-        .toggle-row {
-          display: flex;
+        .toggle-switch {
+          display: inline-flex;
           align-items: center;
+          gap: 11px;
+          background: transparent;
+          border: none;
+          padding: 4px 0;
+          cursor: pointer;
+          font: inherit;
+        }
+        .toggle-track {
+          position: relative;
+          flex-shrink: 0;
+          width: 40px;
+          height: 23px;
+          border-radius: 999px;
+          background: var(--surface-3);
+          border: 1px solid var(--border);
+          transition: background 0.18s ease, border-color 0.18s ease;
+        }
+        .toggle-thumb {
+          position: absolute;
+          top: 2px;
+          left: 2px;
+          width: 17px;
+          height: 17px;
+          border-radius: 50%;
+          background: var(--text-2);
+          box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+          transition: transform 0.18s ease, background 0.18s ease;
+        }
+        .toggle-switch.on .toggle-track {
+          background: var(--accent);
+          border-color: var(--accent);
+        }
+        .toggle-switch.on .toggle-thumb {
+          transform: translateX(17px);
+          background: var(--accent-fg);
+        }
+        .toggle-switch:focus-visible .toggle-track {
+          box-shadow: 0 0 0 3px var(--accent-dim);
+        }
+        .toggle-text {
           font-size: 13px;
           font-weight: 500;
           color: var(--text-2);
-          cursor: pointer;
         }
+        .toggle-switch.on .toggle-text { color: var(--text); }
 
         /* Modal */
         .modal-header {

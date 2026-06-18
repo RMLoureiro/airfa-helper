@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Airfa — Revamp Visual · Direções de Design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #0B0A09;
+    color: #B9B1A4;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Doc header ─────────────────────────────────────────── */
+  .doc-header {
+    max-width: 1320px; margin: 0 auto;
+    padding: 72px 56px 44px;
+    border-bottom: 1px solid #211D17;
+  }
+  .doc-eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: #6E6354; margin-bottom: 18px;
+  }
+  .doc-title {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: clamp(34px, 5vw, 58px); font-weight: 500;
+    color: #F1ECE2; line-height: 1.04; letter-spacing: -0.015em;
+    margin-bottom: 18px;
+  }
+  .doc-sub { font-size: 15.5px; color: #847A6B; max-width: 640px; line-height: 1.7; }
+  .doc-toc { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 30px; }
+  .toc-pill {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    letter-spacing: 0.05em; color: #9A8F7E; text-decoration: none;
+    padding: 7px 13px; border: 1px solid #2A251E; border-radius: 999px;
+    transition: .15s;
+  }
+  .toc-pill:hover { border-color: #4A4234; color: #E7E0D4; }
+  .toc-pill b { color: #E7E0D4; font-weight: 600; }
+
+  /* ── Section ────────────────────────────────────────────── */
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 56px 56px 90px; }
+  section { padding-top: 56px; }
+  section + section { border-top: 1px solid #1B1813; }
+
+  .sec-head { display: flex; align-items: baseline; gap: 16px; margin-bottom: 6px; }
+  .sec-num {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    color: #57503F; letter-spacing: 0.1em;
+  }
+  .sec-name { font-family: 'Fraunces', serif; font-size: 30px; font-weight: 500; color: #F1ECE2; letter-spacing: -0.01em; }
+  .sec-tag { font-size: 14px; color: #7C7160; }
+  .sec-desc { font-size: 14px; color: #6E6757; max-width: 760px; line-height: 1.65; margin: 12px 0 22px; }
+  .sec-meta { display: flex; gap: 26px; flex-wrap: wrap; margin-bottom: 26px; }
+  .meta-b { font-size: 12.5px; color: #6E6757; }
+  .meta-b span { color: #A89C89; }
+
+  /* palette strip */
+  .pal { display: flex; align-items: center; gap: 5px; margin-bottom: 26px; flex-wrap: wrap; }
+  .pal .lbl { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #5A5343; margin-right: 6px; }
+  .sw { width: 30px; height: 30px; border-radius: 6px; }
+  .pal .gap { width: 18px; }
+
+  /* mock frame */
+  .frames { display: flex; flex-direction: column; gap: 22px; }
+  .frame-lbl { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: #6E6354; margin-bottom: 9px; }
+  .frame {
+    border-radius: 14px; overflow: hidden;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.03), 0 30px 70px -30px rgba(0,0,0,0.8);
+  }
+
+  /* ===================================================================== */
+  /*  APP MOCK — driven entirely by CSS vars set per theme                 */
+  /* ===================================================================== */
+  .app {
+    display: flex; height: 520px;
+    font-family: var(--body);
+    background: var(--bg);
+    color: var(--text2);
+    --r: var(--radius);
+  }
+  .app * { font-family: inherit; }
+
+  /* sidebar */
+  .sb { width: 218px; flex-shrink: 0; background: var(--surf); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 0; }
+  .sb-brand { display: flex; align-items: center; gap: 11px; padding: 20px 18px 16px; }
+  .sb-mark {
+    width: 34px; height: 34px; border-radius: var(--mark-r); flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--mark-bg); color: var(--mark-fg);
+    font-family: var(--display); font-weight: 600; font-size: 18px; font-style: var(--mark-style);
+  }
+  .sb-bn { font-family: var(--brand-font); font-size: 16px; font-weight: 600; color: var(--text); font-style: var(--brand-style); letter-spacing: var(--brand-ls); line-height: 1; }
+  .sb-bs { font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+  .sb-div { height: 1px; background: var(--border); margin: 4px 16px 8px; }
+  .sb-nav { display: flex; flex-direction: column; gap: 2px; padding: 6px 10px; }
+  .ni { display: flex; align-items: center; gap: 10px; padding: 8px 11px; border-radius: var(--nav-r); font-size: 13px; font-weight: 500; color: var(--muted); position: relative; }
+  .ni .dot { width: 14px; height: 14px; border-radius: 4px; background: currentColor; opacity: .55; flex-shrink: 0; }
+  .ni.on { background: var(--nav-on-bg); color: var(--accent); font-weight: 600; }
+  .ni.on::before { content: var(--nav-bar); position: absolute; left: 0; top: 7px; bottom: 7px; width: 2px; background: var(--accent); border-radius: 2px; }
+  .ni .bdg { margin-left: auto; font-family: var(--mono); font-size: 9px; font-weight: 600; background: var(--accent); color: var(--mark-fg); border-radius: 999px; padding: 1px 6px; }
+  .sb-user { display: flex; align-items: center; gap: 10px; margin: auto 10px 14px; padding: 9px; background: var(--surf2); border-radius: 10px; }
+  .av { width: 32px; height: 32px; border-radius: var(--av-r); background: var(--accent-dim); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0; }
+  .un { font-size: 12px; font-weight: 600; color: var(--text); }
+  .ur { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  /* main */
+  .mn { flex: 1; min-width: 0; padding: 26px 30px; overflow: hidden; }
+  .mn-top { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 22px; }
+  .greet { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .ptitle { font-family: var(--display); font-size: var(--title-size); font-weight: var(--title-weight); font-style: var(--title-style); color: var(--text); letter-spacing: var(--title-ls); line-height: 1; }
+  .acts { display: flex; gap: 9px; }
+  .btn { font-size: 12.5px; font-weight: 600; padding: 8px 14px; border-radius: var(--btn-r); border: 1px solid transparent; }
+  .btn.ghost { background: transparent; color: var(--text2); border-color: var(--border-strong); }
+  .btn.prim { background: var(--accent); color: var(--mark-fg); }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 26px; }
+  .stat { background: var(--surf); border: 1px solid var(--border); border-radius: var(--card-r); padding: 16px 18px; }
+  .stat .sv { font-family: var(--stat-font); font-size: 30px; font-weight: var(--stat-weight); color: var(--text); line-height: 1; font-style: var(--stat-style); }
+  .stat .sv.acc { color: var(--accent); }
+  .stat .sl { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-top: 9px; }
+
+  .sh { font-family: var(--sh-font); font-size: var(--sh-size); font-weight: var(--sh-weight); font-style: var(--sh-style); color: var(--text); margin-bottom: 13px; letter-spacing: var(--sh-ls); display: flex; align-items: center; gap: 10px; }
+  .sh::after { content: ''; flex: 1; height: 1px; background: var(--border); opacity: var(--sh-rule); }
+
+  .ev { display: flex; align-items: center; gap: 13px; background: var(--surf); border: 1px solid var(--border); border-radius: var(--card-r); padding: 12px 14px; margin-bottom: 9px; }
+  .ev .stripe { width: 3px; align-self: stretch; border-radius: 3px; background: var(--ev-c); }
+  .ev .en { font-size: 13.5px; font-weight: 600; color: var(--text); }
+  .ev .ed { font-family: var(--mono); font-size: 10.5px; color: var(--muted); margin-top: 3px; letter-spacing: 0.02em; }
+  .ev .eb { margin-left: auto; font-size: 10.5px; font-weight: 600; padding: 3px 9px; border-radius: var(--badge-r); background: var(--ev-bg); color: var(--ev-c); border: 1px solid var(--ev-bd); white-space: nowrap; }
+
+  /* ── login mock ─────────────────────────────────────────── */
+  .login { display: flex; height: 360px; background: var(--bg); font-family: var(--body); }
+  .login-l { flex: 1; background: var(--login-l); position: relative; overflow: hidden; display: flex; align-items: flex-end; padding: 34px; }
+  .login-l .staff { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 13px; padding: 0 0 0 34px; }
+  .login-l .staff i { height: 1px; background: var(--text); opacity: .07; }
+  .login-l .lt { position: relative; font-family: var(--display); font-style: var(--title-style); font-weight: var(--title-weight); font-size: 30px; color: var(--text); line-height: 1.1; letter-spacing: var(--title-ls); }
+  .login-r { width: 320px; background: var(--surf); display: flex; flex-direction: column; justify-content: center; padding: 0 40px; gap: 13px; }
+  .login-r .lmark { width: 40px; height: 40px; border-radius: var(--mark-r); background: var(--mark-bg); color: var(--mark-fg); display: flex; align-items: center; justify-content: center; font-family: var(--display); font-weight: 600; font-size: 20px; font-style: var(--mark-style); margin-bottom: 6px; }
+  .login-r .ltitle { font-family: var(--display); font-size: 22px; font-weight: var(--title-weight); font-style: var(--title-style); color: var(--text); margin-bottom: 6px; }
+  .login-r .lfield { height: 38px; background: var(--surf2); border: 1px solid var(--border); border-radius: var(--btn-r); }
+  .login-r .lbtn { height: 40px; background: var(--accent); color: var(--mark-fg); border-radius: var(--btn-r); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px; margin-top: 4px; }
+
+  .two { display: grid; grid-template-columns: 1fr; gap: 22px; }
+
+  @media (max-width: 720px) {
+    .doc-header, .wrap { padding-left: 22px; padding-right: 22px; }
+    .app, .login { height: auto; flex-direction: column; }
+    .sb { width: 100%; flex-direction: row; flex-wrap: wrap; }
+    .login-r { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header class="doc-header">
+  <div class="doc-eyebrow">Airfa · Sistema de Gestão da Banda Filarmónica</div>
+  <h1 class="doc-title">Quatro direções para<br>o novo visual.</h1>
+  <p class="doc-sub">
+    Cada direção é mostrada como um ecrã real da aplicação — o painel de início e o login —
+    para que possas sentir o tom, e não apenas ver cores. Todas mantêm a stack atual
+    (Next.js + CSS variables) e o tema claro/escuro. Escolhe uma e eu implemento-a a sério no código.
+  </p>
+  <nav class="doc-toc">
+    <a class="toc-pill" href="#d1">01 · <b>Maestro</b></a>
+    <a class="toc-pill" href="#d2">02 · <b>Atelier</b></a>
+    <a class="toc-pill" href="#d3">03 · <b>Forte</b></a>
+    <a class="toc-pill" href="#d4">04 · <b>Concerto</b></a>
+  </nav>
+</header>
+
+<div class="wrap" id="root"></div>
+
+<script>
+/* Event accent colours per theme are passed in; this keeps rows realistic. */
+const THEMES = [
+  {
+    id: 'd1', num: '01', name: 'Maestro',
+    tag: '— A identidade atual, afinada.',
+    desc: 'Evolução direta do COMPASSO atual: mantém o calor do pergaminho e o serif Cormorant, mas com pretos mais profundos, contraste mais nítido e uma hierarquia tipográfica mais assertiva. A opção de menor risco — refina sem romper. Mantém o azul-tinta como acento.',
+    fonts: 'Cormorant Garamond · DM Sans · JetBrains Mono',
+    feel: 'Editorial, quente, reservado',
+    vars: {
+      body: "'DM Sans', sans-serif", display: "'Cormorant Garamond', serif",
+      mono: "'JetBrains Mono', monospace", 'brand-font': "'Cormorant Garamond', serif",
+      bg: '#0B0A08', surf: '#141210', surf2: '#1C1915', border: '#2A251E', 'border-strong': '#3A342B',
+      text: '#F0EBE1', text2: '#C2BAAD', muted: '#7C7264',
+      accent: '#6FA5CC', 'accent-dim': 'rgba(111,165,204,0.16)',
+      'mark-bg': '#6FA5CC', 'mark-fg': '#0B0A08', 'mark-style': 'italic', 'mark-r': '9px',
+      'brand-style': 'italic', 'brand-ls': '0.01em',
+      radius: '8px', 'card-r': '10px', 'btn-r': '7px', 'nav-r': '7px', 'badge-r': '5px', 'av-r': '9px',
+      'nav-on-bg': 'rgba(111,165,204,0.14)', 'nav-bar': '""',
+      'title-size': '30px', 'title-weight': '600', 'title-style': 'italic', 'title-ls': '-0.01em',
+      'stat-font': "'Cormorant Garamond', serif", 'stat-weight': '600', 'stat-style': 'normal',
+      'sh-font': "'Cormorant Garamond', serif", 'sh-size': '19px', 'sh-weight': '600', 'sh-style': 'normal', 'sh-ls': '0', 'sh-rule': '0.5',
+      'login-l': '#100E0B',
+    },
+    light: { bg:'#F2ECDD', surf:'#FBF7EE', surf2:'#EBE3D0', border:'#D5CCB6', muted:'#8A8070', text:'#1E1B14', text2:'#4A4336', accent:'#3A6E9A', 'accent-dim':'rgba(58,110,154,0.12)', 'mark-fg':'#FBF7EE', 'login-l':'#E7DECB', 'border-strong':'#C2B79E' },
+    ev: { concert:['#D4892A','rgba(212,137,42,0.14)','rgba(212,137,42,0.32)'], rehearsal:['#6FA5CC','rgba(111,165,204,0.14)','rgba(111,165,204,0.32)'] },
+  },
+  {
+    id: 'd2', num: '02', name: 'Atelier',
+    tag: '— Programa de concerto em papel.',
+    desc: 'Claro por defeito, como um programa de sala impresso. Branco-papel, muito espaço, regras finas e um serif Fraunces com carácter contemporâneo emparelhado com Inter. Um único acento — verde-pinheiro profundo — usado com parcimónia. Calmo, legível, editorial. O oposto do "dashboard genérico de SaaS".',
+    fonts: 'Fraunces · Inter · JetBrains Mono',
+    feel: 'Sereno, claro, sofisticado',
+    defaultLight: true,
+    vars: {
+      body: "'Inter', sans-serif", display: "'Fraunces', serif",
+      mono: "'JetBrains Mono', monospace", 'brand-font': "'Fraunces', serif",
+      bg: '#161513', surf: '#1E1C19', surf2: '#262320', border: '#2F2B26', 'border-strong': '#403B33',
+      text: '#F4F1EA', text2: '#C7C0B4', muted: '#857C6E',
+      accent: '#5E9B7A', 'accent-dim': 'rgba(94,155,122,0.16)',
+      'mark-bg': '#2E5C46', 'mark-fg': '#F4F1EA', 'mark-style': 'normal', 'mark-r': '11px',
+      'brand-style': 'normal', 'brand-ls': '-0.01em',
+      radius: '10px', 'card-r': '12px', 'btn-r': '999px', 'nav-r': '999px', 'badge-r': '999px', 'av-r': '999px',
+      'nav-on-bg': 'rgba(94,155,122,0.14)', 'nav-bar': 'none',
+      'title-size': '34px', 'title-weight': '500', 'title-style': 'normal', 'title-ls': '-0.02em',
+      'stat-font': "'Fraunces', serif", 'stat-weight': '500', 'stat-style': 'normal',
+      'sh-font': "'Fraunces', serif", 'sh-size': '17px', 'sh-weight': '500', 'sh-style': 'italic', 'sh-ls': '0', 'sh-rule': '0.6',
+      'login-l': '#11221A',
+    },
+    light: { bg:'#F6F3EC', surf:'#FFFFFF', surf2:'#F1EDE3', border:'#E4DFD3', muted:'#8E8576', text:'#1A1813', text2:'#534B3E', accent:'#2E5C46', 'accent-dim':'rgba(46,92,70,0.10)', 'mark-bg':'#2E5C46', 'mark-fg':'#FFFFFF', 'border-strong':'#D2CBBB', 'login-l':'#1E3A2C' },
+    ev: { concert:['#B06A1F','rgba(176,106,31,0.10)','rgba(176,106,31,0.28)'], rehearsal:['#2E5C46','rgba(46,92,70,0.10)','rgba(46,92,70,0.26)'] },
+  },
+  {
+    id: 'd3', num: '03', name: 'Forte',
+    tag: '— Console moderno, alto contraste.',
+    desc: 'A direção mais contemporânea e "produto 2025": preto quase puro, branco-osso, e Space Grotesk — um grotesco geométrico com personalidade. Cantos mais vivos, densidade controlada, um único acento de sinal (âmbar quente). Nada de serifas. Sente-se preciso, técnico e confiante, sem cair no genérico.',
+    fonts: 'Space Grotesk · Inter · JetBrains Mono',
+    feel: 'Nítido, técnico, decidido',
+    vars: {
+      body: "'Inter', sans-serif", display: "'Space Grotesk', sans-serif",
+      mono: "'JetBrains Mono', monospace", 'brand-font': "'Space Grotesk', sans-serif",
+      bg: '#0A0A0B', surf: '#121214', surf2: '#1A1A1D', border: '#26262A', 'border-strong': '#37373D',
+      text: '#F2F1EE', text2: '#AFADA8', muted: '#6F6D69',
+      accent: '#E0A53C', 'accent-dim': 'rgba(224,165,60,0.14)',
+      'mark-bg': '#E0A53C', 'mark-fg': '#0A0A0B', 'mark-style': 'normal', 'mark-r': '7px',
+      'brand-style': 'normal', 'brand-ls': '-0.02em',
+      radius: '6px', 'card-r': '8px', 'btn-r': '6px', 'nav-r': '6px', 'badge-r': '5px', 'av-r': '7px',
+      'nav-on-bg': 'rgba(224,165,60,0.12)', 'nav-bar': '""',
+      'title-size': '28px', 'title-weight': '600', 'title-style': 'normal', 'title-ls': '-0.03em',
+      'stat-font': "'Space Grotesk', sans-serif", 'stat-weight': '600', 'stat-style': 'normal',
+      'sh-font': "'Space Grotesk', sans-serif", 'sh-size': '13px', 'sh-weight': '600', 'sh-style': 'normal', 'sh-ls': '0.04em', 'sh-rule': '0.7',
+      'login-l': '#0E0E10',
+    },
+    light: { bg:'#F4F3F0', surf:'#FFFFFF', surf2:'#ECEBE7', border:'#DEDCD6', muted:'#86837D', text:'#131312', text2:'#4D4B47', accent:'#9A6B12', 'accent-dim':'rgba(154,107,18,0.10)', 'mark-bg':'#131312', 'mark-fg':'#F4F3F0', 'border-strong':'#CDCAC2', 'login-l':'#131312' },
+    ev: { concert:['#D08A1E','rgba(208,138,30,0.12)','rgba(208,138,30,0.30)'], rehearsal:['#5B8FB8','rgba(91,143,184,0.12)','rgba(91,143,184,0.30)'] },
+  },
+  {
+    id: 'd4', num: '04', name: 'Concerto',
+    tag: '— Noite de gala, azul-meia-noite & ouro.',
+    desc: 'A mais cerimoniosa. Azul-meia-noite das capas de programa, ouro de champanhe nas letras. O serif Cormorant ganha drama sobre o fundo noturno. Formal e elegante — para uma banda que se apresenta com orgulho. Mais expressiva que a Maestro, mantendo a alma musical.',
+    fonts: 'Cormorant Garamond · DM Sans · JetBrains Mono',
+    feel: 'Cerimonioso, elegante, noturno',
+    vars: {
+      body: "'DM Sans', sans-serif", display: "'Cormorant Garamond', serif",
+      mono: "'JetBrains Mono', monospace", 'brand-font': "'Cormorant Garamond', serif",
+      bg: '#0A0E18', surf: '#101626', surf2: '#161E31', border: '#222C44', 'border-strong': '#32405E',
+      text: '#EDEAE0', text2: '#AEB6C6', muted: '#6E7892',
+      accent: '#D4B36A', 'accent-dim': 'rgba(212,179,106,0.15)',
+      'mark-bg': '#D4B36A', 'mark-fg': '#0A0E18', 'mark-style': 'italic', 'mark-r': '9px',
+      'brand-style': 'italic', 'brand-ls': '0.01em',
+      radius: '8px', 'card-r': '10px', 'btn-r': '7px', 'nav-r': '7px', 'badge-r': '5px', 'av-r': '9px',
+      'nav-on-bg': 'rgba(212,179,106,0.12)', 'nav-bar': '""',
+      'title-size': '32px', 'title-weight': '600', 'title-style': 'italic', 'title-ls': '-0.01em',
+      'stat-font': "'Cormorant Garamond', serif", 'stat-weight': '600', 'stat-style': 'normal',
+      'sh-font': "'Cormorant Garamond', serif", 'sh-size': '19px', 'sh-weight': '600', 'sh-style': 'normal', 'sh-ls': '0', 'sh-rule': '0.5',
+      'login-l': '#080B12',
+    },
+    light: { bg:'#EAE6DA', surf:'#F7F3E9', surf2:'#E3DDCC', border:'#CDC4AE', muted:'#7E7560', text:'#16203A', text2:'#3E4865', accent:'#A07A2A', 'accent-dim':'rgba(160,122,42,0.12)', 'mark-bg':'#16203A', 'mark-fg':'#F7F3E9', 'border-strong':'#BAB096', 'login-l':'#16203A' },
+    ev: { concert:['#D4B36A','rgba(212,179,106,0.14)','rgba(212,179,106,0.32)'], rehearsal:['#7E9BD0','rgba(126,155,208,0.14)','rgba(126,155,208,0.32)'] },
+  },
+];
+
+const NAV = [
+  ['Início', true, null], ['Presenças', false, null], ['Eventos', false, null],
+  ['Instrumentos', false, null], ['Repertório', false, null], ['Notificações', false, '3'],
+];
+
+function varStyle(theme, light) {
+  const v = { ...theme.vars, ...(light ? theme.light : {}) };
+  return Object.entries(v).map(([k, val]) => `--${k}:${val}`).join(';');
+}
+
+function appMock(theme, light) {
+  const ev = theme.ev;
+  const nav = NAV.map(([label, on, badge]) =>
+    `<div class="ni${on ? ' on' : ''}"><span class="dot"></span>${label}${badge ? `<span class="bdg">${badge}</span>` : ''}</div>`
+  ).join('');
+  return `
+  <div class="app" style="${varStyle(theme, light)}">
+    <div class="sb">
+      <div class="sb-brand">
+        <div class="sb-mark">A</div>
+        <div><div class="sb-bn">Airfa</div><div class="sb-bs">Banda Filarmónica</div></div>
+      </div>
+      <div class="sb-div"></div>
+      <div class="sb-nav">${nav}</div>
+      <div class="sb-user">
+        <div class="av">J</div>
+        <div><div class="un">João Pereira</div><div class="ur">Trompete</div></div>
+      </div>
+    </div>
+    <div class="mn">
+      <div class="mn-top">
+        <div>
+          <div class="greet">Boa tarde, João</div>
+          <div class="ptitle">Início</div>
+        </div>
+        <div class="acts">
+          <button class="btn ghost">Calendário</button>
+          <button class="btn prim">+ Evento</button>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="sv">4</div><div class="sl">Próximos eventos</div></div>
+        <div class="stat"><div class="sv">28</div><div class="sl">Membros ativos</div></div>
+        <div class="stat"><div class="sv acc">91%</div><div class="sl">Presença média</div></div>
+      </div>
+      <div class="sh">Próximos eventos</div>
+      <div class="ev" style="--ev-c:${ev.concert[0]};--ev-bg:${ev.concert[1]};--ev-bd:${ev.concert[2]}">
+        <div class="stripe"></div>
+        <div style="flex:1;min-width:0"><div class="en">Concerto de São João</div><div class="ed">Sáb · 7 Jun · 21h00 · Largo da Feira</div></div>
+        <div class="eb">Concerto</div>
+      </div>
+      <div class="ev" style="--ev-c:${ev.rehearsal[0]};--ev-bg:${ev.rehearsal[1]};--ev-bd:${ev.rehearsal[2]}">
+        <div class="stripe"></div>
+        <div style="flex:1;min-width:0"><div class="en">Ensaio Semanal</div><div class="ed">Qui · 29 Mai · 21h30 · Sede</div></div>
+        <div class="eb">Ensaio</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function loginMock(theme, light) {
+  return `
+  <div class="login" style="${varStyle(theme, light)}">
+    <div class="login-l">
+      <div class="staff"><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="lt">Banda<br>Filarmónica<br>da Airfa</div>
+    </div>
+    <div class="login-r">
+      <div class="lmark">A</div>
+      <div class="ltitle">Iniciar sessão</div>
+      <div class="lfield"></div>
+      <div class="lfield"></div>
+      <div class="lbtn">Entrar</div>
+    </div>
+  </div>`;
+}
+
+function swatches(theme) {
+  const order = ['bg','surf','surf2','border','muted','accent'];
+  const dark = order.map(k => `<div class="sw" style="background:${theme.vars[k]}"></div>`).join('');
+  const lv = { ...theme.vars, ...theme.light };
+  const lt = order.map(k => `<div class="sw" style="background:${lv[k]};box-shadow:inset 0 0 0 1px rgba(0,0,0,0.08)"></div>`).join('');
+  return `<div class="pal"><span class="lbl">Escuro</span>${dark}<span class="gap"></span><span class="lbl">Claro</span>${lt}</div>`;
+}
+
+function section(theme) {
+  const primary = theme.defaultLight ? false : true; // big frame = the theme's "natural" mode
+  return `
+  <section id="${theme.id}">
+    <div class="sec-head">
+      <span class="sec-num">${theme.num}</span>
+      <span class="sec-name" style="color:${theme.vars.accent}">${theme.name}</span>
+      <span class="sec-tag">${theme.tag}</span>
+    </div>
+    <p class="sec-desc">${theme.desc}</p>
+    <div class="sec-meta">
+      <div class="meta-b">Tipografia · <span>${theme.fonts}</span></div>
+      <div class="meta-b">Tom · <span>${theme.feel}</span></div>
+    </div>
+    ${swatches(theme)}
+    <div class="frames">
+      <div>
+        <div class="frame-lbl">Início — modo ${theme.defaultLight ? 'claro' : 'escuro'} (principal)</div>
+        <div class="frame">${appMock(theme, theme.defaultLight)}</div>
+      </div>
+      <div class="two">
+        <div>
+          <div class="frame-lbl">Início — modo ${theme.defaultLight ? 'escuro' : 'claro'}</div>
+          <div class="frame">${appMock(theme, !theme.defaultLight)}</div>
+        </div>
+      </div>
+      <div>
+        <div class="frame-lbl">Login</div>
+        <div class="frame">${loginMock(theme, theme.defaultLight)}</div>
+      </div>
+    </div>
+  </section>`;
+}
+
+document.getElementById('root').innerHTML = THEMES.map(section).join('');
+</script>
+</body>
+</html>

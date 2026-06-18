@@ -462,6 +462,19 @@ export default function ReforcosPage() {
         .reinf-table tr:hover td { background: var(--surface-2); }
         .reinf-table .actions-cell { display: flex; gap: 6px; }
 
+        /* Mobile: reflow the table into stacked cards (consistent with the rest of the app) */
+        @media (max-width: 640px) {
+          .reinf-table, .reinf-table tbody, .reinf-table tr, .reinf-table td { display: block; width: 100%; }
+          .reinf-table thead { display: none; }
+          .reinf-table tr { border: 1px solid var(--border); border-radius: 10px; background: var(--surface); margin-bottom: 12px; padding: 4px 2px; }
+          .reinf-table tr:hover td { background: transparent; }
+          .reinf-table td { border: none; padding: 7px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+          .reinf-table td::before { content: attr(data-label); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); flex: 0 0 auto; }
+          .reinf-table td.actions-td { padding-top: 4px; }
+          .reinf-table td.actions-td::before { display: none; }
+          .reinf-table .actions-cell { width: 100%; justify-content: flex-end; }
+        }
+
         .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 16px; }
         .modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 28px; width: 100%; max-width: 480px; box-shadow: var(--shadow-lg); }
         .modal-box.wide { max-width: 560px; }
@@ -550,13 +563,13 @@ export default function ReforcosPage() {
                   <tbody>
                     {filteredReinforcements.map(r => (
                       <tr key={r.id}>
-                        <td style={{ fontWeight: 500 }}>{r.name}</td>
-                        <td style={{ color: 'var(--text-2)' }}>{r.instrument ?? '—'}</td>
-                        <td style={{ color: 'var(--text-2)' }}>{r.contact ?? '—'}</td>
-                        <td style={{ color: 'var(--warning)', fontWeight: 600 }}>
+                        <td data-label="Nome" style={{ fontWeight: 500 }}>{r.name}</td>
+                        <td data-label="Instrumento" style={{ color: 'var(--text-2)' }}>{r.instrument ?? '—'}</td>
+                        <td data-label="Contacto" style={{ color: 'var(--text-2)' }}>{r.contact ?? '—'}</td>
+                        <td data-label="Valor habitual" style={{ color: 'var(--warning)', fontWeight: 600 }}>
                           {r.usual_fee != null ? `${Number(r.usual_fee).toFixed(2)} €` : '—'}
                         </td>
-                        <td>
+                        <td className="actions-td">
                           <div className="actions-cell">
                             <button
                               className="btn btn-secondary"

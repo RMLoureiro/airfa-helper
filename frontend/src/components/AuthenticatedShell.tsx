@@ -164,13 +164,13 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
   const [role, setRole] = useState('');
   const [musicalRole, setMusicalRole] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(true);
+  const [darkMode, setDarkMode] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     const saved = localStorage.getItem('airfa_theme');
-    const isDark = saved !== 'light';
+    const isDark = saved === 'dark';
     setDarkMode(isDark);
     document.documentElement.classList.toggle('light', !isDark);
   }, []);
@@ -244,7 +244,7 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
         width: 28,
         height: 28,
         padding: 0,
-        borderRadius: 7,
+        borderRadius: 3,
         background: 'var(--accent-dim)',
         border: '1px solid rgba(91,143,184,0.22)',
         color: 'var(--accent-2)',
@@ -494,7 +494,7 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
           width: 28px;
           height: 28px;
           padding: 0;
-          border-radius: 7px;
+          border-radius: 3px;
           background: var(--accent-dim);
           border: 1px solid rgba(91,143,184,0.22);
           color: var(--accent-2);
@@ -513,14 +513,14 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
           height: 36px;
           background: var(--accent);
           color: var(--accent-fg);
-          border-radius: 8px;
+          border-radius: 3px;
           display: flex;
           align-items: center;
           justify-content: center;
           font-family: var(--font-display, serif);
           font-size: 20px;
-          font-style: italic;
-          font-weight: 700;
+          font-style: normal;
+          font-weight: 800;
           flex-shrink: 0;
         }
 
@@ -538,10 +538,10 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
           gap: 6px;
           font-family: var(--font-display, serif);
           font-size: 18px;
-          font-style: italic;
-          font-weight: 600;
+          font-style: normal;
+          font-weight: 700;
           color: var(--text);
-          letter-spacing: 0.02em;
+          letter-spacing: -0.01em;
           line-height: 1.1;
         }
 
@@ -579,7 +579,7 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
           align-items: center;
           gap: 10px;
           padding: 9px 12px;
-          border-radius: 6px;
+          border-radius: 3px;
           color: var(--muted);
           font-size: 14px;
           font-weight: 500;
@@ -639,7 +639,7 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
           aspect-ratio: 1;
           min-width: 44px;
           flex-shrink: 0;
-          border-radius: 10px;
+          border-radius: 3px;
           background: var(--accent-dim);
           border: 1px solid rgba(91,143,184,0.22);
           color: var(--accent-2);
@@ -663,7 +663,7 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
           min-width: 160px;
           background: var(--surface-2);
           border: 1px solid var(--border-strong);
-          border-radius: 8px;
+          border-radius: 3px;
           padding: 4px;
           box-shadow: 0 -8px 24px rgba(0,0,0,0.25);
           z-index: 200;
@@ -765,7 +765,7 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
         .hamburger-btn {
           width: 36px;
           height: 36px;
-          border-radius: 6px;
+          border-radius: 3px;
           border: 1px solid var(--border);
           background: transparent;
           color: var(--text-2);
@@ -778,9 +778,9 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
 
         .mobile-brand {
           font-family: var(--font-display, serif);
-          font-style: italic;
+          font-style: normal;
           font-size: 20px;
-          font-weight: 600;
+          font-weight: 800;
           color: var(--accent-2);
         }
 
@@ -821,7 +821,7 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
           right: 12px;
           width: 32px;
           height: 32px;
-          border-radius: 6px;
+          border-radius: 3px;
           border: 1px solid var(--border);
           background: transparent;
           color: var(--muted);
