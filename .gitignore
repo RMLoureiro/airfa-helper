@@ -47,3 +47,7 @@ REQUIREMENTS.md
 
 # Personal scripts
 personal/
+
+# Uploaded user content — must never be committed (contains personal documents)
+backend/uploads/
+files/uploads/

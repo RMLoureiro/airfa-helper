@@ -64,6 +64,8 @@ class Settings(BaseSettings):
 
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "Airfa Helper API"
+    # "production" disables interactive API docs and gates the background scheduler.
+    ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
     DATABASE_URL: str = _default_database_url()
     CORS_ORIGINS: str = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001")
     SECRET_KEY: str = os.getenv("SECRET_KEY", "supersecret")

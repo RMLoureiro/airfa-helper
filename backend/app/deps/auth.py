@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
+import jwt
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -33,7 +33,7 @@ def get_current_user(
         username = payload.get("sub")
         if username is None:
             raise credentials_exception
-    except JWTError as exc:
+    except jwt.PyJWTError as exc:
         raise credentials_exception from exc
 
     user = db.query(User).filter(User.username == username, User.deleted_at.is_(None)).first()

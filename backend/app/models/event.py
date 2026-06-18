@@ -9,7 +9,7 @@ class Event(Base):
     title = Column(String, nullable=False)
     description = Column(String, nullable=True)
     # Naive wall-clock time (hora local de Portugal) — sem conversão de timezone
-    start_time = Column(DateTime, nullable=False)
+    start_time = Column(DateTime, nullable=False, index=True)
     end_time = Column(DateTime, nullable=False)
     location = Column(String, nullable=True)
     type = Column(Enum(EventType), nullable=False)

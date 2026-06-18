@@ -1,3 +1,8 @@
+import atexit
+import fcntl
+import logging
+import os
+import tempfile
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -6,6 +11,9 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from apscheduler.schedulers.background import BackgroundScheduler
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+
+_logger = logging.getLogger(__name__)
 
 from app.api.v1.api import api_router
 from app.core.config import settings
@@ -17,6 +25,29 @@ from app.services.maintenance_jobs import (
 )
 
 scheduler = BackgroundScheduler(timezone="Europe/Lisbon")
+
+# Hold the lock fd for the process lifetime so it is not garbage-collected.
+_scheduler_lock_fd = None
+
+
+def _acquire_scheduler_lock() -> bool:
+    """Try to become the single scheduler owner across uvicorn workers.
+
+    With `uvicorn --workers N` the lifespan runs once per worker process, which
+    would otherwise start N schedulers and fire every cron job N times. We take
+    an advisory file lock so exactly one worker runs the background jobs.
+    """
+    global _scheduler_lock_fd
+    lock_path = os.path.join(tempfile.gettempdir(), "airfa-scheduler.lock")
+    fd = open(lock_path, "w")
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        fd.close()
+        return False
+    _scheduler_lock_fd = fd
+    atexit.register(fd.close)
+    return True
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -40,6 +71,11 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    if not _acquire_scheduler_lock():
+        _logger.info("Scheduler already owned by another worker; skipping background jobs in this process.")
+        yield
+        return
+
     send_daily_birthday_notifications()
     generate_upcoming_birthday_events()
     cleanup_old_newsletter_items()
@@ -76,10 +112,21 @@ async def lifespan(app: FastAPI):
             scheduler.shutdown(wait=False)
 
 
-app = FastAPI(title=settings.PROJECT_NAME, lifespan=lifespan)
+_is_production = settings.ENVIRONMENT.lower() == "production"
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    lifespan=lifespan,
+    # Disable interactive API docs / schema in production to avoid exposing the
+    # full API surface publicly.
+    docs_url=None if _is_production else "/docs",
+    redoc_url=None if _is_production else "/redoc",
+    openapi_url=None if _is_production else "/openapi.json",
+)
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+# Applies the limiter's default_limits to every route as a global safety net.
+app.add_middleware(SlowAPIMiddleware)
 
 app.add_middleware(SecurityHeadersMiddleware)
 

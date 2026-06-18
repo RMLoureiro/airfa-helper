@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 import re
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
@@ -57,19 +58,28 @@ def _resolve_folder(folder_path: str | None) -> Path | None:
 
 def _build_files(folder_path: str | None, repertoire_id: int) -> list[RepertoireFileRead]:
     folder = _resolve_folder(folder_path)
-    if not folder or not folder.exists() or not folder.is_dir():
+    if not folder:
         return []
 
-    files = []
-    for file_path in sorted(folder.iterdir()):
-        if file_path.is_file() and file_path.suffix.lower() == ".pdf":
-            files.append(
-                RepertoireFileRead(
-                    name=file_path.name,
-                    download_url=f"/api/v1/repertoire/{repertoire_id}/files/{file_path.name}",
-                )
-            )
-    return files
+    # os.scandir reuses the directory entry's cached type, avoiding an extra
+    # stat() syscall per file compared with Path.iterdir() + is_file().
+    try:
+        with os.scandir(folder) as entries:
+            names = [
+                entry.name
+                for entry in entries
+                if entry.is_file() and entry.name.lower().endswith(".pdf")
+            ]
+    except (FileNotFoundError, NotADirectoryError):
+        return []
+
+    return [
+        RepertoireFileRead(
+            name=name,
+            download_url=f"/api/v1/repertoire/{repertoire_id}/files/{name}",
+        )
+        for name in sorted(names)
+    ]
 
 
 @router.get("", response_model=list[RepertoireRead])

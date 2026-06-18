@@ -19,7 +19,7 @@ class User(Base):
     musical_role = Column(Enum(MusicalRole), nullable=True)
     # Soft delete: when set, the member is a "former member" and is excluded
     # from all active features while keeping their historical records intact.
-    deleted_at = Column(DateTime(timezone=True), nullable=True)
+    deleted_at = Column(DateTime(timezone=True), nullable=True, index=True)
 
     instruments = relationship("Instrument", back_populates="user")
 
