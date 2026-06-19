@@ -11,3 +11,6 @@ class Newsletter(Base):
     content = Column(String, nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    facebook_link = Column(String, nullable=True)
+    instagram_link = Column(String, nullable=True)
+    youtube_link = Column(String, nullable=True)

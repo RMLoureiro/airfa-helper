@@ -37,7 +37,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-PT" className={`light ${archivo.variable} ${inter.variable} ${jetbrains.variable}`}>
+    <html lang="pt-PT" className={`${archivo.variable} ${inter.variable} ${jetbrains.variable}`}>
+      <head>
+        {/* Apply saved theme before paint to avoid a flash. Default is dark; only opt into light when explicitly saved. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{if(localStorage.getItem('airfa_theme')==='light'){document.documentElement.classList.add('light');}}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body>{children}</body>
     </html>
   );

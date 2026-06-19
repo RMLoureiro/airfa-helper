@@ -20,6 +20,9 @@ def _to_read(newsletter: Newsletter, author_name: str | None) -> NewsletterRead:
         author_id=newsletter.author_id,
         author_name=author_name,
         created_at=newsletter.created_at,
+        facebook_link=newsletter.facebook_link,
+        instagram_link=newsletter.instagram_link,
+        youtube_link=newsletter.youtube_link,
     )
 
 
@@ -47,6 +50,9 @@ def create_newsletter(
         title=payload.title,
         content=payload.content,
         author_id=current_user.id,
+        facebook_link=payload.facebook_link,
+        instagram_link=payload.instagram_link,
+        youtube_link=payload.youtube_link,
     )
     db.add(newsletter)
     broadcast_notification(db, NotificationType.NEWSLETTER, f"Nova publicação: {payload.title}")
@@ -68,6 +74,9 @@ def update_newsletter(
 
     newsletter.title = payload.title
     newsletter.content = payload.content
+    newsletter.facebook_link = payload.facebook_link
+    newsletter.instagram_link = payload.instagram_link
+    newsletter.youtube_link = payload.youtube_link
 
     broadcast_notification(db, NotificationType.NEWSLETTER, f"Publicação atualizada: {newsletter.title}")
     db.commit()

@@ -5,6 +5,9 @@ from app.schemas.base import ReadSchema
 class NewsletterBase(BaseModel):
     title: str
     content: str
+    facebook_link: str | None = None
+    instagram_link: str | None = None
+    youtube_link: str | None = None
 
 class NewsletterCreate(NewsletterBase):
     pass

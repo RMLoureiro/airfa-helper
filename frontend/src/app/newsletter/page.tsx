@@ -14,6 +14,7 @@ type NewsletterItem = {
   created_at: string;
   facebook_link?: string | null;
   instagram_link?: string | null;
+  youtube_link?: string | null;
 };
 
 type NewsletterForm = {
@@ -21,9 +22,10 @@ type NewsletterForm = {
   content: string;
   facebook_link: string;
   instagram_link: string;
+  youtube_link: string;
 };
 
-const EMPTY_FORM: NewsletterForm = { title: '', content: '', facebook_link: '', instagram_link: '' };
+const EMPTY_FORM: NewsletterForm = { title: '', content: '', facebook_link: '', instagram_link: '', youtube_link: '' };
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' });
@@ -56,12 +58,12 @@ export default function NewsletterPage() {
   function openCreate() { setEditingItem(null); setForm(EMPTY_FORM); setIsModalOpen(true); }
   function openEdit(item: NewsletterItem) {
     setEditingItem(item);
-    setForm({ title: item.title, content: item.content, facebook_link: item.facebook_link ?? '', instagram_link: item.instagram_link ?? '' });
+    setForm({ title: item.title, content: item.content, facebook_link: item.facebook_link ?? '', instagram_link: item.instagram_link ?? '', youtube_link: item.youtube_link ?? '' });
     setIsModalOpen(true);
   }
 
   async function saveItem() {
-    const payload = { ...form, facebook_link: form.facebook_link || null, instagram_link: form.instagram_link || null };
+    const payload = { ...form, facebook_link: form.facebook_link || null, instagram_link: form.instagram_link || null, youtube_link: form.youtube_link || null };
     const isEditing = Boolean(editingItem);
     await authFetch(isEditing ? `${API_URL}/api/v1/newsletter/${editingItem?.id}` : `${API_URL}/api/v1/newsletter`, {
       method: isEditing ? 'PUT' : 'POST',
@@ -105,10 +107,11 @@ export default function NewsletterPage() {
                 </header>
                 <h2 className="article-title">{item.title}</h2>
                 <p className="article-body">{item.content}</p>
-                {(item.facebook_link || item.instagram_link) && (
+                {(item.facebook_link || item.instagram_link || item.youtube_link) && (
                   <div className="social-row">
                     {item.facebook_link && <a href={item.facebook_link} target="_blank" rel="noopener noreferrer" className="social-link fb">Facebook</a>}
                     {item.instagram_link && <a href={item.instagram_link} target="_blank" rel="noopener noreferrer" className="social-link ig">Instagram</a>}
+                    {item.youtube_link && <a href={item.youtube_link} target="_blank" rel="noopener noreferrer" className="social-link yt">YouTube</a>}
                   </div>
                 )}
               </article>
@@ -139,6 +142,10 @@ export default function NewsletterPage() {
                 <label className="field">
                   Link Instagram
                   <input value={form.instagram_link} onChange={e => setForm({ ...form, instagram_link: e.target.value })} placeholder="https://instagram.com/..." />
+                </label>
+                <label className="field">
+                  Link YouTube
+                  <input value={form.youtube_link} onChange={e => setForm({ ...form, youtube_link: e.target.value })} placeholder="https://youtube.com/..." />
                 </label>
               </div>
               <div className="mf">
@@ -245,6 +252,7 @@ export default function NewsletterPage() {
         .social-link:hover { opacity: 0.8; }
         .fb { background: rgba(24,119,242,0.12); border: 1px solid rgba(24,119,242,0.28); color: #4e9cf5; }
         .ig { background: rgba(225,48,108,0.1); border: 1px solid rgba(225,48,108,0.24); color: #e1306c; }
+        .yt { background: rgba(255,0,0,0.1); border: 1px solid rgba(255,0,0,0.26); color: #ff4d4d; }
 
         /* Modal */
         .mh { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }

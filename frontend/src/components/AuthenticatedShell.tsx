@@ -164,13 +164,13 @@ export default function AuthenticatedShell({ title, subtitle, children }: Authen
   const [role, setRole] = useState('');
   const [musicalRole, setMusicalRole] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(true);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     const saved = localStorage.getItem('airfa_theme');
-    const isDark = saved === 'dark';
+    const isDark = saved !== 'light';
     setDarkMode(isDark);
     document.documentElement.classList.toggle('light', !isDark);
   }, []);
