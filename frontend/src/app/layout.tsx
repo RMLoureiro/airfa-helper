@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Archivo, Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
+import Toast from '@/components/Toast';
 
 // Display / headings / numerals — Archivo (geometric grotesque, "Pauta Azul")
 const archivo = Archivo({
@@ -46,7 +47,10 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <Toast />
+      </body>
     </html>
   );
 }
