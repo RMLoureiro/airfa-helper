@@ -1,7 +1,8 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Archivo, Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import Toast from '@/components/Toast';
+import InstallPWA from '@/components/InstallPWA';
 
 // Display / headings / numerals — Archivo (geometric grotesque, "Pauta Azul")
 const archivo = Archivo({
@@ -29,6 +30,19 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'Airfa',
   description: 'Sistema de gestão da Banda Filarmónica',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Airfa',
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#0E0E10',
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({
@@ -49,6 +63,7 @@ export default function RootLayout({
       <body>
         {children}
         <Toast />
+        <InstallPWA />
       </body>
     </html>
   );
